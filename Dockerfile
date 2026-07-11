@@ -6,10 +6,10 @@ RUN npm ci
 FROM node:22-alpine AS builder
 WORKDIR /app
 ENV DATABASE_URL=file:./dev.db
+RUN apk add --no-cache openssl
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
-RUN npx prisma db push --skip-generate
 RUN npm run build
 
 FROM node:22-alpine AS runner
