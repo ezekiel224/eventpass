@@ -14,12 +14,17 @@ type QrCameraScannerProps = {
 type Html5Scanner = {
   start: (
     cameraIdOrConfig: string | { facingMode: string },
-    configuration: { fps: number; qrbox: { width: number; height: number }; aspectRatio?: number },
+    configuration: { fps: number; qrbox: { width: number; height: number } },
     qrCodeSuccessCallback: (decodedText: string) => void,
     qrCodeErrorCallback?: () => void
   ) => Promise<unknown>;
   stop: () => Promise<unknown>;
   clear: () => void;
+};
+
+type Html5QrcodeClass = {
+  new (elementId: string): Html5Scanner;
+  getCameras: () => Promise<Array<{ id: string; label: string }>>;
 };
 
 export function QrCameraScanner({
@@ -35,6 +40,8 @@ export function QrCameraScanner({
   const [isActive, setIsActive] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState("");
+  const [cameras, setCameras] = useState<Array<{ id: string; label: string }>>([]);
+  const [cameraId, setCameraId] = useState("");
 
   useEffect(() => {
     return () => {
@@ -66,15 +73,20 @@ export function QrCameraScanner({
 
     try {
       const { Html5Qrcode } = await import("html5-qrcode");
-      const scanner = new Html5Qrcode(readerId) as unknown as Html5Scanner;
+      const Qrcode = Html5Qrcode as unknown as Html5QrcodeClass;
+      const availableCameras = await Qrcode.getCameras();
+      const preferredCamera = cameraId || availableCameras.find((camera) => /back|rear|environment/i.test(camera.label))?.id || availableCameras[0]?.id || "";
+      setCameras(availableCameras);
+      setCameraId(preferredCamera);
+
+      const scanner = new Qrcode(readerId);
       scannerRef.current = scanner;
 
       await scanner.start(
-        { facingMode: "environment" },
+        preferredCamera || { facingMode: "environment" },
         {
           fps: 10,
-          qrbox: { width: 260, height: 260 },
-          aspectRatio: 1
+          qrbox: { width: 260, height: 260 }
         },
         (decodedText: string) => {
           if (scanLockedRef.current) {
@@ -88,8 +100,9 @@ export function QrCameraScanner({
       );
 
       setIsActive(true);
-    } catch {
-      setError("Camera could not start. Allow camera access, use HTTPS or localhost, then try again.");
+    } catch (startError) {
+      const detail = startError instanceof Error ? startError.message : "Unknown camera error";
+      setError(`Camera could not start. Allow camera access, use HTTPS or localhost, then try again. ${detail}`);
       await stopCamera();
     } finally {
       setIsStarting(false);
@@ -102,6 +115,19 @@ export function QrCameraScanner({
         id={readerId}
         className={isActive || isStarting ? "min-h-72 overflow-hidden rounded-xl border border-border bg-muted [&_video]:min-h-72 [&_video]:object-cover" : "hidden"}
       />
+      {cameras.length > 1 ? (
+        <select
+          value={cameraId}
+          onChange={(event) => setCameraId(event.target.value)}
+          className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm"
+          disabled={isActive || isStarting}
+          aria-label="Camera"
+        >
+          {cameras.map((camera, index) => (
+            <option key={camera.id} value={camera.id}>{camera.label || `Camera ${index + 1}`}</option>
+          ))}
+        </select>
+      ) : null}
       {error ? (
         <p className="flex items-start gap-2 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
