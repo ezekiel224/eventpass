@@ -11,16 +11,32 @@ export type Branding = {
   accentHsl: string;
 };
 
-export async function getBranding(): Promise<Branding> {
-  const organization = await getDefaultOrganization();
-  const fresh = await prisma.organization.findUniqueOrThrow({ where: { id: organization.id } });
+const fallbackBranding: Branding = {
+  name: "EventPass",
+  logoUrl: null,
+  primaryColor: "#14f1cc",
+  accentColor: "#14f1cc",
+  primaryHsl: "168 92% 48%",
+  accentHsl: "168 92% 48%"
+};
 
-  return {
-    name: fresh.name,
-    logoUrl: fresh.logoUrl,
-    primaryColor: fresh.primaryColor,
-    accentColor: fresh.accentColor,
-    primaryHsl: hexToHslParts(fresh.primaryColor, "168 92% 48%"),
-    accentHsl: hexToHslParts(fresh.accentColor, "168 92% 48%")
-  };
+export async function getBranding(): Promise<Branding> {
+  try {
+    const organization = await getDefaultOrganization();
+    const fresh = await prisma.organization.findUniqueOrThrow({ where: { id: organization.id } });
+
+    return {
+      name: fresh.name,
+      logoUrl: fresh.logoUrl,
+      primaryColor: fresh.primaryColor,
+      accentColor: fresh.accentColor,
+      primaryHsl: hexToHslParts(fresh.primaryColor, fallbackBranding.primaryHsl),
+      accentHsl: hexToHslParts(fresh.accentColor, fallbackBranding.accentHsl)
+    };
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("Using fallback branding because organization settings are unavailable.", error);
+    }
+    return fallbackBranding;
+  }
 }
