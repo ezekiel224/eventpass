@@ -1,0 +1,64 @@
+export type EventSummary = {
+  id: string;
+  name: string;
+  description: string;
+  venue: string;
+  address: string;
+  startsAt: string;
+  endsAt: string;
+  capacity: number;
+  photoUrl: string | null;
+  allergenOptions: string[];
+  organizer: string;
+  contactEmail: string;
+  contactPhone: string | null;
+  status: string;
+  registrationEnabled: boolean;
+  qrPassesEnabled: boolean;
+  emailConfirmationsEnabled: boolean;
+  waitlistEnabled: boolean;
+  registrationDeadline: string | null;
+  attendeeCount: number;
+  checkedInCount: number;
+};
+
+export type AttendeeSummary = {
+  id: string;
+  eventId: string;
+  eventName: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  company: string | null;
+  birthDate: string | null;
+  selectedAllergens: string[];
+  plusOneEnabled: boolean;
+  plusOneFirstName: string | null;
+  plusOneLastName: string | null;
+  plusOneName: string | null;
+  plusOneBirthDate: string | null;
+  plusOneAllergens: string[];
+  under21: boolean;
+  plusOneUnder21: boolean;
+  ticketTier: string;
+  seat: string | null;
+  vip: boolean;
+  raffleTickets: number;
+  notes: string | null;
+  status: string;
+  checkedIn: boolean;
+  checkedInAt: string | null;
+  fallbackCode: string | null;
+  qrPayload: string | null;
+};
+
+export type CheckInResult = {
+  valid: boolean;
+  duplicate: boolean;
+  under21Alert: boolean;
+  under21Message: string | null;
+  checkedInAt: string;
+  attendee: AttendeeSummary;
+};
