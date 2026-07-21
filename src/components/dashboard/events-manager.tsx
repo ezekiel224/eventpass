@@ -45,6 +45,7 @@ export function EventsManager() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
 
   async function loadEvents() {
     setLoading(true);
@@ -152,6 +153,8 @@ export function EventsManager() {
     void createEvent("PUBLISHED");
   }
 
+  const visibleEvents = showArchived ? events : events.filter((event) => event.status !== "ARCHIVED");
+
   return (
     <div className="mt-6 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
       <Card className="p-5">
@@ -201,9 +204,18 @@ export function EventsManager() {
         </form>
       </Card>
       <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/78 p-3">
+          <p className="text-sm text-muted-foreground">
+            {showArchived ? `Showing all ${events.length} events` : `${visibleEvents.length} active events`}
+          </p>
+          <Button type="button" variant="secondary" onClick={() => setShowArchived((current) => !current)}>
+            {showArchived ? "Hide archived" : "Show all"}
+          </Button>
+        </div>
         {loading ? <Card className="p-5 text-sm text-muted-foreground">Loading events...</Card> : null}
         {!loading && events.length === 0 ? <Card className="p-5 text-sm text-muted-foreground">No events yet. Create your first one.</Card> : null}
-        {events.map((event) => (
+        {!loading && events.length > 0 && visibleEvents.length === 0 ? <Card className="p-5 text-sm text-muted-foreground">All events are archived. Use Show all to view them.</Card> : null}
+        {visibleEvents.map((event) => (
           <Card key={event.id} className="p-5 transition duration-200 hover:-translate-y-1 hover:shadow-glow">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               {event.photoUrl ? (

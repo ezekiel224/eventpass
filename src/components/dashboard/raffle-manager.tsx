@@ -1,6 +1,6 @@
 "use client";
 
-import { Gift, ImagePlus, Plus, RefreshCcw, Save, Trash2 } from "lucide-react";
+import { Gift, ImagePlus, Plus, RefreshCcw, Save, Shuffle, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -172,6 +172,18 @@ export function RaffleManager({ event }: { event: EventSummary }) {
     await loadRaffle();
   }
 
+  async function drawWinner(prize: RafflePrize) {
+    setMessage("");
+    const response = await fetch(`/api/events/${event.id}/raffle/prizes/${prize.id}/draw`, { cache: "no-store" });
+    const data = await response.json();
+    if (!response.ok) {
+      setMessage(data.error ?? "Could not draw a winner.");
+      return;
+    }
+    setMessage(`${data.winner.name} won ${data.prize.name}. The winner is being revealed on the Live Display.`);
+    await loadRaffle();
+  }
+
   return (
     <div className="mt-4 rounded-2xl border border-border bg-background/70">
       <button
@@ -257,6 +269,9 @@ export function RaffleManager({ event }: { event: EventSummary }) {
                         ))}
                       </div>
                     ) : null}
+                    <Button className="mt-3 w-full" type="button" variant="secondary" onClick={() => void drawWinner(prize)} disabled={loading || prize.totalTickets === 0}>
+                      <Shuffle className="h-4 w-4" /> Draw &amp; reveal on Live Display
+                    </Button>
                   </div>
                 ))}
               </div>

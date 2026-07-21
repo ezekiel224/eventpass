@@ -1,23 +1,13 @@
 import Link from "next/link";
-import { BarChart3, CalendarDays, Gift, LayoutDashboard, Mail, QrCode, Settings, Users } from "lucide-react";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { dashboardNav } from "@/components/dashboard/dashboard-nav";
 import { getBranding } from "@/lib/branding";
+import type { Branding } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 
-const nav = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/events", label: "Events", icon: CalendarDays },
-  { href: "/dashboard/attendees", label: "Attendees", icon: Users },
-  { href: "/dashboard/check-in", label: "Check In", icon: QrCode },
-  { href: "/dashboard/raffles", label: "Raffles", icon: Gift },
-  { href: "/dashboard/email-logs", label: "Email Logs", icon: Mail },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings }
-];
-
-export async function Sidebar({ active = "Dashboard" }: { active?: string }) {
-  const branding = await getBranding();
+export async function Sidebar({ active = "Dashboard", branding: providedBranding }: { active?: string; branding?: Branding }) {
+  const branding = providedBranding ?? await getBranding();
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-border/70 bg-card/62 px-4 py-5 shadow-soft backdrop-blur-2xl lg:block">
@@ -26,7 +16,7 @@ export async function Sidebar({ active = "Dashboard" }: { active?: string }) {
         {branding.name}
       </Link>
       <nav className="mt-8 space-y-1">
-        {nav.map((item) => (
+        {dashboardNav.map((item) => (
           <Link
             key={item.href}
             href={item.href}

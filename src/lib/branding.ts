@@ -1,6 +1,6 @@
-import { prisma } from "@/lib/db";
 import { hexToHslParts } from "@/lib/color";
 import { getDefaultOrganization } from "@/lib/prisma-helpers";
+import { cache } from "react";
 
 export type Branding = {
   name: string;
@@ -20,18 +20,17 @@ const fallbackBranding: Branding = {
   accentHsl: "168 92% 48%"
 };
 
-export async function getBranding(): Promise<Branding> {
+export const getBranding = cache(async (): Promise<Branding> => {
   try {
     const organization = await getDefaultOrganization();
-    const fresh = await prisma.organization.findUniqueOrThrow({ where: { id: organization.id } });
 
     return {
-      name: fresh.name,
-      logoUrl: fresh.logoUrl,
-      primaryColor: fresh.primaryColor,
-      accentColor: fresh.accentColor,
-      primaryHsl: hexToHslParts(fresh.primaryColor, fallbackBranding.primaryHsl),
-      accentHsl: hexToHslParts(fresh.accentColor, fallbackBranding.accentHsl)
+      name: organization.name,
+      logoUrl: organization.logoUrl,
+      primaryColor: organization.primaryColor,
+      accentColor: organization.accentColor,
+      primaryHsl: hexToHslParts(organization.primaryColor, fallbackBranding.primaryHsl),
+      accentHsl: hexToHslParts(organization.accentColor, fallbackBranding.accentHsl)
     };
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {
@@ -39,4 +38,4 @@ export async function getBranding(): Promise<Branding> {
     }
     return fallbackBranding;
   }
-}
+});

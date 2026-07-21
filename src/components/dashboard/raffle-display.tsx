@@ -1,7 +1,7 @@
 "use client";
 
 import { Gift, RefreshCcw, Sparkles, Ticket } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { EventSummary } from "@/types/domain";
 
@@ -19,6 +19,13 @@ type RaffleData = {
     prizeCount: number;
     totalPrizeTickets: number;
   };
+  latestDraw: {
+    id: string;
+    prizeId: string;
+    prizeName: string;
+    winnerName: string;
+    drawnAt: string;
+  } | null;
   prizes: RafflePrize[];
 };
 
@@ -27,8 +34,34 @@ const emptyRaffle: RaffleData = {
     prizeCount: 0,
     totalPrizeTickets: 0
   },
+  latestDraw: null,
   prizes: []
 };
+
+function randomInRange(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
+
+function randomVividColor() {
+  const hue = Math.floor(Math.random() * 360);
+  const saturation = randomInRange(0.72, 1);
+  const lightness = randomInRange(0.48, 0.68);
+  const chroma = (1 - Math.abs(2 * lightness - 1)) * saturation;
+  const segment = hue / 60;
+  const secondary = chroma * (1 - Math.abs(segment % 2 - 1));
+  const [red, green, blue] = segment < 1 ? [chroma, secondary, 0]
+    : segment < 2 ? [secondary, chroma, 0]
+      : segment < 3 ? [0, chroma, secondary]
+        : segment < 4 ? [0, secondary, chroma]
+          : segment < 5 ? [secondary, 0, chroma]
+            : [chroma, 0, secondary];
+  const offset = lightness - chroma / 2;
+  return `#${[red, green, blue].map((channel) => Math.round((channel + offset) * 255).toString(16).padStart(2, "0")).join("")}`;
+}
+
+function randomPalette() {
+  return Array.from({ length: 9 }, randomVividColor);
+}
 
 export function RaffleDisplay({ initialEventId = "" }: { initialEventId?: string }) {
   const [events, setEvents] = useState<EventSummary[]>([]);
@@ -36,6 +69,9 @@ export function RaffleDisplay({ initialEventId = "" }: { initialEventId?: string
   const [raffle, setRaffle] = useState<RaffleData>(emptyRaffle);
   const [loading, setLoading] = useState(true);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
+  const [reveal, setReveal] = useState<RaffleData["latestDraw"]>(null);
+  const latestDrawId = useRef<string | null>(null);
+  const hasLoadedDraw = useRef(false);
 
   const selectedEvent = useMemo(() => events.find((event) => event.id === eventId) ?? null, [eventId, events]);
 
@@ -63,7 +99,14 @@ export function RaffleDisplay({ initialEventId = "" }: { initialEventId?: string
     setLoading(true);
     const response = await fetch(`/api/events/${targetEventId}/raffle?limit=1`, { cache: "no-store" });
     const data = await response.json();
-    setRaffle(data.raffle ?? emptyRaffle);
+    const nextRaffle: RaffleData = data.raffle ?? emptyRaffle;
+    const nextDrawId = nextRaffle.latestDraw?.id ?? null;
+    if (hasLoadedDraw.current && nextDrawId && nextDrawId !== latestDrawId.current) {
+      setReveal(nextRaffle.latestDraw);
+    }
+    latestDrawId.current = nextDrawId;
+    hasLoadedDraw.current = true;
+    setRaffle(nextRaffle);
     setUpdatedAt(new Date());
     setLoading(false);
   }
@@ -81,11 +124,92 @@ export function RaffleDisplay({ initialEventId = "" }: { initialEventId?: string
 
     const interval = window.setInterval(() => {
       void loadRaffle(eventId);
-    }, 5000);
+    }, 1500);
 
     return () => window.clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
+
+  useEffect(() => {
+    if (!reveal) return;
+    const timeout = window.setTimeout(() => setReveal(null), 9000);
+    return () => window.clearTimeout(timeout);
+  }, [reveal]);
+
+  useEffect(() => {
+    if (!reveal || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let cancelled = false;
+    const timers: number[] = [];
+    let resetConfetti: (() => void) | undefined;
+
+    void import("canvas-confetti").then(({ default: confetti }) => {
+      if (cancelled) return;
+      resetConfetti = () => confetti.reset();
+      const colors = randomPalette();
+      const effect = Math.floor(Math.random() * 3);
+
+      if (effect === 0) {
+        // Randomized cannons fire from different positions and directions.
+        for (let index = 0; index < 5; index += 1) {
+          timers.push(window.setTimeout(() => {
+            if (cancelled) return;
+            confetti({
+              angle: randomInRange(55, 125),
+              spread: randomInRange(50, 90),
+              particleCount: Math.floor(randomInRange(55, 105)),
+              startVelocity: randomInRange(35, 60),
+              origin: { x: randomInRange(0.18, 0.82), y: randomInRange(0.52, 0.75) },
+              colors
+            });
+          }, index * 480));
+        }
+      } else if (effect === 1) {
+        // Layered particles create a dense, realistic celebration burst.
+        const total = Math.floor(randomInRange(180, 260));
+        const fire = (ratio: number, options: Parameters<typeof confetti>[0]) => confetti({
+          origin: { x: randomInRange(0.35, 0.65), y: randomInRange(0.58, 0.75) },
+          colors,
+          ...options,
+          particleCount: Math.floor(total * ratio)
+        });
+        fire(0.25, { spread: 26, startVelocity: 55 });
+        fire(0.2, { spread: 60 });
+        fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+        fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+        fire(0.1, { spread: 120, startVelocity: 45 });
+      } else {
+        // Fireworks launch repeatedly from alternating sides of the display.
+        const endAt = Date.now() + randomInRange(5000, 7000);
+        const interval = window.setInterval(() => {
+          if (cancelled || Date.now() >= endAt) {
+            window.clearInterval(interval);
+            return;
+          }
+          const originY = randomInRange(0.05, 0.4);
+          const options = {
+            particleCount: Math.floor(randomInRange(25, 55)),
+            startVelocity: randomInRange(25, 38),
+            spread: 360,
+            ticks: 70,
+            colors
+          };
+          confetti({ ...options, origin: { x: randomInRange(0.1, 0.35), y: originY } });
+          confetti({ ...options, origin: { x: randomInRange(0.65, 0.9), y: originY } });
+        }, 300);
+        timers.push(interval);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      timers.forEach((timer) => {
+        window.clearTimeout(timer);
+        window.clearInterval(timer);
+      });
+      resetConfetti?.();
+    };
+  }, [reveal]);
 
   async function chooseEvent(nextEventId: string) {
     setEventId(nextEventId);
@@ -94,6 +218,18 @@ export function RaffleDisplay({ initialEventId = "" }: { initialEventId?: string
 
   return (
     <main className="surface-grid min-h-screen bg-background text-foreground">
+      {reveal ? (
+        <div className="winner-reveal fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-background/95 p-6 text-center" role="status" aria-live="assertive">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.25),transparent_58%)]" />
+          <Sparkles className="absolute left-[12%] top-[18%] h-14 w-14 animate-pulse text-primary" />
+          <Sparkles className="absolute bottom-[18%] right-[12%] h-20 w-20 animate-pulse text-accent" />
+          <div className="winner-pop relative max-w-4xl">
+            <p className="text-sm font-bold uppercase tracking-[0.35em] text-primary sm:text-lg">Winner</p>
+            <h2 className="mt-6 text-5xl font-black leading-none sm:text-7xl lg:text-8xl">{reveal.winnerName}</h2>
+            <p className="mt-7 text-xl text-muted-foreground sm:text-3xl">wins <span className="font-semibold text-foreground">{reveal.prizeName}</span></p>
+          </div>
+        </div>
+      ) : null}
       <section className="relative overflow-hidden border-b border-border/70 bg-card/70 backdrop-blur-2xl">
         <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
         <div className="absolute right-20 top-20 h-8 w-8 rotate-45 rounded-sm border border-primary/30 bg-primary/10" />
@@ -128,6 +264,16 @@ export function RaffleDisplay({ initialEventId = "" }: { initialEventId?: string
           </div>
         </div>
       </section>
+
+      {raffle.latestDraw ? (
+        <section className="mx-auto max-w-7xl px-5 pt-6" aria-live="polite">
+          <div className="rounded-2xl border border-primary/40 bg-primary/10 p-5 text-center shadow-glow">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-primary">Latest winner</p>
+            <p className="mt-2 text-3xl font-bold">{raffle.latestDraw.winnerName}</p>
+            <p className="mt-1 text-sm text-muted-foreground">Winner of {raffle.latestDraw.prizeName}</p>
+          </div>
+        </section>
+      ) : null}
 
       <section className="mx-auto grid max-w-7xl gap-5 px-5 py-6 lg:grid-cols-2">
         {raffle.prizes.length === 0 ? (

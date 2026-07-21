@@ -42,6 +42,12 @@ export async function GET(_request: Request, { params }: Params) {
     return target <= 0;
   }) ?? prize.entries[0];
 
+  const winnerName = `${winnerEntry.attendee.firstName} ${winnerEntry.attendee.lastName}`;
+  const drawnAt = new Date();
+  await prisma.$executeRaw`
+    UPDATE RafflePrize SET winnerName = ${winnerName}, drawnAt = ${drawnAt} WHERE id = ${prize.id}
+  `;
+
   return NextResponse.json({
     prize: {
       id: prize.id,
@@ -50,9 +56,10 @@ export async function GET(_request: Request, { params }: Params) {
     },
     winner: {
       attendeeId: winnerEntry.attendee.id,
-      name: `${winnerEntry.attendee.firstName} ${winnerEntry.attendee.lastName}`,
+      name: winnerName,
       email: winnerEntry.attendee.email,
       ticketCount: winnerEntry.ticketCount
-    }
+    },
+    drawnAt: drawnAt.toISOString()
   });
 }

@@ -18,6 +18,10 @@ function serializeRaffle(prizes: Awaited<ReturnType<typeof getPrizes>>, attendee
   const totalAllocatedTickets = attendees.reduce((sum, attendee) => sum + attendee.raffleTickets, 0);
   const totalAssignedTickets = attendees.reduce((sum, attendee) => sum + attendee.raffleEntries.reduce((entrySum, entry) => entrySum + entry.ticketCount, 0), 0);
 
+  const latestPrizeDraw = prizes
+    .filter((prize) => prize.drawnAt && prize.winnerName)
+    .sort((a, b) => (b.drawnAt?.getTime() ?? 0) - (a.drawnAt?.getTime() ?? 0))[0];
+
   return {
     stats: {
       prizeCount: prizes.length,
@@ -27,6 +31,13 @@ function serializeRaffle(prizes: Awaited<ReturnType<typeof getPrizes>>, attendee
       totalAssignedTickets,
       totalPrizeTickets
     },
+    latestDraw: latestPrizeDraw ? {
+      id: `${latestPrizeDraw.id}:${latestPrizeDraw.drawnAt?.toISOString()}`,
+      prizeId: latestPrizeDraw.id,
+      prizeName: latestPrizeDraw.name,
+      winnerName: latestPrizeDraw.winnerName,
+      drawnAt: latestPrizeDraw.drawnAt?.toISOString()
+    } : null,
     prizes: prizes.map((prize) => ({
       id: prize.id,
       eventId: prize.eventId,
@@ -35,6 +46,8 @@ function serializeRaffle(prizes: Awaited<ReturnType<typeof getPrizes>>, attendee
       value: prize.value,
       imageUrl: prize.imageUrl,
       status: prize.status,
+      winnerName: prize.winnerName,
+      drawnAt: prize.drawnAt?.toISOString() ?? null,
       totalTickets: prize.entries.reduce((sum, entry) => sum + entry.ticketCount, 0),
       entries: prize.entries.map((entry) => ({
         id: entry.id,
@@ -84,14 +97,16 @@ async function getPrizes(eventId: string) {
       createdAt: "desc"
     }
   });
-  const imageRows = await prisma.$queryRaw<Array<{ id: string; imageUrl: string | null }>>`
-    SELECT id, imageUrl FROM RafflePrize WHERE eventId = ${eventId}
+  const displayRows = await prisma.$queryRaw<Array<{ id: string; imageUrl: string | null; winnerName: string | null; drawnAt: Date | null }>>`
+    SELECT id, imageUrl, winnerName, drawnAt FROM RafflePrize WHERE eventId = ${eventId}
   `;
-  const imageUrls = new Map(imageRows.map((row) => [row.id, row.imageUrl]));
+  const displayData = new Map(displayRows.map((row) => [row.id, row]));
 
   return prizes.map((prize) => ({
     ...prize,
-    imageUrl: imageUrls.get(prize.id) ?? null
+    imageUrl: displayData.get(prize.id)?.imageUrl ?? null,
+    winnerName: displayData.get(prize.id)?.winnerName ?? null,
+    drawnAt: displayData.get(prize.id)?.drawnAt ?? null
   }));
 }
 

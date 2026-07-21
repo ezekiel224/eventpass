@@ -143,6 +143,8 @@ model RafflePrize {
   value       String?
   imageUrl    String?
   status      String        @default("ACTIVE")
+  winnerName  String?
+  drawnAt     DateTime?
   entries     RaffleEntry[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt

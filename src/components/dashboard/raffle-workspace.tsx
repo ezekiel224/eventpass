@@ -461,7 +461,7 @@ export function RaffleWorkspace() {
                   </div>
                   <div className="flex gap-2">
                     <Button type="button" variant="secondary" onClick={() => void drawWinner(prize)} disabled={prize.totalTickets === 0}>
-                      <Shuffle className="h-4 w-4" /> Draw
+                      <Shuffle className="h-4 w-4" /> Draw &amp; reveal
                     </Button>
                     <Button type="button" variant="ghost" className="h-10 w-10 px-0" onClick={() => void archivePrize(prize.id)} aria-label="Remove prize" title="Remove prize">
                       <Trash2 className="h-4 w-4" />

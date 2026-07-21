@@ -42,6 +42,7 @@ html {
 
 body {
   min-height: 100vh;
+  overflow-x: hidden;
   background:
     linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--background)) 52%, hsl(var(--muted) / 0.46) 100%);
   color: hsl(var(--foreground));
@@ -87,4 +88,49 @@ body {
 
 .focus-ring {
   @apply outline-none ring-offset-2 ring-offset-background focus-visible:ring-2 focus-visible:ring-primary;
+}
+
+@media (max-width: 767px) {
+  .glass,
+  [class*="backdrop-blur"] {
+    backdrop-filter: none;
+  }
+
+  .surface-grid {
+    background-size: 48px 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes winner-reveal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes winner-pop {
+  0% { opacity: 0; transform: scale(0.65) translateY(24px); }
+  65% { opacity: 1; transform: scale(1.06) translateY(0); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.winner-reveal {
+  animation: winner-reveal 420ms ease-out both;
+}
+
+.winner-pop {
+  animation: winner-pop 850ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
