@@ -7,11 +7,13 @@ A modern event pass management platform for creating events, registering attende
 ```bash
 cp .env.example .env
 npm install
-npm run prisma:generate
+npm run prisma:setup
 npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+`prisma:setup` applies the local SQLite schema and runs the idempotent seed. Run it again whenever you create a fresh database.
 
 Seeded local admin credentials default to `admin@example.com` / `ChangeMe123!`. Set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and a long random `AUTH_SECRET` in `.env` before deploying.
 

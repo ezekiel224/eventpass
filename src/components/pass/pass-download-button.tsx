@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type PassDownloadButtonProps = {
+  className?: string;
   attendeeName: string;
   eventName: string;
   organizer: string;
@@ -35,6 +36,7 @@ function slugify(value: string) {
 }
 
 export function PassDownloadButton({
+  className,
   attendeeName,
   eventName,
   organizer,
@@ -103,8 +105,8 @@ export function PassDownloadButton({
   }
 
   return (
-    <Button className="flex-1" type="button" onClick={downloadCard}>
-      <Download className="h-4 w-4" /> Download Card
+    <Button className={className} type="button" onClick={downloadCard}>
+      <Download className="h-4 w-4" /> Save pass
     </Button>
   );
 }

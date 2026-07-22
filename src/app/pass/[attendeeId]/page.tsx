@@ -1,16 +1,16 @@
-import { QrCode } from "lucide-react";
+import { QrCode, ShieldCheck } from "lucide-react";
 import { notFound } from "next/navigation";
 import { PassDownloadButton } from "@/components/pass/pass-download-button";
 import { CalendarButtons } from "@/components/pass/calendar-buttons";
 import { PassExperience } from "@/components/pass/pass-experience";
 import { isPassTheme } from "@/components/pass/pass-system";
-import { GlassCard } from "@/components/ui/card";
 import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
 import { normalizeExistingPass } from "@/lib/pass-data";
 import { parseStringArray } from "@/lib/prisma-helpers";
 import { formatDate, formatTime } from "@/lib/utils";
 import { createQrDataUrl } from "@/services/qr";
+import styles from "@/app/pass/[attendeeId]/pass-page.module.css";
 
 export const dynamic = "force-dynamic";
 
@@ -68,18 +68,23 @@ export default async function PassPage({
   });
 
   return (
-    <main className="surface-grid min-h-screen px-4 py-8 sm:py-12">
-      <div className="mx-auto grid max-w-3xl justify-items-center gap-6">
+    <main className={styles.passPage} data-pass-theme={eventTheme}>
+      <div className={styles.content}>
         <PassExperience data={passData} theme={eventTheme} />
 
-        <GlassCard className="w-full max-w-xl overflow-hidden p-4 sm:p-5">
+        <section className={styles.actionDock} aria-label="Pass actions">
           {under21Alert ? (
-            <div className="mb-3 rounded-xl bg-destructive/10 p-3 text-sm font-semibold text-destructive">
+            <div className={styles.ageAlert}>
               Age verification required at check-in
             </div>
           ) : null}
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className={styles.actionHeader}>
+            <p>Keep your credential close</p>
+            <span className={styles.secureLabel}><ShieldCheck className="h-3.5 w-3.5" /> Verified</span>
+          </div>
+          <div className={styles.actionGrid}>
             <PassDownloadButton
+              className={styles.primaryAction}
               attendeeName={attendeeName}
               eventName={event.name}
               organizer={event.organizer}
@@ -97,6 +102,7 @@ export default async function PassPage({
               accentColor={branding.accentColor}
             />
             <CalendarButtons
+              className={styles.calendarGroup}
               attendeeId={attendee.id}
               eventName={event.name}
               startsAt={event.startsAt.toISOString()}
@@ -104,14 +110,12 @@ export default async function PassPage({
               venue={event.venue}
               address={event.address}
             />
-            <details className="sm:col-span-2">
-              <summary className="focus-ring inline-flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold">
-                <QrCode className="h-4 w-4" /> QR payload
-              </summary>
-              <pre className="mt-3 max-h-32 overflow-auto rounded-xl bg-muted p-3 text-xs">{attendee.pass.qrPayload}</pre>
-            </details>
           </div>
-        </GlassCard>
+          <details className={styles.payload}>
+            <summary className="focus-ring"><QrCode className="h-3.5 w-3.5" /> Verification data</summary>
+            <pre>{attendee.pass.qrPayload}</pre>
+          </details>
+        </section>
       </div>
     </main>
   );

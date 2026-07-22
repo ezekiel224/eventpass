@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Eye, Monitor, Moon, Smartphone, Sun } from "lucide-react";
-import { CollectiblePass } from "@/components/pass/collectible-pass";
+import { PassExperience } from "@/components/pass/pass-experience";
 import {
   GenericVariant,
   NormalizedPassData,
@@ -85,7 +85,7 @@ export function PassThemePreview({ baseData }: { baseData: NormalizedPassData })
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <Card className="grid min-h-[760px] place-items-center overflow-hidden p-5 sm:p-8">
           <div className={`grid w-full place-items-center transition-[max-width] ${mobileWidth ? "max-w-[310px]" : "max-w-[560px]"}`}>
-            <CollectiblePass
+            <PassExperience
               key={`${theme}-${genericVariant}`}
               data={previewData}
               theme={theme}
@@ -93,7 +93,6 @@ export function PassThemePreview({ baseData }: { baseData: NormalizedPassData })
               face={face}
               onFaceChange={setFace}
               forceReducedMotion={reducedMotion}
-              animationIntensity={reducedMotion ? 0 : 1}
             />
           </div>
         </Card>
@@ -118,7 +117,7 @@ export function PassThemePreview({ baseData }: { baseData: NormalizedPassData })
         <div className="mt-5 grid gap-8 md:grid-cols-2 2xl:grid-cols-3">
           {passThemeIds.map((themeId) => (
             <article key={themeId} className="grid justify-items-center gap-3 rounded-3xl border border-border bg-card/55 p-5">
-              <div className="w-full max-w-[292px]"><CollectiblePass data={previewData} theme={themeId} genericVariant={themeId === "minimal" ? genericVariant : "dark"} compact forceReducedMotion={reducedMotion} /></div>
+              <div className="w-full max-w-[292px]"><PassExperience data={previewData} theme={themeId} genericVariant={themeId === "minimal" ? genericVariant : "dark"} forceReducedMotion={reducedMotion} staticPreview /></div>
               <div className="text-center"><h3 className="font-semibold">{passThemeRegistry[themeId].label}</h3><p className="mt-1 text-xs text-muted-foreground">{passThemeRegistry[themeId].description}</p></div>
             </article>
           ))}
@@ -131,7 +130,7 @@ export function PassThemePreview({ baseData }: { baseData: NormalizedPassData })
         <div className="mt-5 grid gap-8 md:grid-cols-2">
           {(["light", "dark"] as const).map((variant) => (
             <article key={variant} className="grid justify-items-center gap-3 rounded-3xl border border-border bg-card/55 p-5">
-              <div className="w-full max-w-[292px]"><CollectiblePass data={previewData} theme="minimal" genericVariant={variant} compact forceReducedMotion={reducedMotion} /></div>
+              <div className="w-full max-w-[340px]"><PassExperience data={previewData} theme="minimal" genericVariant={variant} forceReducedMotion={reducedMotion} staticPreview /></div>
               <h3 className="flex items-center gap-2 font-semibold capitalize">{variant === "light" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />} {variant}</h3>
             </article>
           ))}
