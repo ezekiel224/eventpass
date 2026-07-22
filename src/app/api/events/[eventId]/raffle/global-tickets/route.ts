@@ -21,7 +21,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   const attendees = await prisma.attendee.findMany({
     where: { eventId },
-    include: { raffleEntries: true }
+    include: { raffleEntries: { where: { prize: { status: "ACTIVE" } } } }
   });
 
   if (attendees.length === 0) {

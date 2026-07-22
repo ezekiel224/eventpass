@@ -5,7 +5,8 @@ const PUBLIC_API_PATHS = ["/api/auth/login", "/api/auth/logout", "/api/register"
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isPublicApi = PUBLIC_API_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const isPublicPassCalendar = /^\/api\/attendees\/[^/]+\/calendar$/.test(pathname);
+  const isPublicApi = isPublicPassCalendar || PUBLIC_API_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
   const requiresAuth = pathname.startsWith("/dashboard") || (pathname.startsWith("/api") && !isPublicApi);
 
   if (!requiresAuth) {

@@ -1,7 +1,7 @@
-import { Bell, LogOut, Search } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { MobileNavigation } from "@/components/dashboard/mobile-navigation";
-import { Input } from "@/components/ui/input";
+import { DashboardSearch } from "@/components/dashboard/dashboard-search";
 import { getBranding } from "@/lib/branding";
 
 export async function AppShell({ children, active = "Dashboard" }: { children: React.ReactNode; active?: string }) {
@@ -15,10 +15,7 @@ export async function AppShell({ children, active = "Dashboard" }: { children: R
           <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
             <MobileNavigation branding={branding} active={active} />
             <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:hidden">{active}</span>
-            <div className="relative hidden max-w-md flex-1 sm:block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-9" placeholder="Search events, attendees, emails..." />
-            </div>
+            <DashboardSearch />
             <button className="focus-ring hidden h-10 w-10 items-center justify-center rounded-xl border border-border/80 bg-card/72 text-muted-foreground transition hover:border-primary/40 hover:text-foreground sm:flex" aria-label="Notifications">
               <Bell className="h-4 w-4" />
             </button>

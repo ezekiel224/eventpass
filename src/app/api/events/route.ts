@@ -21,25 +21,40 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const limited = rateLimit(`events:${request.headers.get("x-forwarded-for") ?? "local"}`, 20);
   if (!limited.ok) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    return NextResponse.json({ error: "Too many event requests. Wait a moment and try again." }, { status: 429, headers: { "Retry-After": "60" } });
   }
 
-  const parsed = eventSchema.safeParse(await request.json());
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "The event request was not valid JSON." }, { status: 400 });
+  }
+
+  const parsed = eventSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const flattened = parsed.error.flatten();
+    return NextResponse.json({ error: "Review the highlighted event details.", fieldErrors: flattened.fieldErrors, formErrors: flattened.formErrors }, { status: 400 });
   }
 
-  const organization = await getDefaultOrganization();
-  const event = await prisma.event.create({
-    data: {
-      ...parsed.data,
-      photoUrl: parsed.data.photoUrl || undefined,
-      allergenOptions: stringifyStringArray(parsed.data.allergenOptions),
-      organizationId: organization.id,
-      status: "PUBLISHED"
-    },
-    include: eventQueryInclude()
-  });
+  const requestedStatus = typeof body === "object" && body && "status" in body && body.status === "DRAFT" ? "DRAFT" : "PUBLISHED";
 
-  return NextResponse.json({ event: serializeEvent(event) }, { status: 201 });
+  try {
+    const organization = await getDefaultOrganization();
+    const event = await prisma.event.create({
+      data: {
+        ...parsed.data,
+        photoUrl: parsed.data.photoUrl || undefined,
+        allergenOptions: stringifyStringArray(parsed.data.allergenOptions),
+        organizationId: organization.id,
+        status: requestedStatus
+      },
+      include: eventQueryInclude()
+    });
+
+    return NextResponse.json({ event: serializeEvent(event) }, { status: 201 });
+  } catch (error) {
+    console.error("Could not create event", error);
+    return NextResponse.json({ error: "The event could not be saved. No event was created; please try again." }, { status: 500 });
+  }
 }

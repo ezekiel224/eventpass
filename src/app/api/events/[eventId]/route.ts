@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { eventQueryInclude, serializeEvent, stringifyStringArray } from "@/lib/prisma-helpers";
-import { eventSchema } from "@/lib/validation";
+import { eventUpdateSchema } from "@/lib/validation";
 
 type Params = { params: Promise<{ eventId: string }> };
 
@@ -24,11 +23,17 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   const { eventId } = await params;
-  const body = await request.json();
-  const parsed = eventSchema.partial().extend({ status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional() }).safeParse(body);
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "The event request was not valid JSON." }, { status: 400 });
+  }
+  const parsed = eventUpdateSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const flattened = parsed.error.flatten();
+    return NextResponse.json({ error: "Review the highlighted event details.", fieldErrors: flattened.fieldErrors, formErrors: flattened.formErrors }, { status: 400 });
   }
 
   const event = await prisma.event.update({

@@ -12,6 +12,7 @@ export type EventSummary = {
   organizer: string;
   contactEmail: string;
   contactPhone: string | null;
+  passTheme: string;
   status: string;
   registrationEnabled: boolean;
   qrPassesEnabled: boolean;
@@ -50,6 +51,7 @@ export type AttendeeSummary = {
   status: string;
   checkedIn: boolean;
   checkedInAt: string | null;
+  passId: string | null;
   fallbackCode: string | null;
   qrPayload: string | null;
 };

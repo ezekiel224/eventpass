@@ -27,7 +27,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
         eventId
       },
       include: {
-        raffleEntries: true
+        raffleEntries: { where: { prize: { status: "ACTIVE" } } }
       }
     }),
     prisma.rafflePrize.findFirst({

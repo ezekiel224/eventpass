@@ -47,7 +47,9 @@ function serializeRaffle(prizes: Awaited<ReturnType<typeof getPrizes>>, attendee
       imageUrl: prize.imageUrl,
       status: prize.status,
       winnerName: prize.winnerName,
+      winnerAttendeeId: prize.winnerAttendeeId,
       drawnAt: prize.drawnAt?.toISOString() ?? null,
+      rerollCount: prize.rerollCount,
       totalTickets: prize.entries.reduce((sum, entry) => sum + entry.ticketCount, 0),
       entries: prize.entries.map((entry) => ({
         id: entry.id,
@@ -97,8 +99,8 @@ async function getPrizes(eventId: string) {
       createdAt: "desc"
     }
   });
-  const displayRows = await prisma.$queryRaw<Array<{ id: string; imageUrl: string | null; winnerName: string | null; drawnAt: Date | null }>>`
-    SELECT id, imageUrl, winnerName, drawnAt FROM RafflePrize WHERE eventId = ${eventId}
+  const displayRows = await prisma.$queryRaw<Array<{ id: string; imageUrl: string | null; winnerName: string | null; winnerAttendeeId: string | null; drawnAt: Date | null; rerollCount: number }>>`
+    SELECT id, imageUrl, winnerName, winnerAttendeeId, drawnAt, rerollCount FROM RafflePrize WHERE eventId = ${eventId}
   `;
   const displayData = new Map(displayRows.map((row) => [row.id, row]));
 
@@ -106,7 +108,9 @@ async function getPrizes(eventId: string) {
     ...prize,
     imageUrl: displayData.get(prize.id)?.imageUrl ?? null,
     winnerName: displayData.get(prize.id)?.winnerName ?? null,
-    drawnAt: displayData.get(prize.id)?.drawnAt ?? null
+    winnerAttendeeId: displayData.get(prize.id)?.winnerAttendeeId ?? null,
+    drawnAt: displayData.get(prize.id)?.drawnAt ?? null,
+    rerollCount: displayData.get(prize.id)?.rerollCount ?? 0
   }));
 }
 
@@ -121,13 +125,17 @@ function getAttendees(eventId: string, search = "", limit = 100) {
           { firstName: { contains: trimmed } },
           { lastName: { contains: trimmed } },
           { email: { contains: trimmed } },
-          { company: { contains: trimmed } }
+          { company: { contains: trimmed } },
+          { id: { contains: trimmed } },
+          { ticketTier: { contains: trimmed } },
+          { pass: { id: { contains: trimmed } } },
+          { pass: { fallbackCode: { contains: trimmed } } }
         ]
       } : {})
     },
     include: {
       pass: true,
-      raffleEntries: true
+      raffleEntries: { where: { prize: { status: "ACTIVE" } } }
     },
     orderBy: [
       { lastName: "asc" },

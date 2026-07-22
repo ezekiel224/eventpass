@@ -41,6 +41,15 @@ export function CheckInManager() {
     void loadData();
   }, []);
 
+  useEffect(() => {
+    const source = new EventSource("/api/check-in/stream");
+    source.onmessage = (event) => {
+      const data = JSON.parse(event.data) as { checkIns?: CheckInLog[] };
+      setLogs(data.checkIns ?? []);
+    };
+    return () => source.close();
+  }, []);
+
   async function submitCheckIn(overrides?: { attendeeId?: string; fallbackCode?: string; qrPayload?: string }) {
     setMessage("");
     setResult(null);
@@ -64,9 +73,16 @@ export function CheckInManager() {
       setAttendeeId("");
       setFallbackCode("");
       setQrPayload("");
-      await loadData();
+      setLogs((current) => [{
+        id: `${data.attendee.id}:${data.checkedInAt}`,
+        duplicate: data.duplicate,
+        scannedAt: data.checkedInAt,
+        attendee: data.attendee
+      }, ...current].slice(0, 20));
+      return true;
     } else {
       setMessage(data.error ?? "Could not validate this pass.");
+      return false;
     }
   }
 
@@ -77,7 +93,7 @@ export function CheckInManager() {
 
   async function submitScannedPayload(decodedText: string) {
     setQrPayload(decodedText);
-    await submitCheckIn({ qrPayload: decodedText });
+    return submitCheckIn({ qrPayload: decodedText });
   }
 
   const displayAttendee = result?.attendee ?? attendees.find((attendee) => attendee.id === attendeeId) ?? attendees[0];
@@ -90,7 +106,7 @@ export function CheckInManager() {
             <h2 className="text-lg font-semibold">Pass scanner</h2>
           </div>
           <form className="mt-5 grid gap-4" onSubmit={submit}>
-            <QrCameraScanner onScan={(decodedText) => void submitScannedPayload(decodedText)} startLabel="Scan pass" stopLabel="Stop camera" />
+            <QrCameraScanner onScan={submitScannedPayload} startLabel="Scan pass" stopLabel="Stop camera" />
             <select
               value={attendeeId}
               onChange={(event) => setAttendeeId(event.target.value)}

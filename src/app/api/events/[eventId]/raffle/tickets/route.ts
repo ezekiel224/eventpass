@@ -25,7 +25,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       eventId
     },
     include: {
-      raffleEntries: true
+      raffleEntries: { where: { prize: { status: "ACTIVE" } } }
     }
   });
 
@@ -42,7 +42,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     where: { id: attendee.id },
     data: { raffleTickets: parsed.data.raffleTickets },
     include: {
-      raffleEntries: true
+      raffleEntries: { where: { prize: { status: "ACTIVE" } } }
     }
   });
 

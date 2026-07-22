@@ -29,10 +29,12 @@ const initialForm = {
   vip: false
 };
 
-export function AttendeesManager() {
+export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string }) {
   const [attendees, setAttendees] = useState<AttendeeSummary[]>([]);
   const [events, setEvents] = useState<EventSummary[]>([]);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
+  const [filter, setFilter] = useState("all");
+  const [sort, setSort] = useState("name");
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -57,15 +59,31 @@ export function AttendeesManager() {
     void loadData();
   }, []);
 
+  const ticketTiers = useMemo(() => [...new Set(attendees.map((attendee) => attendee.ticketTier).filter(Boolean))].sort(), [attendees]);
+
   const filtered = useMemo(() => {
-    const normalized = query.toLowerCase();
-    return attendees.filter((attendee) =>
-      [attendee.name, attendee.email, attendee.company ?? "", attendee.ticketTier, attendee.eventName]
+    const normalized = query.trim().toLocaleLowerCase();
+    const matchesFilter = (attendee: AttendeeSummary) => {
+      if (filter === "vip") return attendee.vip;
+      if (filter === "standard") return !attendee.vip;
+      if (filter === "checked-in") return attendee.checkedIn;
+      if (filter === "not-checked-in") return !attendee.checkedIn;
+      if (filter.startsWith("tier:")) return attendee.ticketTier === filter.slice(5);
+      return true;
+    };
+    const matches = attendees.filter((attendee) => matchesFilter(attendee) &&
+      [attendee.id, attendee.passId ?? "", attendee.name, attendee.email, attendee.company ?? "", attendee.ticketTier, attendee.eventName, attendee.fallbackCode ?? "", attendee.status]
         .join(" ")
-        .toLowerCase()
+        .toLocaleLowerCase()
         .includes(normalized)
     );
-  }, [attendees, query]);
+    return matches.sort((left, right) => {
+      if (sort === "vip") return Number(right.vip) - Number(left.vip) || left.name.localeCompare(right.name);
+      if (sort === "check-in") return Number(right.checkedIn) - Number(left.checkedIn) || (right.checkedInAt ?? "").localeCompare(left.checkedInAt ?? "");
+      if (sort === "tier") return left.ticketTier.localeCompare(right.ticketTier) || left.name.localeCompare(right.name);
+      return left.name.localeCompare(right.name);
+    });
+  }, [attendees, filter, query, sort]);
 
   const selectedEvent = events.find((event) => event.id === form.eventId);
 
@@ -141,7 +159,7 @@ export function AttendeesManager() {
 
   function exportCsv() {
     const rows = [
-      ["Event", "Name", "Email", "Phone", "Company", "Ticket", "VIP", "Under 21", "Allergens", "Plus One", "Plus One Under 21", "Status", "Checked In", "Fallback Code"],
+      ["Event", "Name", "Email", "Phone", "Company", "Ticket", "VIP", "Under 21", "Allergens", "Plus One", "Plus One Under 21", "Status", "Checked In", "Pass ID", "Fallback Code"],
       ...filtered.map((attendee) => [
         attendee.eventName,
         attendee.name,
@@ -156,6 +174,7 @@ export function AttendeesManager() {
         attendee.plusOneUnder21 ? "Yes" : "No",
         attendee.status,
         attendee.checkedIn ? "Yes" : "No",
+        attendee.passId ?? "",
         attendee.fallbackCode ?? ""
       ])
     ];
@@ -273,12 +292,28 @@ export function AttendeesManager() {
         </form>
       </Card>
       <Card className="p-5">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="relative max-w-lg flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={query} onChange={(event) => setQuery(event.target.value)} className="pl-9" placeholder="Search attendees by name, email, company, ticket..." />
+            <Input value={query} onChange={(event) => setQuery(event.target.value)} className="pl-9" placeholder="Search name, email, pass ID, company or tier…" />
           </div>
-          <Button variant="secondary" onClick={exportCsv}><Download className="h-4 w-4" /> Export CSV</Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <select value={filter} onChange={(event) => setFilter(event.target.value)} className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm" aria-label="Filter attendees">
+              <option value="all">All attendees</option>
+              <option value="vip">VIP</option>
+              <option value="standard">Standard</option>
+              <option value="checked-in">Checked in</option>
+              <option value="not-checked-in">Not checked in</option>
+              {ticketTiers.map((tier) => <option key={tier} value={`tier:${tier}`}>{tier} tier</option>)}
+            </select>
+            <select value={sort} onChange={(event) => setSort(event.target.value)} className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm" aria-label="Sort attendees">
+              <option value="name">Name A–Z</option>
+              <option value="vip">VIP first</option>
+              <option value="check-in">Check-in status</option>
+              <option value="tier">Pass tier</option>
+            </select>
+            <Button variant="secondary" onClick={exportCsv}><Download className="h-4 w-4" /> Export CSV</Button>
+          </div>
         </div>
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[900px] text-left text-sm">
@@ -300,12 +335,12 @@ export function AttendeesManager() {
                 <tr><td className="py-6 text-muted-foreground" colSpan={6}>No attendees found.</td></tr>
               ) : null}
               {filtered.map((attendee) => (
-                <tr key={attendee.id}>
+                <tr key={attendee.id} className={attendee.vip ? "bg-amber-400/5" : undefined}>
                   <td className="py-4">
                     <div className="flex items-center gap-3">
                       <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 font-semibold text-primary">{initials(attendee.name)}</span>
                       <div>
-                        <p className="font-medium">{attendee.name} {attendee.vip ? <span className="text-accent">VIP</span> : null}</p>
+                        <p className="flex items-center gap-2 font-medium">{attendee.name} {attendee.vip ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-500"><Star className="h-3 w-3 fill-current" /> VIP</span> : null}</p>
                         <p className="text-muted-foreground">{attendee.email}</p>
                         {attendee.under21 || attendee.plusOneUnder21 ? <p className="text-xs font-medium text-destructive">Under 21 alert</p> : null}
                         {attendee.plusOneName ? <p className="text-xs text-muted-foreground">Plus-one: {attendee.plusOneName}</p> : null}

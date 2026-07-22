@@ -40,6 +40,7 @@ export async function POST(_request: Request, { params }: Params) {
       organizer: original.organizer,
       contactEmail: original.contactEmail,
       contactPhone: original.contactPhone,
+      passTheme: original.passTheme,
       status: "DRAFT",
       registrationEnabled: original.registrationEnabled,
       qrPassesEnabled: original.qrPassesEnabled,

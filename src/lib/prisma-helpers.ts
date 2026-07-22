@@ -60,6 +60,7 @@ export function serializeEvent(event: Prisma.EventGetPayload<{ include: typeof e
     organizer: event.organizer,
     contactEmail: event.contactEmail,
     contactPhone: event.contactPhone,
+    passTheme: event.passTheme,
     status: event.status,
     registrationEnabled: event.registrationEnabled,
     qrPassesEnabled: event.qrPassesEnabled,
@@ -116,6 +117,7 @@ export function serializeAttendee(attendee: Prisma.AttendeeGetPayload<{ include:
     status: attendee.status,
     checkedIn: Boolean(successfulCheckIn),
     checkedInAt: successfulCheckIn?.scannedAt.toISOString() ?? null,
+    passId: attendee.pass?.id ?? null,
     fallbackCode: attendee.pass?.fallbackCode ?? null,
     qrPayload: attendee.pass?.qrPayload ?? null
   };

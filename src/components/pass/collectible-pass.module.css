@@ -1,0 +1,1491 @@
+.passRoot {
+  --pass-width: 520px;
+  --pass-height: 845px;
+  --pass-radius: 34px;
+  --pass-bg: #101318;
+  --pass-surface: rgba(255, 255, 255, 0.08);
+  --pass-text: #f8fafc;
+  --pass-muted: rgba(248, 250, 252, 0.66);
+  --pass-metallic: #d7b66a;
+  --pass-border: rgba(255, 255, 255, 0.17);
+  --pass-shadow: 0 38px 90px rgba(4, 8, 18, 0.42), 0 10px 28px rgba(4, 8, 18, 0.28);
+  --pass-font-display: ui-sans-serif, system-ui, sans-serif;
+  --pass-font-body: ui-sans-serif, system-ui, sans-serif;
+  --pass-motion-speed: 720ms;
+  --pass-rotate-x: 0deg;
+  --pass-rotate-y: 0deg;
+  --pass-pointer-x: 50%;
+  --pass-pointer-y: 35%;
+  width: min(100%, var(--pass-width));
+  color: var(--pass-text);
+  font-family: var(--pass-font-body);
+  isolation: isolate;
+  container-type: inline-size;
+}
+
+.compact {
+  --pass-width: 292px;
+  --pass-radius: 26px;
+}
+
+.compact .back {
+  gap: 8px;
+  padding: 16px;
+}
+
+.compact .metadataGrid {
+  gap: 8px 10px;
+}
+
+.compact .customMessage {
+  -webkit-line-clamp: 2;
+}
+
+.scene {
+  width: 100%;
+  aspect-ratio: 320 / 520;
+  perspective: 1250px;
+}
+
+.tiltSurface {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--pass-radius);
+  outline: none;
+  transform: rotateX(var(--pass-rotate-x)) rotateY(var(--pass-rotate-y));
+  transform-style: preserve-3d;
+  transition: transform 460ms cubic-bezier(0.22, 1, 0.36, 1), filter 260ms ease;
+  will-change: transform;
+  cursor: pointer;
+}
+
+.tiltSurface:focus-visible {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pass-accent) 55%, white), var(--pass-shadow);
+}
+
+.card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  transform-style: preserve-3d;
+  transition: transform var(--pass-motion-speed) cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: var(--pass-shadow);
+}
+
+.flipped {
+  transform: rotateY(180deg);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--pass-border);
+  border-radius: var(--pass-radius);
+  background: var(--pass-bg);
+  color: var(--pass-text);
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+  container-type: inline-size;
+}
+
+.face::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,255,255,.085), transparent 18% 76%, rgba(255,255,255,.035));
+  pointer-events: none;
+}
+
+.face > :not(.glare, .eventArtwork, .casinoArt, .galaArt, .arcadeArt, .scienceArt, .biologyArt, .spaceArt, .minimalArt) {
+  position: relative;
+  z-index: 7;
+  min-width: 0;
+}
+
+.front {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 39%);
+  grid-template-areas:
+    "header header"
+    "event event"
+    "badge badge"
+    "identity qr"
+    "stats qr"
+    "hint hint";
+  grid-template-rows: auto minmax(clamp(92px, 22cqw, 118px), auto) auto minmax(clamp(70px, 18cqw, 94px), auto) auto auto;
+  gap: clamp(10px, 2.8cqw, 16px) clamp(12px, 3.2cqw, 18px);
+  padding: clamp(18px, 6.5cqw, 34px);
+}
+
+.back {
+  grid-template-rows: auto auto auto auto auto minmax(0, 1fr) auto;
+  gap: clamp(10px, 2.8cqw, 16px);
+  padding: clamp(19px, 6.5cqw, 34px);
+  transform: rotateY(180deg);
+}
+
+.eventArtwork {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.13;
+  filter: saturate(0.7) contrast(1.1);
+}
+
+.glare {
+  position: absolute;
+  inset: -35%;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--pass-pointer-x) var(--pass-pointer-y), rgba(255,255,255,.24), rgba(255,255,255,.06) 18%, transparent 43%);
+  mix-blend-mode: soft-light;
+  opacity: 0.72;
+  transform: translateZ(36px);
+  transition: opacity 250ms ease;
+}
+
+.passHeader,
+.backHeader {
+  grid-area: header;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  transform: translateZ(42px);
+}
+
+.organizerMark {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: clamp(8px, 2cqw, 11px);
+  color: var(--pass-muted);
+  font-size: clamp(10px, 2.25cqw, 12px);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.organizerMark img,
+.organizerMark > span {
+  display: grid;
+  width: clamp(28px, 7.3cqw, 38px);
+  height: clamp(28px, 7.3cqw, 38px);
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--pass-border);
+  border-radius: 9px;
+  background: var(--pass-surface);
+  object-fit: contain;
+}
+
+.organizerMark b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statusBadge,
+.backHeader > span {
+  flex: 0 0 auto;
+  max-width: 42%;
+  overflow: hidden;
+  border: 1px solid var(--pass-border);
+  border-radius: 999px;
+  background: var(--pass-surface);
+  padding: clamp(5px, 1.3cqw, 7px) clamp(9px, 2.2cqw, 12px);
+  color: var(--pass-muted);
+  font-size: clamp(9px, 2cqw, 10px);
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.eventBlock {
+  grid-area: event;
+  align-self: end;
+  min-width: 0;
+  transform: translateZ(54px);
+}
+
+.themeKicker,
+.identityCopy > span,
+.backTitle > span,
+.perks > span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--pass-muted);
+  font-size: clamp(9px, 2.05cqw, 11px);
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.eventBlock h1,
+.identityBlock h2,
+.backTitle h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--pass-font-display);
+  text-wrap: balance;
+}
+
+.eventBlock h1 {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: clamp(25px, 9cqw, 47px);
+  line-height: .98;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.eventBlock p,
+.identityBlock p,
+.backTitle p {
+  margin: 7px 0 0;
+  overflow: hidden;
+  color: var(--pass-muted);
+  font-size: clamp(11px, 2.45cqw, 13px);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.passTypeBadge {
+  grid-area: badge;
+  width: fit-content;
+  border: 1px solid color-mix(in srgb, var(--pass-accent) 48%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pass-accent) 16%, transparent);
+  padding: clamp(7px, 1.6cqw, 9px) clamp(12px, 2.8cqw, 15px);
+  color: color-mix(in srgb, var(--pass-accent) 76%, white);
+  font-size: clamp(10px, 2.15cqw, 11px);
+  font-weight: 900;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  transform: translateZ(65px);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.qrPanel {
+  grid-area: qr;
+  align-self: center;
+  justify-self: end;
+  width: min(100%, 178px);
+  min-width: 0;
+  text-align: center;
+  transform: translateZ(76px);
+}
+
+.qrFrame {
+  display: grid;
+  aspect-ratio: 1;
+  width: 100%;
+  place-items: center;
+  overflow: hidden;
+  border: 5px solid #fff;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(0,0,0,.25);
+}
+
+.qrFrame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.qrUnavailable {
+  color: #111827;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.qrPanel > span {
+  display: block;
+  margin-top: 6px;
+  color: var(--pass-muted);
+  font-size: clamp(8px, 1.75cqw, 9px);
+  font-weight: 900;
+  letter-spacing: .15em;
+}
+
+.identityBlock {
+  grid-area: identity;
+  display: flex;
+  align-self: end;
+  align-items: center;
+  gap: clamp(10px, 2.4cqw, 13px);
+  min-width: 0;
+  transform: translateZ(58px);
+}
+
+.identityCopy {
+  min-width: 0;
+}
+
+.attendeePhoto {
+  width: clamp(44px, 10cqw, 52px);
+  height: clamp(44px, 10cqw, 52px);
+  flex: 0 0 auto;
+  border: 1px solid var(--pass-border);
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.identityBlock h2 {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: clamp(20px, 7.25cqw, 38px);
+  line-height: 1.02;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.frontStats {
+  grid-area: stats;
+  display: grid;
+  align-self: end;
+  gap: 7px;
+  transform: translateZ(48px);
+}
+
+.metadataItem {
+  min-width: 0;
+}
+
+.frontStats .metadataItem {
+  border-top: 1px solid var(--pass-border);
+  padding-top: 7px;
+}
+
+.metadataItem span {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--pass-muted);
+  font-size: clamp(8px, 1.75cqw, 9px);
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.metadataItem strong {
+  display: block;
+  overflow: hidden;
+  font-size: clamp(11px, 2.35cqw, 12px);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.flipControl {
+  grid-area: hint;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-self: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  padding: clamp(5px, 1.4cqw, 7px) clamp(9px, 2.3cqw, 12px);
+  color: var(--pass-muted);
+  font: inherit;
+  font-size: clamp(9px, 1.9cqw, 10px);
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transform: translateZ(70px);
+}
+
+.flipControl:hover,
+.flipControl:focus-visible {
+  background: var(--pass-surface);
+  color: var(--pass-text);
+  outline: none;
+}
+
+.flipControl svg {
+  width: 13px;
+  height: 13px;
+}
+
+.backHeader {
+  grid-area: auto;
+}
+
+.backTitle {
+  padding: clamp(5px, 1.5cqw, 8px) 0 clamp(7px, 2.3cqw, 12px);
+  border-bottom: 1px solid var(--pass-border);
+  transform: translateZ(50px);
+}
+
+.backTitle h2 {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: clamp(23px, 8cqw, 40px);
+  line-height: 1;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.metadataGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(7px, 2.3cqw, 12px) clamp(8px, 2.7cqw, 14px);
+  transform: translateZ(42px);
+}
+
+.customMessage {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  border-left: 2px solid var(--pass-accent);
+  padding-left: 11px;
+  color: var(--pass-muted);
+  font-size: clamp(10px, 2.15cqw, 11px);
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  transform: translateZ(38px);
+}
+
+.perks {
+  transform: translateZ(36px);
+}
+
+.perks ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.perks li {
+  border: 1px solid var(--pass-border);
+  border-radius: 999px;
+  background: var(--pass-surface);
+  padding: 4px 7px;
+  font-size: 8px;
+}
+
+.advisories {
+  align-self: end;
+  border: 1px solid var(--pass-border);
+  border-radius: 12px;
+  background: var(--pass-surface);
+  padding: 8px 10px;
+  color: var(--pass-muted);
+  font-size: 8px;
+  line-height: 1.35;
+  transform: translateZ(34px);
+}
+
+.advisories p {
+  margin: 0;
+}
+
+.advisories p + p {
+  margin-top: 3px;
+}
+
+.sponsors {
+  display: flex;
+  min-height: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.sponsors img {
+  width: auto;
+  max-width: clamp(28px, 8cqw, 42px);
+  height: auto;
+  max-height: clamp(16px, 4.6cqw, 24px);
+  object-fit: contain;
+}
+
+.back .flipControl {
+  align-self: end;
+}
+
+.faceAnnouncement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Casino: lacquered private-room credential with a tactile roulette control. */
+.themeCasino {
+  --pass-radius: 24px;
+  --pass-bg: radial-gradient(circle at 18% 4%, #5c1c2c 0, #260b14 30%, #090708 72%);
+  --pass-surface: rgba(255, 244, 207, .09);
+  --pass-text: #fff8df;
+  --pass-muted: rgba(255, 244, 219, .68);
+  --pass-metallic: #e5bd65;
+  --pass-border: rgba(229, 189, 101, .44);
+  --pass-shadow: 0 42px 95px rgba(40, 5, 15, .55), inset 0 0 0 1px rgba(255,255,255,.05);
+  --pass-font-display: Georgia, "Times New Roman", serif;
+}
+
+.themeCasino .face {
+  box-shadow: inset 0 0 0 4px rgba(9,7,8,.8), inset 0 0 0 5px rgba(229,189,101,.46), inset 0 0 55px rgba(0,0,0,.5);
+}
+
+.themeCasino .back {
+  background: radial-gradient(circle at center, #124a39, #08261e 58%, #050b09);
+}
+
+.themeCasino .eventBlock { max-width: none; }
+
+.themeCasino .themeKicker,
+.themeCasino .metadataItem span {
+  color: var(--pass-metallic);
+}
+
+.themeCasino .passTypeBadge {
+  border-color: #e5bd65;
+  background: linear-gradient(135deg, #f7df9a, #a66e18 55%, #f5d67c);
+  color: #251306;
+  box-shadow: 0 5px 18px rgba(229,189,101,.24);
+}
+
+.themeCasino .qrFrame {
+  border-color: #fff8df;
+  border-radius: 7px;
+  box-shadow: 0 0 0 2px #9b762c, 0 16px 30px rgba(0,0,0,.38);
+}
+
+.themeCasino .glare {
+  background: radial-gradient(circle at var(--pass-pointer-x) var(--pass-pointer-y), rgba(255,224,132,.35), transparent 35%);
+  mix-blend-mode: screen;
+}
+
+.casinoArt,
+.galaArt,
+.arcadeArt,
+.scienceArt,
+.biologyArt,
+.spaceArt,
+.minimalArt {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.rouletteButton {
+  position: absolute;
+  top: 78px;
+  right: 8px;
+  z-index: 1;
+  width: 170px;
+  height: 170px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  padding: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  opacity: .82;
+  transform: rotateX(50deg) rotateZ(-5deg);
+}
+
+.rouletteButton:focus-visible {
+  outline: 3px solid #fff8df;
+  outline-offset: 4px;
+}
+
+.rouletteWheel {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border: clamp(5px, 1.4cqw, 7px) solid #a87421;
+  border-radius: 50%;
+  background: conic-gradient(from -15deg, #087a42 0deg 30deg, #a1122a 30deg 60deg, #111 60deg 90deg, #a1122a 90deg 120deg, #111 120deg 150deg, #a1122a 150deg 180deg, #111 180deg 210deg, #a1122a 210deg 240deg, #111 240deg 270deg, #a1122a 270deg 300deg, #111 300deg 330deg, #a1122a 330deg 360deg);
+  box-shadow: inset 0 0 0 clamp(4px, 1cqw, 5px) #e7c574, inset 0 0 0 clamp(14px, 4cqw, 21px) rgba(0,0,0,.35), 0 12px 28px rgba(0,0,0,.45);
+  animation: rouletteSpin 3.2s cubic-bezier(.12,.68,.14,1) both;
+}
+
+.rouletteHub {
+  position: absolute;
+  inset: 35%;
+  border: 3px solid #e7c574;
+  border-radius: 50%;
+  background: radial-gradient(circle, #f9df91, #8a5d19);
+}
+
+.roulettePocket {
+  position: absolute;
+  top: 2px;
+  left: calc(50% - 8px);
+  width: 16px;
+  height: 50%;
+  color: #fff4d1;
+  font: 700 7px/1 ui-monospace, monospace;
+  text-align: center;
+  transform: rotate(calc(var(--roulette-index) * 30deg));
+  transform-origin: 50% 100%;
+  text-shadow: 0 1px 2px #000;
+}
+
+.rouletteZero { color: #fffbe8; }
+
+.rouletteBall {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff9e8;
+  box-shadow: 0 1px 5px #000;
+  transform-origin: 0 48px;
+  animation: rouletteBall 3.2s cubic-bezier(.2,.7,.2,1) both;
+}
+
+.casinoSuitA,
+.casinoSuitB {
+  position: absolute;
+  color: rgba(229,189,101,.12);
+  font: 110px/1 Georgia, serif;
+}
+
+.casinoSuitA { left: -15px; bottom: 45px; transform: rotate(-14deg); }
+.casinoSuitB { right: -7px; bottom: 110px; color: rgba(174,24,50,.22); transform: rotate(12deg); }
+
+.casinoChip {
+  position: absolute;
+  right: 12px;
+  bottom: 52px;
+  width: 58px;
+  height: 58px;
+  border: 7px dashed #f6df9f;
+  border-radius: 50%;
+  background: radial-gradient(circle, #741426 0 32%, #d2a64d 33% 39%, #741426 40%);
+  opacity: .45;
+  animation: chipTurn 12s linear infinite;
+}
+
+/* Gala: centered editorial layout with animated foil linework. */
+.themeGala {
+  --pass-radius: 4px 34px 4px 34px;
+  --pass-bg: linear-gradient(145deg, #090a10, #15141b 50%, #08090d);
+  --pass-surface: rgba(246, 229, 190, .07);
+  --pass-text: #f8f0df;
+  --pass-muted: rgba(248,240,223,.64);
+  --pass-metallic: #d9bc78;
+  --pass-border: rgba(217,188,120,.35);
+  --pass-font-display: Georgia, "Times New Roman", serif;
+}
+
+.themeGala .front {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 34%);
+  grid-template-areas:
+    "header header"
+    "event event"
+    "badge badge"
+    "identity qr"
+    "stats qr"
+    "hint hint";
+  padding: clamp(24px, 8cqw, 31px);
+  text-align: center;
+}
+
+.themeGala .eventBlock,
+.themeGala .passTypeBadge,
+.themeGala .flipControl {
+  justify-self: center;
+}
+
+.themeGala .eventBlock h1 {
+  font-weight: 400;
+  letter-spacing: -.025em;
+}
+
+.themeGala .identityBlock,
+.themeGala .frontStats {
+  text-align: left;
+}
+
+.themeGala .passTypeBadge {
+  width: clamp(54px, 12cqw, 63px);
+  height: clamp(54px, 12cqw, 63px);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d9bc78;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 30%, #f2dcaa, #a9863d);
+  color: #21180b;
+  display: flex;
+  padding: 5px;
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,.25), 0 7px 22px rgba(217,188,120,.2);
+}
+
+.themeGala .qrFrame {
+  border-radius: 0 16px 0 16px;
+}
+
+.themeGala .glare {
+  background: radial-gradient(circle at var(--pass-pointer-x) var(--pass-pointer-y), rgba(255,244,210,.24), transparent 28%), linear-gradient(115deg, transparent 32%, rgba(255,240,193,.2) 46%, transparent 59%);
+}
+
+.galaArt svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #d9bc78;
+  stroke-width: .8;
+  opacity: .55;
+  stroke-dasharray: 900;
+  animation: galaDraw 2.2s ease-out both;
+}
+
+.galaPearlA,
+.galaPearlB,
+.galaPearlC {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #fff5d8;
+  box-shadow: 0 0 12px #e9cf93;
+  animation: galaPearl 4s ease-in-out infinite;
+}
+
+.galaPearlA { top: 22%; left: 13%; }
+.galaPearlB { top: 35%; right: 12%; animation-delay: -1.4s; }
+.galaPearlC { bottom: 18%; left: 20%; animation-delay: -2.6s; }
+
+/* Arcade: cabinet geometry, CRT scanlines, pixel sprites, and token language. */
+.themeArcade {
+  --pass-radius: 12px;
+  --pass-bg: linear-gradient(180deg, #070a20, #11103a 52%, #08091a);
+  --pass-surface: rgba(0, 235, 255, .08);
+  --pass-text: #f4fbff;
+  --pass-muted: #89dce7;
+  --pass-border: rgba(24,229,255,.52);
+  --pass-shadow: 0 0 0 3px #16103f, 0 0 0 5px #ff2dc8, 0 30px 80px rgba(14,5,45,.65);
+  --pass-font-display: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --pass-font-body: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+.themeArcade .face {
+  background-image: linear-gradient(rgba(24,229,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(24,229,255,.04) 1px, transparent 1px), var(--pass-bg);
+  background-size: 16px 16px, 16px 16px, auto;
+  box-shadow: inset 0 0 0 4px #08091a, inset 0 0 0 6px rgba(24,229,255,.42);
+}
+
+.themeArcade .front {
+  grid-template-columns: minmax(0, 39%) minmax(0, 1fr);
+  grid-template-areas:
+    "header header"
+    "event event"
+    "badge badge"
+    "qr identity"
+    "qr stats"
+    "hint hint";
+}
+
+.themeArcade .qrPanel {
+  justify-self: start;
+}
+
+.themeArcade .eventBlock h1 {
+  color: #fff45f;
+  font-size: clamp(22px, 7.6cqw, 40px);
+  line-height: 1.07;
+  text-shadow: 2px 2px 0 #ff2dc8, -1px -1px 0 #18e5ff;
+  text-transform: uppercase;
+}
+
+.themeArcade .identityBlock h2 {
+  color: #75ff72;
+  text-transform: uppercase;
+}
+
+.themeArcade .passTypeBadge {
+  border-radius: 3px;
+  border-color: #ff2dc8;
+  background: #ff2dc8;
+  color: #08091a;
+  box-shadow: 4px 4px 0 #18e5ff;
+}
+
+.themeArcade .qrFrame {
+  border-radius: 3px;
+  box-shadow: 5px 5px 0 #18e5ff, -3px -3px 0 #ff2dc8;
+}
+
+.themeArcade .flipControl {
+  color: #fff45f;
+  animation: pressStart 1.05s steps(2, end) infinite;
+}
+
+.themeArcade .metadataItem strong {
+  color: #75ff72;
+}
+
+.arcadeArt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(180deg, transparent 0 3px, rgba(0,0,0,.18) 3px 5px);
+  opacity: .45;
+}
+
+.pixelAlien {
+  position: absolute;
+  top: 92px;
+  right: 28px;
+  width: 36px;
+  height: 26px;
+  background: #75ff72;
+  clip-path: polygon(20% 0, 80% 0, 80% 18%, 100% 18%, 100% 82%, 78% 82%, 78% 100%, 58% 100%, 58% 80%, 42% 80%, 42% 100%, 22% 100%, 22% 82%, 0 82%, 0 18%, 20% 18%);
+  opacity: .65;
+  animation: spriteBob 1.4s steps(2, end) infinite;
+}
+
+.pixelAlien i {
+  position: absolute;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  background: #09102a;
+}
+.pixelAlien i:first-child { left: 8px; }
+.pixelAlien i:last-child { right: 8px; }
+
+.pixelShip {
+  position: absolute;
+  bottom: 118px;
+  left: 27px;
+  width: 34px;
+  height: 24px;
+  background: #18e5ff;
+  clip-path: polygon(44% 0, 57% 0, 63% 35%, 86% 45%, 100% 100%, 0 100%, 14% 45%, 37% 35%);
+  animation: shipMove 3s ease-in-out infinite;
+}
+
+.pixelStarA,
+.pixelStarB {
+  position: absolute;
+  color: #ff2dc8;
+  animation: pressStart 1.3s steps(2) infinite;
+}
+.pixelStarA { left: 26px; top: 175px; }
+.pixelStarB { right: 38px; top: 225px; animation-delay: -.6s; }
+
+.arcadeProgress {
+  position: absolute;
+  left: 25px;
+  right: 25px;
+  bottom: 40px;
+  height: 4px;
+  border: 1px solid #18e5ff;
+}
+.arcadeProgress i { display: block; height: 100%; background: linear-gradient(90deg, #18e5ff, #ff2dc8); animation: arcadeLoad 3s steps(8) infinite; }
+
+/* Science: instrument grid, orbital atom, waveform and scan line. */
+.themeScience {
+  --pass-radius: 18px;
+  --pass-bg: linear-gradient(160deg, #101820, #06101a 58%, #071b22);
+  --pass-surface: rgba(68, 224, 255, .08);
+  --pass-text: #e8fbff;
+  --pass-muted: #7aaab8;
+  --pass-border: rgba(68,224,255,.3);
+  --pass-shadow: 0 36px 90px rgba(0,15,29,.55), inset 0 0 42px rgba(68,224,255,.05);
+  --pass-font-display: ui-sans-serif, system-ui, sans-serif;
+  --pass-font-body: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+.themeScience .face {
+  background-image: linear-gradient(rgba(68,224,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(68,224,255,.055) 1px, transparent 1px), var(--pass-bg);
+  background-size: 22px 22px, 22px 22px, auto;
+}
+
+.themeScience .face::after {
+  content: "SECURE / DATA CREDENTIAL";
+  position: absolute;
+  right: -67px;
+  top: 45%;
+  z-index: 3;
+  color: rgba(68,224,255,.2);
+  font: 700 8px/1 ui-monospace, monospace;
+  letter-spacing: .24em;
+  transform: rotate(90deg);
+}
+
+.themeScience .eventBlock h1 {
+  font-weight: 520;
+  letter-spacing: -.04em;
+}
+
+.themeScience .eventBlock {
+  max-width: 72%;
+}
+
+.themeScience .passTypeBadge,
+.themeScience .statusBadge {
+  border-radius: 2px;
+  color: #44e0ff;
+}
+
+.themeScience .qrFrame {
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px #44e0ff, 0 0 22px rgba(68,224,255,.2);
+}
+
+.themeScience .qrPanel > span::before { content: "▣ "; }
+
+.atomCore {
+  position: absolute;
+  top: 82px;
+  right: 16px;
+  width: 105px;
+  height: 105px;
+  opacity: .4;
+  animation: atomFloat 7s ease-in-out infinite;
+}
+
+.atomCore i {
+  position: absolute;
+  inset: 31px 6px;
+  border: 1px solid #44e0ff;
+  border-radius: 50%;
+}
+.atomCore i:nth-child(2) { transform: rotate(60deg); }
+.atomCore i:nth-child(3) { transform: rotate(120deg); }
+.atomCore b { position: absolute; inset: 48px; border-radius: 50%; background: #ffb84a; box-shadow: 0 0 16px #ffb84a; }
+
+.waveform {
+  position: absolute;
+  left: 26px;
+  right: 26px;
+  bottom: 75px;
+  width: calc(100% - 52px);
+  height: 44px;
+  fill: none;
+  stroke: #44e0ff;
+  stroke-width: 1.5;
+  opacity: .22;
+  stroke-dasharray: 300;
+  animation: waveDraw 3s linear infinite;
+}
+
+.scienceScan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #44e0ff, transparent);
+  box-shadow: 0 0 14px #44e0ff;
+  opacity: .35;
+  animation: scienceScan 4.2s ease-in-out infinite;
+}
+
+.scienceTicks { position: absolute; left: 25px; bottom: 27px; color: rgba(68,224,255,.25); font: 7px/1 ui-monospace, monospace; letter-spacing: .32em; }
+
+/* Biology: translucent membranes, living cells, branching and DNA motion. */
+.themeBiology {
+  --pass-radius: 38px 38px 76px 38px;
+  --pass-bg: radial-gradient(circle at 80% 15%, #14766b, transparent 34%), radial-gradient(circle at 10% 88%, #335f38, transparent 42%), linear-gradient(145deg, #071d1a, #0b3027 58%, #071a17);
+  --pass-surface: rgba(221, 243, 202, .09);
+  --pass-text: #eef6dc;
+  --pass-muted: #9bbca4;
+  --pass-border: rgba(169,220,170,.29);
+  --pass-shadow: 0 38px 90px rgba(4,36,28,.5), inset 0 0 60px rgba(88,255,185,.06);
+  --pass-font-display: Georgia, "Times New Roman", serif;
+}
+
+.themeBiology .face {
+  border-width: 2px 1px 1px 2px;
+}
+
+.themeBiology .front {
+  grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
+  grid-template-areas:
+    "header header"
+    "event event"
+    "badge badge"
+    "identity identity"
+    "qr stats"
+    "hint hint";
+}
+
+.themeBiology .qrPanel {
+  justify-self: start;
+}
+
+.themeBiology .eventBlock h1 {
+  color: #f2f3d7;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.themeBiology .passTypeBadge {
+  border-radius: 999px 999px 999px 8px;
+  border-color: #77e7b1;
+  color: #b9ffd7;
+}
+
+.themeBiology .qrFrame {
+  border-width: 7px;
+  border-color: #edf4d9;
+  border-radius: 22px 8px 22px 8px;
+  box-shadow: 0 0 0 2px rgba(119,231,177,.5), 0 18px 35px rgba(0,0,0,.28);
+}
+
+.themeBiology .glare {
+  background: radial-gradient(circle at var(--pass-pointer-x) var(--pass-pointer-y), rgba(89,255,184,.3), transparent 32%);
+  mix-blend-mode: screen;
+}
+
+.bioCellA,
+.bioCellB,
+.bioCellC {
+  position: absolute;
+  border: 1px solid rgba(164,255,205,.3);
+  border-radius: 48% 52% 62% 38% / 41% 45% 55% 59%;
+  background: radial-gradient(circle at 35% 35%, rgba(245,159,136,.35) 0 12%, rgba(87,236,170,.1) 13% 52%, transparent 53%);
+  box-shadow: inset 0 0 28px rgba(112,255,188,.08), 0 0 22px rgba(59,255,178,.06);
+  animation: cellPulse 5s ease-in-out infinite;
+}
+.bioCellA { width: 130px; height: 110px; right: -27px; top: 62px; }
+.bioCellB { width: 88px; height: 76px; left: -25px; bottom: 108px; animation-delay: -2s; }
+.bioCellC { width: 36px; height: 34px; left: 32px; top: 178px; animation-delay: -3.2s; }
+
+.dnaHelix {
+  position: absolute;
+  right: 30px;
+  bottom: 42px;
+  width: 65px;
+  height: 135px;
+  opacity: .33;
+  animation: dnaSway 7s ease-in-out infinite;
+}
+
+.dnaHelix i {
+  position: absolute;
+  top: calc(var(--dna-index) * 17px);
+  left: 50%;
+  width: 56px;
+  height: 2px;
+  background: linear-gradient(90deg, #ff9b83 0 9%, #a9f3ba 10% 90%, #62e7bc 91%);
+  transform: translateX(-50%) rotate(calc(var(--dna-index) * 24deg));
+}
+
+.bioBranch { position: absolute; left: -8px; bottom: -5px; width: 190px; height: 190px; fill: none; stroke: rgba(169,243,186,.2); stroke-width: 1.3; stroke-dasharray: 420; animation: branchGrow 4s ease-out both; }
+
+/* Space: deep star layers, planetary volume, orbital path and mission labels. */
+.themeSpace {
+  --pass-radius: 30px;
+  --pass-bg: radial-gradient(circle at 18% 22%, #33256d 0, transparent 28%), radial-gradient(circle at 88% 65%, #153c74 0, transparent 31%), linear-gradient(155deg, #040611, #090d25 55%, #03040d);
+  --pass-surface: rgba(179, 197, 255, .08);
+  --pass-text: #f4f5ff;
+  --pass-muted: #9da9d1;
+  --pass-border: rgba(179,197,255,.28);
+  --pass-shadow: 0 44px 100px rgba(2,4,16,.65), 0 0 48px rgba(83,62,184,.16);
+  --pass-font-display: ui-sans-serif, system-ui, sans-serif;
+  --pass-font-body: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+.themeSpace .face {
+  box-shadow: inset 0 0 65px rgba(103,86,255,.08);
+}
+
+.themeSpace .front {
+  grid-template-columns: minmax(0, 39%) minmax(0, 1fr);
+  grid-template-areas:
+    "header header"
+    "event event"
+    "badge badge"
+    "qr identity"
+    "qr stats"
+    "hint hint";
+}
+
+.themeSpace .qrPanel {
+  justify-self: start;
+}
+
+.themeSpace .identityBlock,
+.themeSpace .frontStats {
+  padding-left: 3px;
+}
+
+.themeSpace .eventBlock h1 {
+  font-size: clamp(26px, 9.2cqw, 46px);
+  font-weight: 620;
+  letter-spacing: -.055em;
+}
+
+.themeSpace .passTypeBadge {
+  border-color: rgba(180,198,255,.5);
+  background: linear-gradient(90deg, rgba(100,82,255,.3), rgba(46,190,255,.18));
+  color: #e7e9ff;
+}
+
+.themeSpace .qrFrame {
+  border-color: #eef1ff;
+  border-radius: 16px;
+  box-shadow: 0 0 0 1px rgba(145,161,255,.6), 0 0 28px rgba(99,85,255,.28);
+}
+
+.themeSpace .metadataItem span { color: #92a5ed; }
+
+.starLayerFar,
+.starLayerNear {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,.9) 0 1px, transparent 1.4px), radial-gradient(circle, rgba(160,190,255,.8) 0 1px, transparent 1.3px);
+  background-position: 10px 20px, 54px 87px;
+  background-size: 73px 83px, 109px 121px;
+  opacity: .35;
+  animation: starDrift 18s linear infinite;
+}
+.starLayerNear { background-size: 137px 151px, 191px 177px; opacity: .6; animation-duration: 28s; animation-direction: reverse; }
+
+.nebula { position: absolute; width: 260px; height: 210px; right: -100px; top: 95px; border-radius: 50%; background: radial-gradient(ellipse, rgba(111,72,255,.22), rgba(28,160,255,.08) 45%, transparent 70%); transform: rotate(-22deg); filter: blur(9px); }
+
+.planet {
+  position: absolute;
+  top: 78px;
+  right: -34px;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #c3cdff, #5266b4 20%, #222c68 55%, #090c22 75%);
+  box-shadow: inset -22px -12px 30px rgba(0,0,0,.55), 0 0 38px rgba(122,139,255,.17);
+  opacity: .72;
+  animation: planetTurn 14s ease-in-out infinite;
+}
+.planet::after { content: ""; position: absolute; left: -24px; right: -24px; top: 53px; height: 24px; border: 4px solid rgba(188,199,255,.52); border-radius: 50%; transform: rotate(-18deg); box-shadow: 0 0 14px rgba(139,153,255,.2); }
+
+.orbit { position: absolute; left: 26px; bottom: 80px; width: 82px; height: 82px; border: 1px solid rgba(166,183,255,.25); border-radius: 50%; transform: rotate(28deg); }
+.orbit i { position: absolute; top: -3px; left: 50%; width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 9px #9aa9ff; transform-origin: 0 44px; animation: satelliteOrbit 6s linear infinite; }
+
+.constellation { position: absolute; left: 8px; top: 150px; width: 145px; height: 105px; fill: #dfe6ff; stroke: rgba(194,207,255,.27); stroke-width: .7; opacity: .35; }
+.shootingStar { position: absolute; top: 70px; left: -40px; width: 70px; height: 1px; background: linear-gradient(90deg, transparent, #fff); transform: rotate(-25deg); animation: shootingStar 8s ease-in infinite; }
+
+/* Minimal: deliberate whitespace and event-controlled color in light or dark. */
+.themeMinimal {
+  --pass-radius: 26px;
+  --pass-bg: linear-gradient(150deg, #151821, #0c0f16);
+  --pass-surface: rgba(255,255,255,.055);
+  --pass-text: #f8fafc;
+  --pass-muted: #98a0b0;
+  --pass-border: rgba(255,255,255,.13);
+  --pass-shadow: 0 32px 80px rgba(5,8,14,.35);
+  --pass-font-display: ui-sans-serif, system-ui, sans-serif;
+}
+
+.themeMinimal[data-generic-variant="light"] {
+  --pass-bg: linear-gradient(150deg, #fff, #f3f5f7);
+  --pass-surface: rgba(18,24,35,.05);
+  --pass-text: #131722;
+  --pass-muted: #667085;
+  --pass-border: rgba(18,24,35,.14);
+  --pass-shadow: 0 32px 80px rgba(29,37,51,.18);
+}
+
+.themeMinimal .face {
+  background: var(--pass-bg);
+}
+
+.themeMinimal .card {
+  animation: minimalEnter 620ms cubic-bezier(.22,1,.36,1) both;
+}
+
+.themeMinimal .eventArtwork {
+  opacity: .08;
+  mask-image: linear-gradient(to bottom, black, transparent 62%);
+}
+
+.themeMinimal .eventBlock h1 {
+  font-weight: 650;
+  letter-spacing: -.055em;
+}
+
+.themeMinimal .passTypeBadge {
+  border: 0;
+  background: var(--pass-accent);
+  color: #07110f;
+}
+
+.themeMinimal .qrFrame {
+  border-width: 7px;
+  border-radius: 18px;
+  box-shadow: 0 14px 34px rgba(0,0,0,.14);
+}
+
+.themeMinimal .frontStats {
+  grid-template-columns: repeat(2, minmax(0,1fr));
+}
+
+.minimalOrb { position: absolute; width: 230px; height: 230px; right: -115px; top: 74px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--pass-accent) 35%, transparent), transparent 68%); opacity: .8; }
+.minimalRule { position: absolute; left: 0; top: 0; width: 7px; height: 100%; background: var(--pass-accent); }
+.minimalIndex { position: absolute; right: -63px; bottom: 135px; color: var(--pass-muted); font: 700 7px/1 ui-monospace, monospace; letter-spacing: .22em; transform: rotate(90deg); opacity: .55; }
+
+/* Responsive signature artwork: these details scale from compact previews to full-size passes. */
+.themeCasino .front {
+  background-image: radial-gradient(circle at 18% 4%, rgba(121,34,54,.9), transparent 38%), repeating-linear-gradient(135deg, transparent 0 18px, rgba(255,255,255,.012) 18px 19px), linear-gradient(155deg, #2c0a14, #10080b 68%, #050506);
+}
+
+.rouletteButton {
+  top: clamp(78px, 18cqw, 94px);
+  right: clamp(8px, 2.5cqw, 13px);
+  width: clamp(170px, 44cqw, 230px);
+  height: clamp(170px, 44cqw, 230px);
+}
+
+.roulettePocket { font-size: clamp(7px, 1.8cqw, 10px); }
+.rouletteBall { transform-origin: 0 clamp(74px, 19cqw, 99px); }
+.casinoSuitA,
+.casinoSuitB { font-size: clamp(110px, 29cqw, 152px); }
+.casinoChip { right: clamp(12px, 3cqw, 16px); bottom: clamp(52px, 12cqw, 64px); width: clamp(58px, 14cqw, 74px); height: clamp(58px, 14cqw, 74px); }
+
+.casinoMarquee {
+  position: absolute;
+  left: clamp(20px, 6.5cqw, 34px);
+  bottom: clamp(28px, 7cqw, 38px);
+  color: rgba(243,211,136,.4);
+  font: 800 clamp(7px, 1.65cqw, 9px)/1 ui-monospace, monospace;
+  letter-spacing: .26em;
+}
+
+.casinoCardFan {
+  position: absolute;
+  right: clamp(14px, 4cqw, 22px);
+  bottom: clamp(122px, 29cqw, 154px);
+  width: clamp(70px, 17cqw, 90px);
+  height: clamp(78px, 19cqw, 100px);
+  opacity: .19;
+  transform: rotate(10deg);
+}
+
+.casinoCardFan i {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: start;
+  border: 1px solid #e5bd65;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #fff6da, #b99247);
+  padding: 7px;
+  color: #6c1123;
+  font: 700 14px/1 Georgia, serif;
+}
+.casinoCardFan i:nth-child(1) { transform: rotate(-22deg) translateX(-22%); }
+.casinoCardFan i:nth-child(2) { transform: rotate(-8deg) translateX(-8%); }
+.casinoCardFan i:nth-child(3) { transform: rotate(8deg) translateX(7%); }
+
+.themeGala .face {
+  background-image: radial-gradient(circle at 50% 14%, rgba(217,188,120,.11), transparent 23%), linear-gradient(145deg, #090a10, #17151b 52%, #07080c);
+  box-shadow: inset 0 0 0 1px rgba(255,248,226,.04), inset 0 0 80px rgba(0,0,0,.34);
+}
+.themeGala .front { padding: clamp(24px, 7.2cqw, 37px); }
+.galaPearlA,
+.galaPearlB,
+.galaPearlC { width: clamp(3px, .8cqw, 4px); height: clamp(3px, .8cqw, 4px); }
+.galaMonogram {
+  position: absolute;
+  top: clamp(62px, 15cqw, 78px);
+  left: 50%;
+  display: grid;
+  width: clamp(68px, 17cqw, 88px);
+  height: clamp(68px, 17cqw, 88px);
+  place-items: center;
+  color: rgba(217,188,120,.12);
+  font: 400 clamp(28px, 7cqw, 36px)/1 Georgia, serif;
+  letter-spacing: -.08em;
+  transform: translateX(-50%);
+}
+.galaMonogram::before { content: ""; position: absolute; inset: 0; border: 1px solid rgba(217,188,120,.25); transform: rotate(45deg); }
+.galaRibbon {
+  position: absolute;
+  right: 0;
+  bottom: clamp(26px, 6.5cqw, 34px);
+  left: 0;
+  color: rgba(217,188,120,.42);
+  font: 700 clamp(7px, 1.65cqw, 9px)/1 ui-sans-serif, sans-serif;
+  letter-spacing: .38em;
+  text-align: center;
+}
+
+.themeArcade .face {
+  background-size: clamp(16px, 3.8cqw, 20px) clamp(16px, 3.8cqw, 20px), clamp(16px, 3.8cqw, 20px) clamp(16px, 3.8cqw, 20px), auto;
+}
+.pixelAlien { top: clamp(92px, 22cqw, 116px); right: clamp(28px, 6.5cqw, 34px); width: clamp(36px, 9cqw, 47px); height: clamp(26px, 6.5cqw, 34px); }
+.pixelShip { bottom: clamp(118px, 28cqw, 146px); left: clamp(27px, 6.5cqw, 34px); width: clamp(34px, 8.5cqw, 44px); height: clamp(24px, 6cqw, 31px); }
+.pixelStarA { left: clamp(26px, 6cqw, 32px); top: clamp(175px, 42cqw, 220px); }
+.pixelStarB { right: clamp(38px, 9cqw, 47px); top: clamp(225px, 54cqw, 282px); }
+.arcadeProgress { left: clamp(25px, 6cqw, 32px); right: clamp(25px, 6cqw, 32px); bottom: clamp(40px, 9cqw, 48px); }
+.arcadeScore {
+  position: absolute;
+  top: clamp(55px, 13cqw, 68px);
+  right: clamp(22px, 5cqw, 27px);
+  display: grid;
+  color: #fff45f;
+  font: 700 clamp(7px, 1.7cqw, 9px)/1.2 ui-monospace, monospace;
+  letter-spacing: .12em;
+  text-align: right;
+  text-shadow: 1px 1px #ff2dc8;
+}
+.arcadeScore i { color: #18e5ff; font-style: normal; }
+.arcadeCoin { position: absolute; right: clamp(22px, 5cqw, 27px); bottom: clamp(43px, 10cqw, 52px); color: rgba(255,244,95,.62); font: 700 clamp(7px, 1.7cqw, 9px)/1 ui-monospace, monospace; }
+
+.atomCore { top: clamp(82px, 19cqw, 100px); right: clamp(16px, 4cqw, 21px); width: clamp(105px, 25cqw, 132px); height: clamp(105px, 25cqw, 132px); }
+.atomCore i { inset: 29% 6%; }
+.atomCore b { inset: 46%; }
+.waveform { left: clamp(26px, 6.5cqw, 34px); right: clamp(26px, 6.5cqw, 34px); bottom: clamp(75px, 18cqw, 94px); width: calc(100% - clamp(52px, 13cqw, 68px)); height: clamp(44px, 10cqw, 52px); }
+.scienceTicks { left: clamp(25px, 6cqw, 32px); bottom: clamp(27px, 6cqw, 32px); font-size: clamp(7px, 1.5cqw, 8px); }
+.scienceReadout {
+  position: absolute;
+  top: clamp(57px, 13cqw, 68px);
+  left: clamp(22px, 6.5cqw, 34px);
+  display: grid;
+  gap: 3px;
+  color: rgba(68,224,255,.38);
+  font: 700 clamp(7px, 1.55cqw, 8px)/1 ui-monospace, monospace;
+  letter-spacing: .16em;
+}
+.scienceReadout i { color: rgba(255,184,74,.58); font-style: normal; }
+.scienceBarcode { position: absolute; right: clamp(24px, 6cqw, 31px); bottom: clamp(28px, 7cqw, 36px); width: clamp(58px, 14cqw, 74px); height: clamp(12px, 3cqw, 16px); background: repeating-linear-gradient(90deg, rgba(68,224,255,.4) 0 1px, transparent 1px 4px, rgba(68,224,255,.4) 4px 6px, transparent 6px 9px); }
+
+.bioCellA { width: clamp(130px, 31cqw, 164px); height: clamp(110px, 26cqw, 138px); right: clamp(-35px, -6cqw, -27px); top: clamp(62px, 15cqw, 78px); }
+.bioCellB { width: clamp(88px, 21cqw, 110px); height: clamp(76px, 18cqw, 94px); left: clamp(-31px, -5cqw, -25px); bottom: clamp(108px, 26cqw, 136px); }
+.bioCellC { width: clamp(36px, 9cqw, 47px); height: clamp(34px, 8cqw, 42px); left: clamp(32px, 8cqw, 42px); top: clamp(178px, 42cqw, 220px); }
+.dnaHelix { right: clamp(30px, 7cqw, 37px); bottom: clamp(42px, 10cqw, 52px); width: clamp(65px, 15.5cqw, 81px); height: clamp(135px, 32cqw, 168px); }
+.dnaHelix i { top: calc(var(--dna-index) * clamp(17px, 4cqw, 21px)); width: clamp(56px, 13cqw, 68px); }
+.bioBranch { width: clamp(190px, 46cqw, 240px); height: clamp(190px, 46cqw, 240px); }
+.bioTaxonomy {
+  position: absolute;
+  right: clamp(22px, 5cqw, 27px);
+  bottom: clamp(28px, 7cqw, 36px);
+  display: grid;
+  gap: 4px;
+  color: rgba(185,255,215,.38);
+  font: 700 clamp(7px, 1.55cqw, 8px)/1 ui-monospace, monospace;
+  letter-spacing: .14em;
+  text-align: right;
+}
+.bioTaxonomy i { color: rgba(255,155,131,.55); font-style: normal; }
+
+.planet { top: clamp(78px, 18cqw, 96px); right: clamp(-42px, -6.5cqw, -34px); width: clamp(132px, 32cqw, 168px); height: clamp(132px, 32cqw, 168px); }
+.planet::after { left: clamp(-31px, -5cqw, -24px); right: clamp(-31px, -5cqw, -24px); top: 40%; height: 18%; }
+.orbit { left: clamp(26px, 6cqw, 32px); bottom: clamp(80px, 19cqw, 100px); width: clamp(82px, 20cqw, 104px); height: clamp(82px, 20cqw, 104px); }
+.orbit i { transform-origin: 0 clamp(41px, 10cqw, 52px); }
+.constellation { left: clamp(8px, 2cqw, 11px); top: clamp(150px, 36cqw, 188px); width: clamp(145px, 35cqw, 184px); height: clamp(105px, 25cqw, 132px); }
+.missionPatch {
+  position: absolute;
+  top: clamp(54px, 12cqw, 64px);
+  right: clamp(23px, 5.5cqw, 29px);
+  display: grid;
+  width: clamp(48px, 11cqw, 58px);
+  height: clamp(48px, 11cqw, 58px);
+  place-items: center;
+  border: 1px solid rgba(183,201,255,.25);
+  border-radius: 50%;
+  color: rgba(222,230,255,.48);
+  font: 700 clamp(6px, 1.35cqw, 7px)/1 ui-monospace, monospace;
+  letter-spacing: .08em;
+  text-align: center;
+}
+.missionPatch i { display: block; color: #dce4ff; font-size: clamp(11px, 2.5cqw, 13px); font-style: normal; }
+.trajectory { position: absolute; right: clamp(12px, 3cqw, 16px); bottom: clamp(40px, 9cqw, 48px); width: clamp(150px, 36cqw, 190px); fill: rgba(220,230,255,.7); stroke: rgba(154,174,255,.22); stroke-dasharray: 4 4; }
+
+.minimalOrb { width: clamp(230px, 55cqw, 286px); height: clamp(230px, 55cqw, 286px); right: clamp(-143px, -22cqw, -115px); top: clamp(74px, 18cqw, 94px); }
+.minimalRule { width: clamp(7px, 1.5cqw, 8px); }
+.minimalIndex { right: clamp(-78px, -12cqw, -63px); bottom: clamp(135px, 32cqw, 168px); font-size: clamp(7px, 1.5cqw, 8px); }
+.minimalSerial { position: absolute; left: clamp(20px, 6.5cqw, 34px); bottom: clamp(28px, 6cqw, 32px); color: var(--pass-muted); font: 700 clamp(7px, 1.55cqw, 8px)/1 ui-monospace, monospace; letter-spacing: .2em; opacity: .55; }
+.minimalCorner { position: absolute; top: clamp(58px, 14cqw, 72px); right: clamp(22px, 6cqw, 31px); color: color-mix(in srgb, var(--pass-accent) 68%, var(--pass-text)); font: 300 clamp(22px, 5cqw, 26px)/1 ui-sans-serif, sans-serif; opacity: .7; }
+
+.passRoot[data-visible="false"] *,
+.forceReduced * {
+  animation-play-state: paused !important;
+}
+
+.forceReduced .tiltSurface,
+.forceReduced .card {
+  transition-duration: 1ms;
+}
+
+.forceReduced .rouletteWheel,
+.forceReduced .rouletteBall,
+.forceReduced .galaArt svg,
+.forceReduced .flipControl,
+.forceReduced .scienceScan,
+.forceReduced .starLayerFar,
+.forceReduced .starLayerNear,
+.forceReduced .shootingStar {
+  animation: none !important;
+}
+
+@keyframes rouletteSpin { 0% { transform: rotate(0); } 72% { transform: rotate(1040deg); } 100% { transform: rotate(1128deg); } }
+@keyframes rouletteBall { 0% { transform: rotate(0) translateX(-50%); } 78% { transform: rotate(-1480deg) translateX(-50%); } 100% { transform: rotate(-1555deg) translateX(-50%); } }
+@keyframes chipTurn { to { transform: rotate(360deg); } }
+@keyframes galaDraw { from { stroke-dashoffset: 900; opacity: 0; } to { stroke-dashoffset: 0; opacity: .55; } }
+@keyframes galaPearl { 0%,100% { opacity:.15; transform:translateY(0); } 50% { opacity:.8; transform:translateY(-8px); } }
+@keyframes pressStart { 50% { opacity: .28; } }
+@keyframes spriteBob { 50% { transform: translateY(7px); } }
+@keyframes shipMove { 0%,100% { transform:translateX(0); } 50% { transform:translateX(26px); } }
+@keyframes arcadeLoad { 0% { width: 8%; } 75%,100% { width: 100%; } }
+@keyframes atomFloat { 0%,100% { transform:rotate(0) translateY(0); } 50% { transform:rotate(18deg) translateY(7px); } }
+@keyframes waveDraw { from { stroke-dashoffset: 300; } to { stroke-dashoffset: 0; } }
+@keyframes scienceScan { 0%,100% { top: 13%; opacity:0; } 15% { opacity:.45; } 85% { opacity:.45; } 100% { top: 88%; opacity:0; } }
+@keyframes cellPulse { 0%,100% { transform:scale(1) rotate(0); } 50% { transform:scale(1.07) rotate(5deg); } }
+@keyframes dnaSway { 0%,100% { transform:rotate(-5deg); } 50% { transform:rotate(7deg); } }
+@keyframes branchGrow { from { stroke-dashoffset:420; } to { stroke-dashoffset:0; } }
+@keyframes starDrift { to { background-position: 83px 103px, -55px 208px; } }
+@keyframes planetTurn { 0%,100% { transform:rotate(-2deg) scale(1); } 50% { transform:rotate(5deg) scale(1.025); } }
+@keyframes satelliteOrbit { to { transform:rotate(360deg); } }
+@keyframes shootingStar { 0%,78% { opacity:0; transform:translate(0,0) rotate(-25deg); } 82% { opacity:1; } 90%,100% { opacity:0; transform:translate(440px,190px) rotate(-25deg); } }
+@keyframes minimalEnter { from { opacity:0; transform:translateY(12px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+
+@container (max-width: 340px) {
+  .front {
+    gap: clamp(7px, 2.8cqw, 10px) clamp(8px, 3.2cqw, 12px);
+    padding: clamp(14px, 5.8cqw, 18px);
+  }
+
+  .back {
+    gap: clamp(4px, 1.8cqw, 7px);
+    padding: clamp(13px, 5cqw, 16px);
+  }
+
+  .backTitle > span,
+  .perks > span { margin-bottom: 3px; }
+  .backTitle h2 { font-size: clamp(19px, 7cqw, 24px); }
+  .backTitle p { margin-top: 4px; }
+  .customMessage { line-height: 1.3; -webkit-line-clamp: 2; }
+  .perks ul { gap: 3px; }
+  .perks li { padding: 2px 5px; font-size: 7px; }
+  .advisories { padding: 5px 7px; font-size: 7px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tiltSurface,
+  .card { transition-duration: 1ms; }
+  .passRoot * { animation-duration: 1ms !important; animation-iteration-count: 1 !important; }
+  .rouletteWheel { transform: rotate(108deg); }
+}

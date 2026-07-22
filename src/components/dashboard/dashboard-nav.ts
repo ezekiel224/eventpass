@@ -1,9 +1,10 @@
-import { BarChart3, CalendarDays, Gift, LayoutDashboard, Mail, QrCode, Settings, Users } from "lucide-react";
+import { BarChart3, CalendarDays, Gift, LayoutDashboard, Mail, Palette, QrCode, Settings, Users } from "lucide-react";
 
 export const dashboardNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/events", label: "Events", icon: CalendarDays },
   { href: "/dashboard/attendees", label: "Attendees", icon: Users },
+  { href: "/dashboard/pass-designs", label: "Pass Designs", icon: Palette },
   { href: "/dashboard/check-in", label: "Check In", icon: QrCode },
   { href: "/dashboard/raffles", label: "Raffles", icon: Gift },
   { href: "/dashboard/email-logs", label: "Email Logs", icon: Mail },

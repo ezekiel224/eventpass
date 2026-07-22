@@ -2,7 +2,7 @@
 
 import { Gift, ImagePlus, Plus, RefreshCcw, Save, Search, Shuffle, Ticket, Trash2, UserCheck, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
 import { Button } from "@/components/ui/button";
 import { Card, GlassCard } from "@/components/ui/card";
@@ -15,6 +15,9 @@ type RafflePrize = {
   description: string | null;
   value: string | null;
   imageUrl: string | null;
+  winnerName: string | null;
+  drawnAt: string | null;
+  rerollCount: number;
   totalTickets: number;
   entries: {
     attendeeId: string;
@@ -90,6 +93,7 @@ export function RaffleWorkspace() {
   const [winner, setWinner] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const loadRequestRef = useRef(0);
 
   const selectedPrize = useMemo(() => raffle.prizes.find((prize) => prize.id === assignment.prizeId) ?? null, [assignment.prizeId, raffle.prizes]);
 
@@ -113,8 +117,10 @@ export function RaffleWorkspace() {
       return;
     }
 
+    const requestId = ++loadRequestRef.current;
     const response = await fetch(`/api/events/${targetEventId}/raffle?limit=150&search=${encodeURIComponent(search)}`, { cache: "no-store" });
     const data = await response.json();
+    if (requestId !== loadRequestRef.current) return;
     const nextRaffle = data.raffle ?? emptyRaffle;
     setRaffle(nextRaffle);
     setTicketEdits(Object.fromEntries(nextRaffle.attendees.map((attendee: RaffleAttendee) => [attendee.id, String(attendee.raffleTickets)])));
@@ -135,6 +141,13 @@ export function RaffleWorkspace() {
     void loadEvents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!eventId) return;
+    const timer = window.setTimeout(() => void loadRaffle(eventId, searchTerm), 300);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
 
   async function chooseEvent(nextEventId: string) {
     setEventId(nextEventId);
@@ -313,8 +326,17 @@ export function RaffleWorkspace() {
     }
   }
 
-  async function drawWinner(prize: RafflePrize) {
-    const response = await fetch(`/api/events/${eventId}/raffle/prizes/${prize.id}/draw`, { cache: "no-store" });
+  async function drawWinner(prize: RafflePrize, override = false) {
+    if (override && !window.confirm(`${prize.winnerName ?? "The current winner"} will be replaced because they are not present. Continue with the override and reroll?`)) {
+      return;
+    }
+
+    const response = await fetch(`/api/events/${eventId}/raffle/prizes/${prize.id}/draw`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ override }),
+      cache: "no-store"
+    });
     const data = await response.json();
 
     if (!response.ok) {
@@ -322,7 +344,10 @@ export function RaffleWorkspace() {
       return;
     }
 
-    setWinner(`${data.winner.name} won ${data.prize.name} (${data.winner.ticketCount} of ${data.prize.totalTickets} tickets).`);
+    setWinner(override
+      ? `${data.overriddenWinner} was overridden. ${data.winner.name} is now the final winner of ${data.prize.name}.`
+      : `${data.winner.name} is the final winner of ${data.prize.name}.`);
+    await loadRaffle();
   }
 
   async function lookupScannedPayload(decodedText: string) {
@@ -412,6 +437,7 @@ export function RaffleWorkspace() {
 
         <Card className="p-5">
           <h2 className="text-lg font-semibold">Assign tickets to prizes</h2>
+          <p className="mt-1 text-sm text-muted-foreground">A final event winner is automatically excluded from every later prize draw.</p>
           <form className="mt-5 grid gap-3 lg:grid-cols-[1fr_8rem_auto]" onSubmit={assignTickets}>
             <select
               className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm"
@@ -457,12 +483,23 @@ export function RaffleWorkspace() {
                       <p className="font-semibold">{prize.name}</p>
                       <p className="mt-1 text-sm text-muted-foreground">{prize.totalTickets} tickets entered{prize.value ? ` - ${prize.value}` : ""}</p>
                       {prize.description ? <p className="mt-2 text-sm text-muted-foreground">{prize.description}</p> : null}
+                      {prize.winnerName ? (
+                        <p className="mt-3 inline-flex rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">
+                          Final winner: {prize.winnerName}{prize.rerollCount > 0 ? ` · ${prize.rerollCount} reroll${prize.rerollCount === 1 ? "" : "s"}` : ""}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button type="button" variant="secondary" onClick={() => void drawWinner(prize)} disabled={prize.totalTickets === 0}>
-                      <Shuffle className="h-4 w-4" /> Draw &amp; reveal
-                    </Button>
+                    {prize.winnerName ? (
+                      <Button type="button" variant="danger" onClick={() => void drawWinner(prize, true)} disabled={prize.totalTickets === 0}>
+                        <RefreshCcw className="h-4 w-4" /> Override &amp; reroll
+                      </Button>
+                    ) : (
+                      <Button type="button" variant="secondary" onClick={() => void drawWinner(prize)} disabled={prize.totalTickets === 0}>
+                        <Shuffle className="h-4 w-4" /> Draw &amp; reveal
+                      </Button>
+                    )}
                     <Button type="button" variant="ghost" className="h-10 w-10 px-0" onClick={() => void archivePrize(prize.id)} aria-label="Remove prize" title="Remove prize">
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -519,10 +556,10 @@ export function RaffleWorkspace() {
         <Card className="p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold">Guest tickets</h2>
-            <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); void loadRaffle(eventId, searchTerm); }}>
-              <Input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Search guests" />
-              <Button type="submit" variant="secondary"><Search className="h-4 w-4" /> Search</Button>
-            </form>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} className="pl-9" placeholder="Search name, email or pass ID…" aria-label="Search raffle guests" />
+            </div>
           </div>
           <div className="mt-4 max-h-[34rem] overflow-auto rounded-xl border border-border">
             {raffle.attendees.length === 0 ? <p className="p-4 text-sm text-muted-foreground">No guests found.</p> : null}

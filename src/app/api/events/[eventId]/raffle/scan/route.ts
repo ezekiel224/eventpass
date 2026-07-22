@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { serializeRaffleAttendee } from "@/app/api/events/[eventId]/raffle/route";
+import { qrValidationSchema } from "@/lib/validation";
+import { verifyQrPayload } from "@/services/qr";
 
 type Params = { params: Promise<{ eventId: string }> };
 
@@ -13,14 +15,17 @@ const scanSchema = z.object({
   qrPayload: z.string().optional()
 });
 
-function attendeeIdFromPayload(payload: string | undefined) {
+function attendeeIdFromPayload(payload: string | undefined, eventId: string) {
   if (!payload) {
     return undefined;
   }
 
   try {
-    const parsed = JSON.parse(payload);
-    return typeof parsed.attendeeId === "string" ? parsed.attendeeId : undefined;
+    const parsed = qrValidationSchema.safeParse(JSON.parse(payload));
+    if (!parsed.success || parsed.data.eventId !== eventId || !verifyQrPayload(parsed.data)) {
+      return undefined;
+    }
+    return parsed.data.attendeeId;
   } catch {
     return undefined;
   }
@@ -34,9 +39,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const attendeeId = parsed.data.attendeeId || attendeeIdFromPayload(parsed.data.qrPayload);
+  const attendeeId = parsed.data.attendeeId || attendeeIdFromPayload(parsed.data.qrPayload, eventId);
   const pass = parsed.data.fallbackCode
-    ? await prisma.pass.findUnique({ where: { fallbackCode: parsed.data.fallbackCode.trim() } })
+    ? await prisma.pass.findFirst({ where: { OR: [{ fallbackCode: parsed.data.fallbackCode.trim() }, { id: parsed.data.fallbackCode.trim() }] } })
     : null;
   const resolvedAttendeeId = attendeeId || pass?.attendeeId;
 
@@ -51,7 +56,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     },
     include: {
       pass: true,
-      raffleEntries: true
+      raffleEntries: { where: { prize: { status: "ACTIVE" } } }
     }
   });
 

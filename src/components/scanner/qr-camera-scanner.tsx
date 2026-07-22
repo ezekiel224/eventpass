@@ -1,11 +1,11 @@
 "use client";
 
-import { Camera, Loader2, ShieldAlert, StopCircle } from "lucide-react";
+import { Camera, CheckCircle2, Loader2, ShieldAlert, StopCircle } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 type QrCameraScannerProps = {
-  onScan: (decodedText: string) => void | Promise<void>;
+  onScan: (decodedText: string) => boolean | void | Promise<boolean | void>;
   disabled?: boolean;
   startLabel?: string;
   stopLabel?: string;
@@ -37,14 +37,43 @@ export function QrCameraScanner({
   const readerId = `qr-reader-${generatedId}`;
   const scannerRef = useRef<Html5Scanner | null>(null);
   const scanLockedRef = useRef(false);
+  const lastScanRef = useRef({ value: "", at: 0 });
+  const unlockTimerRef = useRef<number | null>(null);
   const [isActive, setIsActive] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState("");
   const [cameras, setCameras] = useState<Array<{ id: string; label: string }>>([]);
   const [cameraId, setCameraId] = useState("");
+  const [feedback, setFeedback] = useState<"success" | "error" | null>(null);
+
+  function playFeedback(success: boolean) {
+    if (!success) return;
+
+    try {
+      const AudioContextClass = window.AudioContext
+        ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const context = new AudioContextClass();
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.frequency.setValueAtTime(880, context.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(1174, context.currentTime + 0.09);
+      gain.gain.setValueAtTime(0.0001, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.16);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start();
+      oscillator.stop(context.currentTime + 0.17);
+      oscillator.addEventListener("ended", () => void context.close());
+    } catch {
+      // Visual feedback remains available when audio is blocked by the browser.
+    }
+  }
 
   useEffect(() => {
     return () => {
+      if (unlockTimerRef.current) window.clearTimeout(unlockTimerRef.current);
       if (scannerRef.current) {
         void scannerRef.current.stop().catch(() => undefined);
       }
@@ -58,6 +87,7 @@ export function QrCameraScanner({
       scannerRef.current = null;
     }
     scanLockedRef.current = false;
+    setFeedback(null);
     setIsActive(false);
     setIsStarting(false);
   }
@@ -89,12 +119,26 @@ export function QrCameraScanner({
           qrbox: { width: 260, height: 260 }
         },
         (decodedText: string) => {
-          if (scanLockedRef.current) {
+          const now = Date.now();
+          if (scanLockedRef.current || (lastScanRef.current.value === decodedText && now - lastScanRef.current.at < 2500)) {
             return;
           }
           scanLockedRef.current = true;
-          void stopCamera();
-          void onScan(decodedText);
+          lastScanRef.current = { value: decodedText, at: now };
+          setFeedback(null);
+          void Promise.resolve(onScan(decodedText))
+            .then((result) => {
+              const success = result !== false;
+              setFeedback(success ? "success" : "error");
+              playFeedback(success);
+            })
+            .catch(() => setFeedback("error"))
+            .finally(() => {
+              unlockTimerRef.current = window.setTimeout(() => {
+                scanLockedRef.current = false;
+                setFeedback(null);
+              }, 900);
+            });
         },
         () => undefined
       );
@@ -111,10 +155,17 @@ export function QrCameraScanner({
 
   return (
     <div className="grid gap-3">
-      <div
-        id={readerId}
-        className={isActive || isStarting ? "min-h-72 overflow-hidden rounded-xl border border-border bg-muted [&_video]:min-h-72 [&_video]:object-cover" : "hidden"}
-      />
+      <div className={isActive || isStarting ? "relative min-h-72 overflow-hidden rounded-xl border border-border bg-muted" : "hidden"}>
+        <div id={readerId} className="min-h-72 [&_video]:min-h-72 [&_video]:object-cover" />
+        <div
+          className={`pointer-events-none absolute inset-0 grid place-items-center transition ${feedback === "success" ? "bg-emerald-500/30 opacity-100" : feedback === "error" ? "bg-destructive/25 opacity-100" : "opacity-0"}`}
+          aria-live="polite"
+        >
+          <span className={`grid h-20 w-20 place-items-center rounded-full text-white shadow-2xl ${feedback === "error" ? "bg-destructive" : "bg-emerald-500"}`}>
+            {feedback === "error" ? <ShieldAlert className="h-10 w-10" /> : <CheckCircle2 className="h-10 w-10" />}
+          </span>
+        </div>
+      </div>
       {cameras.length > 1 ? (
         <select
           value={cameraId}
@@ -140,6 +191,7 @@ export function QrCameraScanner({
           {isStarting ? "Starting camera" : isActive ? stopLabel : startLabel}
         </Button>
       </div>
+      {isActive ? <p className="text-xs text-muted-foreground">Camera stays active after each scan. Hold the next pass in view when feedback clears.</p> : null}
     </div>
   );
 }
