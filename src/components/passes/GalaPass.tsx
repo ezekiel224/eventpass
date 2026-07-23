@@ -5,6 +5,7 @@ import { KeyboardEvent, useState } from "react";
 import { motion } from "framer-motion";
 import { QrCode, Rotate3D, ShieldCheck, Sparkles, Ticket } from "lucide-react";
 import { PassDepth } from "@/components/passes/PassDepth";
+import { PassLocationMap } from "@/components/passes/PassLocationMap";
 import { PassSurfaceEffects } from "@/components/passes/PassSurfaceEffects";
 import { fittedEventTitleSize, fittedGuestNameSize, raisedLetteringStyle } from "@/components/passes/pass-text";
 import type { InteractivePassProps } from "@/components/passes/pass-types";
@@ -22,7 +23,7 @@ function GalaQr({ props, large = false }: { props: InteractivePassProps; large?:
       ) : (
         <div className={`grid place-items-center ${large ? "h-[7.75rem] w-[7.75rem]" : "h-[5.3rem] w-[5.3rem] sm:h-24 sm:w-24"}`}><QrCode className={large ? "h-28 w-28" : "h-16 w-16"} aria-hidden="true" /></div>
       )}
-      <p className="mt-1 text-center text-[7px] font-bold uppercase tracking-[0.16em]">VIP · {props.passId ?? "Admit one"}</p>
+      <p className="mt-1 text-center text-[7px] font-bold uppercase tracking-[0.16em]">Scan to verify</p>
     </div>
   );
 }
@@ -101,6 +102,7 @@ export function GalaPass(props: InteractivePassProps) {
                     {props.venue ? <span>{props.venue}</span> : null}
                     {props.accessLevel ? <span>{props.accessLevel}</span> : null}
                   </div>
+                  {props.address ? <p className="mt-1 line-clamp-2 text-[9px] leading-3 text-white/45">{props.address}</p> : null}
                 </div>
                 <GalaQr props={props} />
               </div>
@@ -125,7 +127,7 @@ export function GalaPass(props: InteractivePassProps) {
                 </div>
                 <GalaQr props={props} large />
               </div>
-              <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
+              <dl className="mt-4 grid grid-cols-2 gap-2.5 text-sm">
                 {[["Event", props.eventName], ["Date", props.eventDate], ["Time", props.eventTime ?? "See invitation"], ["Venue", props.venue ?? "See event details"]].map(([label, value]) => (
                   <div key={label} className="rounded-xl border border-white/10 bg-black/10 p-3 shadow-[inset_0_1px_rgba(255,255,255,0.04)]">
                     <dt className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/40">{label}</dt>
@@ -133,6 +135,7 @@ export function GalaPass(props: InteractivePassProps) {
                   </div>
                 ))}
               </dl>
+              {props.showMap !== false ? <div className="mt-3"><PassLocationMap address={props.address} venue={props.venue} variant="gala" accent="#e5c476" /></div> : props.address ? <p className="mt-3 line-clamp-2 text-[9px] text-white/50">{props.address}</p> : null}
               <div className="mt-auto flex items-end justify-between gap-4 border-t border-white/10 pt-4">
                 <div className="min-w-0"><p className="text-[8px] font-bold uppercase tracking-[0.23em] text-white/40">Invitation number</p><p className="mt-1 truncate font-mono text-xs text-[#f7dda1]">{props.passId ?? props.qrValue}</p></div>
                 <span className="flex shrink-0 items-center gap-1.5 text-[8px] font-bold uppercase tracking-[0.17em] text-white/40"><Rotate3D className="h-3.5 w-3.5" /> Tap to return</span>

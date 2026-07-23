@@ -72,6 +72,14 @@ export const attendeeRegistrationSchema = z.object({
   customAnswers: z.record(z.string()).optional()
 });
 
+export const publicAttendeeRegistrationSchema = attendeeRegistrationSchema.omit({
+  notes: true,
+  vip: true,
+  ticketTier: true,
+  seat: true,
+  customAnswers: true
+});
+
 export const attendeeUpdateSchema = attendeeRegistrationSchema.omit({ eventId: true }).partial().extend({
   status: z.string().max(40).optional()
 });

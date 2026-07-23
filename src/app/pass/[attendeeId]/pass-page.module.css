@@ -61,6 +61,14 @@
   --page-base: #080806;
 }
 
+.passPage[data-pass-theme="ice-cream"] {
+  --page-accent: #f3a8c4;
+  --page-accent-rgb: 243, 168, 196;
+  --page-secondary-rgb: 142, 221, 210;
+  --page-base: #211219;
+  --page-button-ink: #30101e;
+}
+
 .passPage[data-pass-theme="retro-arcade"] {
   --page-accent: #55fff0;
   --page-accent-rgb: 85, 255, 240;

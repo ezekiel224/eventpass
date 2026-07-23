@@ -149,6 +149,7 @@ function MinimalArt() {
 export function PassThemeArt({ theme, face = "front" }: { theme: PassThemeId; face?: PassFace }) {
   if (theme === "casino") return <CasinoArt showRoulette={face === "front"} />;
   if (theme === "gala") return <GalaArt />;
+  if (theme === "ice-cream") return <MinimalArt />;
   if (theme === "retro-arcade") return <ArcadeArt />;
   if (theme === "science") return <ScienceArt />;
   if (theme === "biology") return <BiologyArt />;

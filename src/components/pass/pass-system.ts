@@ -1,4 +1,4 @@
-export const passThemeIds = ["casino", "gala", "retro-arcade", "science", "biology", "space", "minimal"] as const;
+export const passThemeIds = ["casino", "gala", "ice-cream", "retro-arcade", "science", "biology", "space", "minimal"] as const;
 
 export type PassThemeId = (typeof passThemeIds)[number];
 export type PassFace = "front" | "back";
@@ -54,6 +54,12 @@ export const passThemeRegistry: Record<PassThemeId, PassThemeDefinition> = {
     label: "Fancy Gala",
     shortLabel: "Gala",
     description: "Editorial black-tie typography with responsive foil and Art Deco linework."
+  },
+  "ice-cream": {
+    id: "ice-cream",
+    label: "Ice Cream Social",
+    shortLabel: "Social",
+    description: "A polished pastel-parlor pass with raised lettering, scalloped trim, and playful printed sprinkles."
   },
   "retro-arcade": {
     id: "retro-arcade",

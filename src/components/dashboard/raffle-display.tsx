@@ -79,7 +79,7 @@ export function RaffleDisplay({ initialEventId = "" }: { initialEventId?: string
     const response = await fetch("/api/events", { cache: "no-store" });
     const data = await response.json();
     const nextEvents = data.events ?? [];
-    const nextEventId = eventId || nextEvents[0]?.id || "";
+    const nextEventId = nextEvents.some((event: EventSummary) => event.id === eventId) ? eventId : nextEvents[0]?.id || "";
     setEvents(nextEvents);
     setEventId(nextEventId);
     if (nextEventId) {

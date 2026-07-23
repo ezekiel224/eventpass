@@ -1,4 +1,4 @@
-import { BarChart3, CalendarDays, Gift, LayoutDashboard, Mail, Palette, QrCode, Settings, Users } from "lucide-react";
+import { CalendarDays, Gift, LayoutDashboard, Palette, QrCode, Settings, Users } from "lucide-react";
 
 export const dashboardNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -7,7 +7,5 @@ export const dashboardNav = [
   { href: "/dashboard/pass-designs", label: "Pass Designs", icon: Palette },
   { href: "/dashboard/check-in", label: "Check In", icon: QrCode },
   { href: "/dashboard/raffles", label: "Raffles", icon: Gift },
-  { href: "/dashboard/email-logs", label: "Email Logs", icon: Mail },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/settings", label: "Settings", icon: Settings }
 ] as const;

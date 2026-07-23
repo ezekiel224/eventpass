@@ -103,7 +103,7 @@ export function RaffleWorkspace() {
     const data = await response.json();
     const nextEvents = data.events ?? [];
     setEvents(nextEvents);
-    const nextEventId = eventId || nextEvents[0]?.id || "";
+    const nextEventId = nextEvents.some((event: EventSummary) => event.id === eventId) ? eventId : nextEvents[0]?.id || "";
     setEventId(nextEventId);
     setLoading(false);
     if (nextEventId) {

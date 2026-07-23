@@ -10,12 +10,12 @@ export async function Sidebar({ active = "Dashboard", branding: providedBranding
   const branding = providedBranding ?? await getBranding();
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r border-border/70 bg-card/62 px-4 py-5 shadow-soft backdrop-blur-2xl lg:block">
+    <aside className="fixed inset-y-0 left-0 z-50 hidden h-dvh w-72 flex-col overflow-hidden border-r border-border/70 bg-card/95 px-4 py-5 shadow-soft backdrop-blur-2xl lg:flex">
       <Link href="/dashboard" className="flex items-center gap-3 rounded-2xl px-2 py-1 text-lg font-semibold">
         <BrandMark branding={branding} />
         {branding.name}
       </Link>
-      <nav className="mt-8 space-y-1">
+      <nav className="mt-8 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pb-4">
         {dashboardNav.map((item) => (
           <Link
             key={item.href}
@@ -30,7 +30,7 @@ export async function Sidebar({ active = "Dashboard", branding: providedBranding
           </Link>
         ))}
       </nav>
-      <div className="absolute bottom-5 left-4 right-4 rounded-2xl border border-border/80 bg-background/66 p-4 backdrop-blur-xl">
+      <div className="mt-4 shrink-0 rounded-2xl border border-border/80 bg-background/80 p-4 backdrop-blur-xl">
         <p className="text-sm font-semibold">{branding.name}</p>
         <p className="mt-1 text-xs text-muted-foreground">Admin workspace</p>
         <div className="mt-4 flex items-center justify-between">

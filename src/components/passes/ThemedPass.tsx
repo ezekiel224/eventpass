@@ -8,6 +8,7 @@ import {
   BadgeCheck,
   Dna,
   Gamepad2,
+  IceCreamCone,
   Orbit,
   QrCode,
   Rotate3D,
@@ -16,6 +17,7 @@ import {
   type LucideIcon
 } from "lucide-react";
 import { PassDepth } from "@/components/passes/PassDepth";
+import { PassLocationMap } from "@/components/passes/PassLocationMap";
 import { PassSurfaceEffects } from "@/components/passes/PassSurfaceEffects";
 import type { InteractivePassProps, PassFinish, PassTheme } from "@/components/passes/pass-types";
 import { fittedEventTitleSize, fittedGuestNameSize, raisedLetteringStyle } from "@/components/passes/pass-text";
@@ -34,6 +36,16 @@ type ThemeConfig = {
 };
 
 const themeConfig: Record<Exclude<RemainingTheme, "minimal">, ThemeConfig> = {
+  "ice-cream": {
+    label: "Ice Cream Social",
+    eyebrow: "The scoop club / admit one",
+    credentialLabel: "Social pass",
+    accent: "#a91f59",
+    secondary: "#176f69",
+    background: "linear-gradient(145deg,#fff8e9 0%,#f9d6e4 47%,#cceee8 100%)",
+    pattern: "radial-gradient(ellipse at 7px 7px,rgba(169,31,89,.17) 0 1.3px,transparent 1.8px),radial-gradient(ellipse at 18px 17px,rgba(23,111,105,.15) 0 1.3px,transparent 1.8px),linear-gradient(120deg,transparent 46%,rgba(255,255,255,.24) 47% 53%,transparent 54%)",
+    Icon: IceCreamCone
+  },
   "retro-arcade": {
     label: "Arcade protocol",
     eyebrow: "Player one / access ready",
@@ -116,7 +128,7 @@ export interface ThemedPassProps extends InteractivePassProps {
 
 export function ThemedPass({ theme, finish = "dark", ...props }: ThemedPassProps) {
   const config = getThemeConfig(theme, finish);
-  const light = theme === "minimal" && finish === "light";
+  const light = theme === "ice-cream" || (theme === "minimal" && finish === "light");
   const [internalFace, setInternalFace] = useState<"front" | "back">("front");
   const currentFace = props.face ?? internalFace;
   const flipped = currentFace === "back";
@@ -137,7 +149,11 @@ export function ThemedPass({ theme, finish = "dark", ...props }: ThemedPassProps
   const faceStyle = {
     color: light ? "#111111" : "#f8fafc",
     backgroundImage: `${config.pattern},${config.background}`,
-    backgroundSize: theme === "biology" || theme === "space" ? "100% 100%" : "30px 30px,30px 30px,100% 100%",
+    backgroundSize: theme === "ice-cream"
+      ? "26px 26px,26px 26px,74px 74px,100% 100%"
+      : theme === "biology" || theme === "space"
+        ? "100% 100%"
+        : "30px 30px,30px 30px,100% 100%",
     borderColor: `${config.accent}33`
   };
 
@@ -162,6 +178,7 @@ export function ThemedPass({ theme, finish = "dark", ...props }: ThemedPassProps
           <PassDepth motion={props.motion} accent={config.accent} />
           <section className="absolute inset-0 overflow-hidden rounded-[1.65rem] border p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_30px_75px_rgba(0,0,0,0.4)] [backface-visibility:hidden] sm:p-7" style={{ ...faceStyle, WebkitBackfaceVisibility: "hidden", transform: "translateZ(0.5px)" }}>
             <PassSurfaceEffects accent={config.accent} light={light} />
+            {theme === "ice-cream" ? <IceCreamTrim accent={config.accent} /> : null}
             <Icon className="pointer-events-none absolute -right-12 top-24 h-56 w-56 opacity-[0.055]" strokeWidth={1} aria-hidden="true" />
 
             <div className="relative z-10 flex h-full flex-col" style={{ transform: "translateZ(30px)" }}>
@@ -180,6 +197,7 @@ export function ThemedPass({ theme, finish = "dark", ...props }: ThemedPassProps
                 <p className={`text-[9px] font-bold uppercase tracking-[0.3em] ${light ? "text-black/40" : "text-white/40"}`}>{props.eventDate}</p>
                 <h1 className="mt-3 max-w-[20rem] text-balance font-black leading-[0.87] tracking-[-0.055em]" style={{ fontSize: fittedEventTitleSize(props.eventName), ...raisedLetteringStyle(config.accent, light) }}>{props.eventName}</h1>
                 <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: config.secondary }}>{props.venue ?? "Digital admission"}</p>
+                {props.address ? <p className={`mt-1.5 line-clamp-2 text-[9px] leading-3 ${light ? "text-black/50" : "text-white/45"}`}>{props.address}</p> : null}
               </div>
 
               <div className="mt-auto grid grid-cols-[1fr_auto] items-end gap-4">
@@ -203,6 +221,7 @@ export function ThemedPass({ theme, finish = "dark", ...props }: ThemedPassProps
 
           <section className="absolute inset-0 overflow-hidden rounded-[1.65rem] border p-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_30px_75px_rgba(0,0,0,0.4)] [backface-visibility:hidden]" style={{ ...faceStyle, WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg) translateZ(0.5px)" }}>
             <PassSurfaceEffects accent={config.accent} light={light} />
+            {theme === "ice-cream" ? <IceCreamTrim accent={config.accent} /> : null}
             <Icon className="pointer-events-none absolute -left-12 bottom-12 h-56 w-56 opacity-[0.045]" strokeWidth={1} aria-hidden="true" />
             <div className="relative z-10 flex h-full flex-col" style={{ transform: "translateZ(28px)" }}>
               <header className="flex items-center justify-between">
@@ -219,7 +238,7 @@ export function ThemedPass({ theme, finish = "dark", ...props }: ThemedPassProps
                 <PassQr props={props} large />
               </div>
 
-              <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
+              <dl className="mt-4 grid grid-cols-2 gap-2.5 text-sm">
                 {[
                   ["Event", props.eventName],
                   ["Date", props.eventDate],
@@ -233,6 +252,12 @@ export function ThemedPass({ theme, finish = "dark", ...props }: ThemedPassProps
                 ))}
               </dl>
 
+              {props.showMap !== false ? (
+                <div className="mt-3"><PassLocationMap address={props.address} venue={props.venue} variant={light ? "light" : "dark"} accent={config.accent} /></div>
+              ) : props.address ? (
+                <p className={`mt-3 line-clamp-2 text-[9px] ${light ? "text-black/50" : "text-white/45"}`}>{props.address}</p>
+              ) : null}
+
               <div className={`mt-auto flex items-end justify-between gap-4 border-t pt-4 ${light ? "border-black/10" : "border-white/10"}`}>
                 <div className="min-w-0">
                   <p className={`text-[8px] font-bold uppercase tracking-[0.24em] ${light ? "text-black/40" : "text-white/40"}`}>Pass reference</p>
@@ -244,6 +269,22 @@ export function ThemedPass({ theme, finish = "dark", ...props }: ThemedPassProps
           </section>
         </motion.article>
       </motion.div>
+    </div>
+  );
+}
+
+function IceCreamTrim({ accent }: { accent: string }) {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-0 h-4 opacity-80" aria-hidden="true">
+      <div
+        className="h-full w-full"
+        style={{
+          backgroundImage: `radial-gradient(circle at 9px 0,${accent} 0 8px,transparent 8.5px)`,
+          backgroundPosition: "0 0",
+          backgroundRepeat: "repeat-x",
+          backgroundSize: "18px 14px"
+        }}
+      />
     </div>
   );
 }

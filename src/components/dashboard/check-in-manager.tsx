@@ -198,12 +198,15 @@ export function CheckInManager() {
           <h3 className="mt-6 font-semibold">Recent check-ins</h3>
           <div className="mt-3 space-y-2">
             {logs.length === 0 ? <p className="text-sm text-muted-foreground">No scans yet.</p> : null}
-            {logs.map((log) => (
-              <div key={log.id} className="flex items-center justify-between rounded-xl border border-border p-3 text-sm">
-                <span>{log.attendee.name}{log.attendee.under21 || log.attendee.plusOneUnder21 ? " - Under 21 alert" : ""}</span>
-                <span className={log.duplicate ? "text-destructive" : "text-accent"}>{log.duplicate ? "Duplicate" : "Checked in"}</span>
-              </div>
-            ))}
+            {logs.map((log) => {
+              const alert = log.duplicate || log.attendee.under21 || log.attendee.plusOneUnder21;
+              return (
+                <div key={log.id} className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-sm ${alert ? "border-destructive/45 bg-destructive/[0.07]" : "border-border"}`}>
+                  <span className="font-medium">{log.attendee.name}{log.attendee.under21 || log.attendee.plusOneUnder21 ? " · Under 21" : ""}</span>
+                  <span className={alert ? "shrink-0 font-bold text-destructive" : "shrink-0 text-accent"}>{log.duplicate ? "Duplicate scan" : log.attendee.under21 || log.attendee.plusOneUnder21 ? "Age alert" : "Checked in"}</span>
+                </div>
+              );
+            })}
           </div>
         </Card>
       </div>

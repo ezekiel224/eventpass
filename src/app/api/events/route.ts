@@ -6,9 +6,11 @@ import { rateLimit } from "@/services/rate-limit";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   await getDefaultOrganization();
+  const includeArchived = request.nextUrl.searchParams.get("includeArchived") === "true";
   const events = await prisma.event.findMany({
+    where: includeArchived ? undefined : { status: { not: "ARCHIVED" } },
     include: eventQueryInclude(),
     orderBy: {
       startsAt: "asc"

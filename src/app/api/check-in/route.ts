@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const checkIns = await prisma.checkIn.findMany({
+    where: { attendee: { event: { status: { not: "ARCHIVED" } } } },
     orderBy: { scannedAt: "desc" },
     take: 20,
     include: {
@@ -72,6 +73,10 @@ export async function POST(request: NextRequest) {
 
   if (!attendee) {
     return NextResponse.json({ valid: false, error: "Attendee not found" }, { status: 404 });
+  }
+
+  if (attendee.event.status === "ARCHIVED") {
+    return NextResponse.json({ valid: false, error: "This event is archived and no longer accepts check-ins" }, { status: 400 });
   }
 
   const duplicate = attendee.checkIns.some((checkIn) => !checkIn.duplicate);

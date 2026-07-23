@@ -7,9 +7,14 @@ export const runtime = "nodejs";
 
 async function recentCheckIns(eventId?: string) {
   const checkIns = await prisma.checkIn.findMany({
-    where: eventId ? { attendee: { eventId } } : undefined,
+    where: {
+      attendee: {
+        ...(eventId ? { eventId } : {}),
+        event: { status: { not: "ARCHIVED" } }
+      }
+    },
     orderBy: { scannedAt: "desc" },
-    take: 30,
+    take: 100,
     include: { attendee: { include: attendeeInclude } }
   });
 

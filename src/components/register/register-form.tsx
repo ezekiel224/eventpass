@@ -13,7 +13,6 @@ const initialForm = {
   phone: "",
   company: "",
   under21: "",
-  notes: "",
   selectedAllergens: [] as string[],
   plusOneEnabled: false,
   plusOneFirstName: "",
@@ -57,7 +56,6 @@ export function RegisterForm({ eventId, allergenOptions }: { eventId: string; al
         phone: form.phone || undefined,
         company: form.company || undefined,
         under21: form.under21 === "yes",
-        notes: form.notes || undefined,
         selectedAllergens: form.selectedAllergens,
         plusOneEnabled: form.plusOneEnabled,
         plusOneFirstName: form.plusOneEnabled ? form.plusOneFirstName : undefined,
@@ -155,7 +153,6 @@ export function RegisterForm({ eventId, allergenOptions }: { eventId: string; al
           ) : null}
         </div>
       ) : null}
-      <Input value={form.notes} onChange={(event) => setField("notes", event.target.value)} placeholder="Notes, dietary needs, or accessibility requests" />
       {message ? <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{message}</p> : null}
       <Button className="h-12" disabled={saving} type="submit">Register and generate pass</Button>
       <div className="grid gap-3 sm:grid-cols-2">

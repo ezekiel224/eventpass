@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Crown, Diamond, QrCode, Rotate3D, Spade, Ticket } from "lucide-react";
 import { CasinoRoulette } from "@/components/passes/CasinoRoulette";
 import { PassDepth } from "@/components/passes/PassDepth";
+import { PassLocationMap } from "@/components/passes/PassLocationMap";
 import { PassSurfaceEffects } from "@/components/passes/PassSurfaceEffects";
 import { fittedEventTitleSize, fittedGuestNameSize, raisedLetteringStyle } from "@/components/passes/pass-text";
 import type { InteractivePassProps } from "@/components/passes/pass-types";
@@ -100,6 +101,8 @@ export function CasinoPass(props: InteractivePassProps) {
                   <p className="mt-4 text-[8px] font-bold uppercase tracking-[0.3em] text-[#ddc484]/45">Player</p>
                   <h2 className="mt-1 line-clamp-2 font-black uppercase leading-[0.95] tracking-[-0.03em] text-[#fff2cc]" style={{ fontSize: fittedGuestNameSize(props.guestName), ...raisedLetteringStyle("#d2a84d") }}>{props.guestName}</h2>
                   <p className="mt-2 truncate text-[10px] uppercase tracking-[0.17em] text-[#d9c99e]/55">{props.accessLevel ?? "VIP floor access"}</p>
+                  {props.venue ? <p className="mt-1 truncate text-[9px] font-bold uppercase tracking-[0.14em] text-[#d6ad58]/65">{props.venue}</p> : null}
+                  {props.address ? <p className="mt-1 line-clamp-2 text-[9px] leading-3 text-[#d9c99e]/50">{props.address}</p> : null}
                 </div>
                 <CasinoQr guestName={props.guestName} qrValue={props.qrValue} qrImageUrl={props.qrImageUrl} />
               </div>
@@ -118,12 +121,12 @@ export function CasinoPass(props: InteractivePassProps) {
                 <Crown className="h-6 w-6 text-[#d6ad58]" aria-hidden="true" />
                 <span className="text-[9px] font-black uppercase tracking-[0.28em] text-[#d6ad58]">House privileges</span>
               </div>
-              <div className="mt-[15%] text-center">
+              <div className="mt-[8%] text-center">
                 <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#d6ad58]">Credential holder</p>
                 <h2 className="mt-3 font-black uppercase leading-none tracking-[-0.04em] text-[#fff2cc]" style={{ fontSize: fittedGuestNameSize(props.guestName), ...raisedLetteringStyle("#d2a84d") }}>{props.guestName}</h2>
                 {props.company ? <p className="mt-2 text-xs text-[#ead8aa]/75">{props.company}</p> : null}
               </div>
-              <dl className="mt-8 grid grid-cols-2 gap-3 text-xs">
+              <dl className="mt-5 grid grid-cols-2 gap-2.5 text-xs">
                 {[
                   ["Access", props.accessLevel ?? props.ticketType],
                   ["Date", props.eventDate],
@@ -136,6 +139,7 @@ export function CasinoPass(props: InteractivePassProps) {
                   </div>
                 ))}
               </dl>
+              {props.showMap !== false ? <div className="mt-3"><PassLocationMap address={props.address} venue={props.venue} variant="casino" accent="#d2a84d" /></div> : props.address ? <p className="mt-3 line-clamp-2 text-center text-[9px] text-[#ead8aa]/55">{props.address}</p> : null}
               <div className="mt-auto flex items-end justify-between gap-4">
                 <div>
                   <p className="text-[8px] font-bold uppercase tracking-[0.24em] text-[#d6ad58]">Pass reference</p>

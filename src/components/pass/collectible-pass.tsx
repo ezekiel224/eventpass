@@ -39,6 +39,7 @@ type CollectiblePassProps = {
 const themeClasses: Record<PassThemeId, string> = {
   casino: styles.themeCasino,
   gala: styles.themeGala,
+  "ice-cream": styles.themeGala,
   "retro-arcade": styles.themeArcade,
   science: styles.themeScience,
   biology: styles.themeBiology,
@@ -49,6 +50,7 @@ const themeClasses: Record<PassThemeId, string> = {
 const themeLabels: Record<PassThemeId, { passId: string; access: string; raffle: string; venue: string }> = {
   casino: { passId: "House credential", access: "Room access", raffle: "Lucky chips", venue: "Private room" },
   gala: { passId: "Invitation no.", access: "Admission", raffle: "Drawing entries", venue: "Reception" },
+  "ice-cream": { passId: "Scoop pass", access: "Social access", raffle: "Treat tickets", venue: "Parlor" },
   "retro-arcade": { passId: "Player ID", access: "Unlocked zone", raffle: "Tokens", venue: "Stage" },
   science: { passId: "Credential ID", access: "Authorization", raffle: "Trial entries", venue: "Lab sector" },
   biology: { passId: "Specimen ID", access: "Field access", raffle: "Samples", venue: "Habitat" },

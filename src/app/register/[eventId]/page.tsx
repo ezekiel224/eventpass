@@ -12,7 +12,7 @@ export default async function RegisterPage({ params }: { params: Promise<{ event
   const { eventId } = await params;
   const event = await prisma.event.findUnique({ where: { id: eventId } });
 
-  if (!event) {
+  if (!event || event.status === "ARCHIVED") {
     notFound();
   }
 

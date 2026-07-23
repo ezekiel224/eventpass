@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
 import { attendeeInclude, createPassForAttendee, serializeAttendee, stringifyStringArray } from "@/lib/prisma-helpers";
-import { attendeeRegistrationSchema } from "@/lib/validation";
+import { publicAttendeeRegistrationSchema } from "@/lib/validation";
 import { renderPassEmail, sendEmail } from "@/services/email";
 import { rateLimit } from "@/services/rate-limit";
 
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Too many registrations from this source" }, { status: 429 });
   }
 
-  const parsed = attendeeRegistrationSchema.safeParse(await request.json());
+  const parsed = publicAttendeeRegistrationSchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
@@ -39,11 +39,9 @@ export async function POST(request: NextRequest) {
       plusOneAllergens: stringifyStringArray(parsed.data.plusOneAllergens),
       under21: parsed.data.under21 ?? false,
       plusOneUnder21: parsed.data.plusOneEnabled ? parsed.data.plusOneUnder21 ?? false : false,
-      ticketTier: parsed.data.ticketTier ?? "General",
-      seat: parsed.data.seat,
-      notes: parsed.data.notes,
-      vip: parsed.data.vip ?? false,
-      customAnswers: parsed.data.customAnswers ? JSON.stringify(parsed.data.customAnswers) : undefined
+      ticketTier: "General",
+      notes: null,
+      vip: false
     }
   });
 

@@ -111,7 +111,7 @@ export function PassThemePreview({ baseData }: { baseData: NormalizedPassData })
 
       <section>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Same data, seven systems</p><h2 className="mt-2 text-2xl font-semibold">Theme comparison</h2></div>
+          <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Same data, eight systems</p><h2 className="mt-2 text-2xl font-semibold">Theme comparison</h2></div>
           <p className="max-w-xl text-sm text-muted-foreground">Each card below uses the same normalized pass object. Click any pass to inspect its reverse.</p>
         </div>
         <div className="mt-5 grid gap-8 md:grid-cols-2 2xl:grid-cols-3">

@@ -63,6 +63,7 @@ const fieldIds: Record<EventFormField, string> = {
 const themeSwatches: Record<PassThemeId, string> = {
   casino: "from-rose-950 via-red-900 to-amber-500",
   gala: "from-zinc-950 via-zinc-800 to-amber-200",
+  "ice-cream": "from-rose-200 via-pink-300 to-teal-200",
   "retro-arcade": "from-indigo-950 via-fuchsia-700 to-cyan-400",
   science: "from-slate-950 via-cyan-950 to-cyan-400",
   biology: "from-emerald-950 via-teal-700 to-lime-300",
@@ -157,7 +158,7 @@ export function EventsManager() {
     setLoading(true);
     try {
       const [response, brandingResponse] = await Promise.all([
-        fetch("/api/events", { cache: "no-store" }),
+        fetch("/api/events?includeArchived=true", { cache: "no-store" }),
         fetch("/api/settings/branding", { cache: "no-store" })
       ]);
       if (!response.ok) throw new Error("Events could not be loaded.");

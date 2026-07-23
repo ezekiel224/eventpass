@@ -41,9 +41,11 @@ export function PassExperience({
         eventDate={data.eventDate}
         eventTime={data.eventTime}
         venue={data.venueName}
+        address={data.venueLocation ?? undefined}
         passId={data.passId}
         company={data.company ?? undefined}
         accessLevel={data.accessLevel ?? undefined}
+        showMap={!staticPreview}
         forceReducedMotion={forceReducedMotion}
         face={face}
         onFaceChange={onFaceChange}

@@ -1,14 +1,14 @@
 # Collectible pass themes
 
-EventPass now renders attendee credentials through one normalized data model and one shared interaction engine. Seven visual presets provide theme-specific composition, decoration, typography, surface treatment, and animation without changing pass validation or QR contents.
+EventPass now renders attendee credentials through one normalized data model and one shared interaction engine. Eight visual presets provide theme-specific composition, decoration, typography, surface treatment, and animation without changing pass validation or QR contents.
 
 ## Architecture
 
 - `pass-system.ts` defines the normalized model, theme IDs, registry, and safe customization helpers.
 - `pass-data.ts` maps the existing Prisma event, attendee, pass, QR, and branding records into that model.
 - `collectible-pass.tsx` owns pointer tilt, flip state, keyboard interaction, visibility pausing, QR rendering, and optional-field behavior.
-- `pass-theme-art.tsx` contains lightweight CSS/SVG artwork for the seven themes.
-- `collectible-pass.module.css` contains shared design tokens plus the distinct Casino, Gala, Retro Arcade, Science, Biology, Space, and Minimal art systems.
+- `pass-theme-art.tsx` contains lightweight CSS/SVG artwork for the eight themes.
+- `collectible-pass.module.css` contains shared design tokens plus the distinct Casino, Gala, Ice Cream Social, Retro Arcade, Science, Biology, Space, and Minimal art systems.
 - `/dashboard/pass-designs` is the development and organizer preview surface.
 
 ## Existing field mapping
@@ -42,7 +42,7 @@ The current database does not provide attendee photos, sponsor-logo collections,
 <CollectiblePass data={normalizedPass} theme="casino" />
 ```
 
-Supported theme values are `casino`, `gala`, `retro-arcade`, `science`, `biology`, `space`, and `minimal`. The organizer selects the design while creating an event; it is stored in `Event.passTheme`, inherited by every attendee pass, preserved when an event is duplicated, and can be corrected from the event card later. Attendee-facing pages intentionally do not expose their own theme selector. Minimal supports `genericVariant="light"` and `genericVariant="dark"`.
+Supported theme values are `casino`, `gala`, `ice-cream`, `retro-arcade`, `science`, `biology`, `space`, and `minimal`. The organizer selects the design while creating an event; it is stored in `Event.passTheme`, inherited by every attendee pass, preserved when an event is duplicated, and can be corrected from the event card later. Attendee-facing pages intentionally do not expose their own theme selector. Minimal supports `genericVariant="light"` and `genericVariant="dark"`.
 
 The renderer accepts controlled or uncontrolled front/back state, `forceReducedMotion`, `animationIntensity`, compact gallery sizing, safe accent colors, organizer assets, and optional background artwork.
 

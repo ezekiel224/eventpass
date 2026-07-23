@@ -8,8 +8,12 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const eventId = request.nextUrl.searchParams.get("eventId") ?? undefined;
+  const includeArchived = request.nextUrl.searchParams.get("includeArchived") === "true";
   const attendees = await prisma.attendee.findMany({
-    where: eventId ? { eventId } : undefined,
+    where: {
+      ...(eventId ? { eventId } : {}),
+      ...(includeArchived ? {} : { event: { status: { not: "ARCHIVED" } } })
+    },
     include: attendeeInclude,
     orderBy: {
       createdAt: "desc"
@@ -31,8 +35,8 @@ export async function POST(request: NextRequest) {
   }
 
   const event = await prisma.event.findUnique({ where: { id: parsed.data.eventId } });
-  if (!event) {
-    return NextResponse.json({ error: "Event not found" }, { status: 404 });
+  if (!event || event.status === "ARCHIVED") {
+    return NextResponse.json({ error: "Attendees cannot be added to an archived event" }, { status: 400 });
   }
 
   const attendee = await prisma.attendee.create({

@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, ExternalLink, Mail, Search, Star, Trash2, UserPlus } from "lucide-react";
+import { CalendarDays, Download, ExternalLink, Mail, Search, Star, Trash2, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ const initialForm = {
 export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string }) {
   const [attendees, setAttendees] = useState<AttendeeSummary[]>([]);
   const [events, setEvents] = useState<EventSummary[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState("");
   const [query, setQuery] = useState(initialQuery);
   const [filter, setFilter] = useState("all");
   const [sort, setSort] = useState("name");
@@ -39,25 +40,36 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
-  async function loadData() {
+  async function loadData(preferredEventId = selectedEventId) {
     setLoading(true);
-    const [attendeeResponse, eventResponse] = await Promise.all([
-      fetch("/api/attendees", { cache: "no-store" }),
-      fetch("/api/events", { cache: "no-store" })
-    ]);
-    const attendeeData = await attendeeResponse.json();
+    const eventResponse = await fetch("/api/events", { cache: "no-store" });
     const eventData = await eventResponse.json();
-    const loadedEvents = eventData.events ?? [];
-    setAttendees(attendeeData.attendees ?? []);
+    const loadedEvents = (eventData.events ?? []) as EventSummary[];
+    const mostRecent = [...loadedEvents].sort((left, right) => new Date(right.startsAt).getTime() - new Date(left.startsAt).getTime())[0];
+    const nextEventId = loadedEvents.some((event) => event.id === preferredEventId) ? preferredEventId : mostRecent?.id ?? "";
+    const attendeeResponse = nextEventId ? await fetch(`/api/attendees?eventId=${encodeURIComponent(nextEventId)}`, { cache: "no-store" }) : null;
+    const attendeeData = attendeeResponse ? await attendeeResponse.json() : { attendees: [] };
     setEvents(loadedEvents);
-    setForm((current) => ({ ...current, eventId: current.eventId || loadedEvents[0]?.id || "" }));
+    setSelectedEventId(nextEventId);
+    setAttendees(attendeeData.attendees ?? []);
+    setForm((current) => ({ ...current, eventId: nextEventId, selectedAllergens: current.eventId === nextEventId ? current.selectedAllergens : [], plusOneAllergens: current.eventId === nextEventId ? current.plusOneAllergens : [] }));
+    setLoading(false);
+  }
+
+  async function selectEvent(eventId: string) {
+    setSelectedEventId(eventId);
+    setForm((current) => ({ ...current, eventId, selectedAllergens: [], plusOneAllergens: [] }));
+    setLoading(true);
+    const response = await fetch(`/api/attendees?eventId=${encodeURIComponent(eventId)}`, { cache: "no-store" });
+    const data = await response.json();
+    setAttendees(data.attendees ?? []);
     setLoading(false);
   }
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const ticketTiers = useMemo(() => [...new Set(attendees.map((attendee) => attendee.ticketTier).filter(Boolean))].sort(), [attendees]);
 
@@ -85,7 +97,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
     });
   }, [attendees, filter, query, sort]);
 
-  const selectedEvent = events.find((event) => event.id === form.eventId);
+  const selectedEvent = events.find((event) => event.id === selectedEventId);
 
   function setField(name: keyof typeof form, value: string | boolean | string[]) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -131,7 +143,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
     if (response.ok) {
       setMessage("Attendee added and pass generated.");
       setForm((current) => ({ ...initialForm, eventId: current.eventId }));
-      await loadData();
+      await loadData(form.eventId);
     } else {
       setMessage("Could not add attendee. Emails must be unique per event.");
     }
@@ -143,12 +155,12 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ vip: !attendee.vip, ticketTier: attendee.vip ? "General" : attendee.ticketTier })
     });
-    await loadData();
+    await loadData(selectedEventId);
   }
 
   async function deleteAttendee(attendeeId: string) {
     await fetch(`/api/attendees/${attendeeId}`, { method: "DELETE" });
-    await loadData();
+    await loadData(selectedEventId);
   }
 
   async function sendPass(attendee: AttendeeSummary) {
@@ -182,25 +194,32 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = "eventpass-attendees.csv";
+    const eventSlug = selectedEvent?.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "event";
+    link.download = `${eventSlug}-attendees.csv`;
     link.click();
     URL.revokeObjectURL(url);
   }
 
   return (
-    <div className="mt-6 grid gap-4 xl:grid-cols-[0.78fr_1.22fr]">
-      <Card className="p-5">
-        <h2 className="text-lg font-semibold">Add attendee</h2>
-        <form className="mt-5 grid gap-3" onSubmit={addAttendee}>
-          <select
-            value={form.eventId}
-            onChange={(event) => setField("eventId", event.target.value)}
-            className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm"
-            required
-          >
-            <option value="">Choose event</option>
+    <div className="mt-6 space-y-4">
+      <Card className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div className="flex items-center gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><CalendarDays className="h-5 w-5" aria-hidden="true" /></span>
+          <div><p className="text-sm font-semibold">Event attendees</p><p className="text-xs text-muted-foreground">Archived events are excluded from active workflows.</p></div>
+        </div>
+        <label className="grid gap-1.5 sm:min-w-72">
+          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Active event</span>
+          <select value={selectedEventId} onChange={(event) => void selectEvent(event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 text-sm" disabled={events.length === 0}>
+            {events.length === 0 ? <option value="">No active events</option> : null}
             {events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}
           </select>
+        </label>
+      </Card>
+      <div className="grid gap-4 xl:grid-cols-[0.78fr_1.22fr]">
+      <Card className="p-5">
+        <h2 className="text-lg font-semibold">Add attendee</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{selectedEvent ? `Adding to ${selectedEvent.name}` : "Create or restore an active event before adding attendees."}</p>
+        <form className="mt-5 grid gap-3" onSubmit={addAttendee}>
           <div className="grid gap-3 sm:grid-cols-2">
             <Input value={form.firstName} onChange={(event) => setField("firstName", event.target.value)} placeholder="First name" required />
             <Input value={form.lastName} onChange={(event) => setField("lastName", event.target.value)} placeholder="Last name" required />
@@ -282,20 +301,23 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
             <Input value={form.ticketTier} onChange={(event) => setField("ticketTier", event.target.value)} placeholder="Ticket tier" />
             <Input value={form.seat} onChange={(event) => setField("seat", event.target.value)} placeholder="Seat" />
           </div>
-          <Input value={form.notes} onChange={(event) => setField("notes", event.target.value)} placeholder="Notes" />
+          <Input value={form.notes} onChange={(event) => setField("notes", event.target.value)} placeholder="Internal notes (admin only)" />
           <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
             <input type="checkbox" checked={form.vip} onChange={(event) => setField("vip", event.target.checked)} className="h-4 w-4 accent-primary" />
             Mark VIP
           </label>
           {message ? <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">{message}</p> : null}
-          <Button type="submit"><UserPlus className="h-4 w-4" /> Add attendee</Button>
+          <Button type="submit" disabled={!selectedEvent}><UserPlus className="h-4 w-4" /> Add attendee</Button>
         </form>
       </Card>
       <Card className="p-5">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="relative max-w-lg flex-1">
+          <div className="min-w-0 flex-1">
+            <p className="mb-2 text-sm font-semibold">{selectedEvent?.name ?? "No active event"} <span className="font-normal text-muted-foreground">· {attendees.length} guests</span></p>
+            <div className="relative max-w-lg">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={query} onChange={(event) => setQuery(event.target.value)} className="pl-9" placeholder="Search name, email, pass ID, company or tier…" />
+            </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <select value={filter} onChange={(event) => setFilter(event.target.value)} className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm" aria-label="Filter attendees">
@@ -312,7 +334,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
               <option value="check-in">Check-in status</option>
               <option value="tier">Pass tier</option>
             </select>
-            <Button variant="secondary" onClick={exportCsv}><Download className="h-4 w-4" /> Export CSV</Button>
+            <Button variant="secondary" onClick={exportCsv} disabled={!selectedEvent}><Download className="h-4 w-4" /> Export CSV</Button>
           </div>
         </div>
         <div className="mt-5 overflow-x-auto">
@@ -342,6 +364,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
                       <div>
                         <p className="flex items-center gap-2 font-medium">{attendee.name} {attendee.vip ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-500"><Star className="h-3 w-3 fill-current" /> VIP</span> : null}</p>
                         <p className="text-muted-foreground">{attendee.email}</p>
+                        {attendee.notes ? <p className="mt-1 line-clamp-2 max-w-sm text-xs text-muted-foreground"><span className="font-semibold text-foreground/70">Internal:</span> {attendee.notes}</p> : null}
                         {attendee.under21 || attendee.plusOneUnder21 ? <p className="text-xs font-medium text-destructive">Under 21 alert</p> : null}
                         {attendee.plusOneName ? <p className="text-xs text-muted-foreground">Plus-one: {attendee.plusOneName}</p> : null}
                       </div>
@@ -365,6 +388,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
           </table>
         </div>
       </Card>
+      </div>
     </div>
   );
 }
