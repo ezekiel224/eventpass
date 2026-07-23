@@ -16,7 +16,7 @@ import { Card, GlassCard } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 export function PassThemePreview({ baseData }: { baseData: NormalizedPassData }) {
-  const [theme, setTheme] = useState<PassThemeId>("casino");
+  const [theme, setTheme] = useState<PassThemeId>("gala");
   const [face, setFace] = useState<PassFace>("front");
   const [accentColor, setAccentColor] = useState(baseData.accentColor);
   const [passType, setPassType] = useState(baseData.passType);

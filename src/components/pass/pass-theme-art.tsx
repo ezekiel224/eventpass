@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { PassFace, PassThemeId } from "@/components/pass/pass-system";
 import styles from "@/components/pass/collectible-pass.module.css";
 
@@ -47,18 +47,24 @@ function CasinoArt({ showRoulette }: { showRoulette: boolean }) {
 }
 
 function GalaArt() {
+  const foilPatternId = useId().replaceAll(":", "");
+
   return (
     <div className={styles.galaArt} aria-hidden="true">
       <svg viewBox="0 0 320 520" preserveAspectRatio="none">
-        <path d="M22 116V22h92M206 22h92v94M298 404v94h-92M114 498H22v-94" />
-        <path d="M42 98V42h54M224 42h54v56M278 422v56h-54M96 478H42v-56" />
-        <path d="M160 16l18 18-18 18-18-18zM160 468l18 18-18 18-18-18z" />
+        <defs>
+          <pattern id={foilPatternId} width="1" height="1" patternContentUnits="objectBoundingBox">
+            <image href="/textures/gala-gold-foil.jpg" width="1" height="1" preserveAspectRatio="xMidYMid slice" />
+          </pattern>
+        </defs>
+        <g stroke={`url(#${foilPatternId})`}>
+          <path d="M22 116V22h92M206 22h92v94M298 404v94h-92M114 498H22v-94" />
+          <path d="M42 98V42h54M224 42h54v56M278 422v56h-54M96 478H42v-56" />
+          <path d="M160 16l18 18-18 18-18-18zM160 468l18 18-18 18-18-18z" />
+        </g>
       </svg>
-      <span className={styles.galaPearlA} />
-      <span className={styles.galaPearlB} />
-      <span className={styles.galaPearlC} />
       <span className={styles.galaMonogram}>EP</span>
-      <span className={styles.galaRibbon}>AN EVENING TO REMEMBER</span>
+      <span className={styles.galaRibbon}>PRIVATE INVITATION · ADMIT ONE</span>
     </div>
   );
 }

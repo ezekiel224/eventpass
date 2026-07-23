@@ -685,16 +685,19 @@
   animation: chipTurn 12s linear infinite;
 }
 
-/* Gala: centered editorial layout with animated foil linework. */
+/* Gala: tactile black suede with photographic gold-foil details. */
 .themeGala {
-  --pass-radius: 4px 34px 4px 34px;
-  --pass-bg: linear-gradient(145deg, #090a10, #15141b 50%, #08090d);
-  --pass-surface: rgba(246, 229, 190, .07);
-  --pass-text: #f8f0df;
-  --pass-muted: rgba(248,240,223,.64);
-  --pass-metallic: #d9bc78;
-  --pass-border: rgba(217,188,120,.35);
+  --pass-radius: 12px;
+  --pass-bg: #080808;
+  --pass-surface: rgba(225, 199, 143, .055);
+  --pass-text: #f2eadb;
+  --pass-muted: rgba(242,234,219,.61);
+  --pass-metallic: #d8bd7a;
+  --pass-border: rgba(225,199,143,.38);
+  --gala-gold-texture: url("/textures/gala-gold-foil.jpg");
+  --gala-rose-texture: url("/textures/gala-rose-gold-foil.jpg");
   --pass-font-display: Georgia, "Times New Roman", serif;
+  --pass-shadow: 0 45px 100px rgba(0,0,0,.58), 0 12px 32px rgba(0,0,0,.42), 0 0 0 1px rgba(215,183,113,.08);
 }
 
 .themeGala .front {
@@ -718,7 +721,8 @@
 
 .themeGala .eventBlock h1 {
   font-weight: 400;
-  letter-spacing: -.025em;
+  letter-spacing: -.035em;
+  text-shadow: 0 2px 8px rgba(0,0,0,.48);
 }
 
 .themeGala .identityBlock,
@@ -731,49 +735,78 @@
   height: clamp(54px, 12cqw, 63px);
   align-items: center;
   justify-content: center;
-  border: 1px solid #d9bc78;
+  border: 1px solid rgba(255,238,184,.66);
   border-radius: 50%;
-  background: radial-gradient(circle at 38% 30%, #f2dcaa, #a9863d);
-  color: #21180b;
+  background-color: #b89142;
+  background-image:
+    radial-gradient(circle at var(--pass-pointer-x) var(--pass-pointer-y), rgba(255,255,255,.55), transparent 21%),
+    var(--gala-gold-texture);
+  background-position: center, var(--pass-pointer-x) var(--pass-pointer-y);
+  background-size: 100% 100%, 230% 230%;
+  background-blend-mode: screen, normal;
+  color: #160f06;
   display: flex;
   padding: 5px;
-  box-shadow: inset 0 0 0 3px rgba(255,255,255,.25), 0 7px 22px rgba(217,188,120,.2);
+  box-shadow: inset 0 0 0 3px rgba(255,250,229,.22), inset 0 -8px 15px rgba(76,45,4,.2), 0 8px 24px rgba(0,0,0,.4);
+  text-shadow: 0 1px rgba(255,244,202,.24);
 }
 
 .themeGala .qrFrame {
   border-radius: 0 16px 0 16px;
 }
 
+.themeGala .eventArtwork {
+  opacity: .035;
+  filter: grayscale(1) contrast(1.2);
+  mix-blend-mode: luminosity;
+}
+
 .themeGala .glare {
-  background: radial-gradient(circle at var(--pass-pointer-x) var(--pass-pointer-y), rgba(255,244,210,.24), transparent 28%), linear-gradient(115deg, transparent 32%, rgba(255,240,193,.2) 46%, transparent 59%);
+  background:
+    radial-gradient(circle at var(--pass-pointer-x) var(--pass-pointer-y), rgba(255,236,190,.2), transparent 22%),
+    linear-gradient(112deg, transparent 36%, rgba(255,231,176,.12) 47%, transparent 58%);
+  mix-blend-mode: screen;
+  opacity: .56;
 }
 
 .galaArt svg {
   width: 100%;
   height: 100%;
   fill: none;
-  stroke: #d9bc78;
-  stroke-width: .8;
-  opacity: .55;
+  stroke-width: .72;
+  filter: drop-shadow(0 1px 1px rgba(255,240,194,.16)) drop-shadow(0 2px 3px rgba(0,0,0,.5));
+  opacity: .64;
   stroke-dasharray: 900;
   animation: galaDraw 2.2s ease-out both;
 }
 
-.galaPearlA,
-.galaPearlB,
-.galaPearlC {
-  position: absolute;
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: #fff5d8;
-  box-shadow: 0 0 12px #e9cf93;
-  animation: galaPearl 4s ease-in-out infinite;
+.themeGala .eventBlock h1,
+.themeGala .identityBlock h2,
+.themeGala .backTitle h2,
+.themeGala .organizerMark b,
+.themeGala .metadataItem strong {
+  background-color: #d6b767;
+  background-image:
+    radial-gradient(circle at var(--pass-pointer-x) var(--pass-pointer-y), rgba(255,255,255,.72), transparent 17%),
+    var(--gala-gold-texture),
+    var(--gala-rose-texture);
+  background-position: center, var(--pass-pointer-x) var(--pass-pointer-y), center;
+  background-size: 100% 100%, 210% 210%, 260% 260%;
+  background-blend-mode: screen, normal, soft-light;
+  background-clip: text;
+  color: transparent;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 0 rgba(255,240,196,.12)) drop-shadow(0 2px 2px rgba(0,0,0,.5));
 }
 
-.galaPearlA { top: 22%; left: 13%; }
-.galaPearlB { top: 35%; right: 12%; animation-delay: -1.4s; }
-.galaPearlC { bottom: 18%; left: 20%; animation-delay: -2.6s; }
+.themeGala .themeKicker,
+.themeGala .identityCopy > span,
+.themeGala .backTitle > span,
+.themeGala .qrPanel > span,
+.themeGala .metadataItem > span {
+  color: rgba(221,194,134,.66);
+}
 
 /* Arcade: cabinet geometry, CRT scanlines, pixel sprites, and token language. */
 .themeArcade {
@@ -1300,13 +1333,26 @@
 .casinoCardFan i:nth-child(3) { transform: rotate(8deg) translateX(7%); }
 
 .themeGala .face {
-  background-image: radial-gradient(circle at 50% 14%, rgba(217,188,120,.11), transparent 23%), linear-gradient(145deg, #090a10, #17151b 52%, #07080c);
-  box-shadow: inset 0 0 0 1px rgba(255,248,226,.04), inset 0 0 80px rgba(0,0,0,.34);
+  background-color: #080808;
+  background-image:
+    radial-gradient(circle at var(--pass-pointer-x) var(--pass-pointer-y), rgba(213,188,137,.075), transparent 26%),
+    linear-gradient(145deg, rgba(0,0,0,.1), rgba(0,0,0,.34)),
+    url("/textures/gala-black-suede.jpg");
+  background-position: center, center, center;
+  background-size: 100% 100%, 100% 100%, cover;
+  box-shadow: inset 0 0 0 1px rgba(255,242,202,.035), inset 0 0 90px rgba(0,0,0,.48);
+}
+.themeGala .face::before {
+  background-image:
+    linear-gradient(125deg, rgba(255,255,255,.035), transparent 24% 74%, rgba(255,255,255,.025)),
+    var(--gala-rose-texture);
+  background-position: center, var(--pass-pointer-x) var(--pass-pointer-y);
+  background-size: 100% 100%, 240% 240%;
+  background-blend-mode: normal, soft-light;
+  mix-blend-mode: soft-light;
+  opacity: .18;
 }
 .themeGala .front { padding: clamp(24px, 7.2cqw, 37px); }
-.galaPearlA,
-.galaPearlB,
-.galaPearlC { width: clamp(3px, .8cqw, 4px); height: clamp(3px, .8cqw, 4px); }
 .galaMonogram {
   position: absolute;
   top: clamp(62px, 15cqw, 78px);
@@ -1315,21 +1361,45 @@
   width: clamp(68px, 17cqw, 88px);
   height: clamp(68px, 17cqw, 88px);
   place-items: center;
-  color: rgba(217,188,120,.12);
+  background-color: #c9a85f;
+  background-image: var(--gala-gold-texture), var(--gala-rose-texture);
+  background-position: var(--pass-pointer-x) var(--pass-pointer-y), center;
+  background-size: 220% 220%, 260% 260%;
+  background-blend-mode: normal, soft-light;
+  background-clip: text;
+  color: transparent;
   font: 400 clamp(28px, 7cqw, 36px)/1 Georgia, serif;
   letter-spacing: -.08em;
+  opacity: .29;
   transform: translateX(-50%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
-.galaMonogram::before { content: ""; position: absolute; inset: 0; border: 1px solid rgba(217,188,120,.25); transform: rotate(45deg); }
+.galaMonogram::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(222,193,128,.42);
+  box-shadow: inset 0 0 12px rgba(216,181,105,.06), 0 1px rgba(255,241,198,.08);
+  transform: rotate(45deg);
+}
 .galaRibbon {
   position: absolute;
   right: 0;
   bottom: clamp(26px, 6.5cqw, 34px);
   left: 0;
-  color: rgba(217,188,120,.42);
+  background-color: #c9a85f;
+  background-image: var(--gala-gold-texture);
+  background-position: var(--pass-pointer-x) var(--pass-pointer-y);
+  background-size: 190% 190%;
+  background-clip: text;
+  color: transparent;
   font: 700 clamp(7px, 1.65cqw, 9px)/1 ui-sans-serif, sans-serif;
-  letter-spacing: .38em;
+  letter-spacing: .31em;
+  opacity: .7;
   text-align: center;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .themeArcade .face {
@@ -1445,7 +1515,6 @@
 @keyframes rouletteBall { 0% { transform: rotate(0) translateX(-50%); } 78% { transform: rotate(-1480deg) translateX(-50%); } 100% { transform: rotate(-1555deg) translateX(-50%); } }
 @keyframes chipTurn { to { transform: rotate(360deg); } }
 @keyframes galaDraw { from { stroke-dashoffset: 900; opacity: 0; } to { stroke-dashoffset: 0; opacity: .55; } }
-@keyframes galaPearl { 0%,100% { opacity:.15; transform:translateY(0); } 50% { opacity:.8; transform:translateY(-8px); } }
 @keyframes pressStart { 50% { opacity: .28; } }
 @keyframes spriteBob { 50% { transform: translateY(7px); } }
 @keyframes shipMove { 0%,100% { transform:translateX(0); } 50% { transform:translateX(26px); } }

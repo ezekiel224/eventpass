@@ -15,9 +15,9 @@ function CasinoQr({ guestName, qrValue, qrImageUrl }: Pick<InteractivePassProps,
   return (
     <div className="rounded-xl border border-[#d5ad59]/55 bg-[#f8f1df] p-2 text-[#090806] shadow-[0_6px_0_rgba(73,51,15,0.34),0_15px_25px_rgba(0,0,0,0.32)]" title={qrValue} style={{ transform: "translateZ(18px)" }}>
       {qrImageUrl ? (
-        <Image src={qrImageUrl} width={96} height={96} alt={`QR code for ${guestName}`} unoptimized className="h-[5.2rem] w-[5.2rem] rounded-md sm:h-24 sm:w-24" />
+        <Image src={qrImageUrl} width={112} height={112} alt={`QR code for ${guestName}`} unoptimized className="h-28 w-28 rounded-md" />
       ) : (
-        <div className="grid h-[5.2rem] w-[5.2rem] place-items-center sm:h-24 sm:w-24"><QrCode className="h-16 w-16" aria-hidden="true" /></div>
+        <div className="grid h-28 w-28 place-items-center"><QrCode className="h-20 w-20" aria-hidden="true" /></div>
       )}
       <p className="mt-1 text-center text-[7px] font-black uppercase tracking-[0.16em]">House verified</p>
     </div>

@@ -39,7 +39,7 @@ type CollectiblePassProps = {
 const themeClasses: Record<PassThemeId, string> = {
   casino: styles.themeCasino,
   gala: styles.themeGala,
-  "ice-cream": styles.themeGala,
+  "ice-cream": styles.themeMinimal,
   "retro-arcade": styles.themeArcade,
   science: styles.themeScience,
   biology: styles.themeBiology,

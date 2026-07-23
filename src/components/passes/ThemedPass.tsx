@@ -108,13 +108,13 @@ function getThemeConfig(theme: RemainingTheme, finish: PassFinish): ThemeConfig 
 }
 
 function PassQr({ props, large = false }: { props: InteractivePassProps; large?: boolean }) {
-  const size = large ? 128 : 96;
+  const size = large ? 128 : 112;
   return (
     <div className="shrink-0 rounded-2xl border border-black/10 bg-white p-2 text-black shadow-[0_7px_0_rgba(0,0,0,0.16),0_16px_30px_rgba(0,0,0,0.24)]" title={props.qrValue} style={{ transform: "translateZ(18px)" }}>
       {props.qrImageUrl ? (
-        <Image src={props.qrImageUrl} width={size} height={size} alt={`QR code for ${props.guestName}`} unoptimized className={large ? "h-32 w-32 rounded-lg" : "h-[5.3rem] w-[5.3rem] rounded-lg sm:h-24 sm:w-24"} />
+        <Image src={props.qrImageUrl} width={size} height={size} alt={`QR code for ${props.guestName}`} unoptimized className={large ? "h-32 w-32 rounded-lg" : "h-28 w-28 rounded-lg"} />
       ) : (
-        <div className={`grid place-items-center ${large ? "h-32 w-32" : "h-[5.3rem] w-[5.3rem] sm:h-24 sm:w-24"}`}><QrCode className={large ? "h-28 w-28" : "h-16 w-16"} aria-hidden="true" /></div>
+        <div className={`grid place-items-center ${large ? "h-32 w-32" : "h-28 w-28"}`}><QrCode className={large ? "h-28 w-28" : "h-20 w-20"} aria-hidden="true" /></div>
       )}
       <p className="mt-1 text-center text-[7px] font-black uppercase tracking-[0.18em]">Scan to verify</p>
     </div>
