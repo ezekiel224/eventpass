@@ -21,6 +21,7 @@ ENV DATABASE_URL=file:/app/data/eventpass.db
 RUN apk add --no-cache openssl wget
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
 COPY package.json package-lock.json* ./
 COPY --from=builder /app/prisma ./prisma
