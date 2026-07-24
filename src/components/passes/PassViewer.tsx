@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, u
 import { Rotate3D, ShieldCheck } from "lucide-react";
 import { CasinoPass } from "@/components/passes/CasinoPass";
 import { GalaPass } from "@/components/passes/GalaPass";
+import { IceCreamPass } from "@/components/passes/IceCreamPass";
 import { ThemedPass } from "@/components/passes/ThemedPass";
 import type { EventPassDetails, PassFace, PassFinish, PassMotionControls, PassTheme } from "@/components/passes/pass-types";
 import { useGyroscope } from "@/hooks/useGyroscope";
@@ -110,6 +111,8 @@ export function PassViewer({
           <GalaPass {...details} motion={motionControls} face={face} onFaceChange={onFaceChange} />
         ) : theme === "casino" ? (
           <CasinoPass {...details} motion={motionControls} face={face} onFaceChange={onFaceChange} />
+        ) : theme === "ice-cream" ? (
+          <IceCreamPass {...details} motion={motionControls} face={face} onFaceChange={onFaceChange} />
         ) : (
           <ThemedPass {...details} theme={theme} finish={finish} motion={motionControls} face={face} onFaceChange={onFaceChange} />
         )}
