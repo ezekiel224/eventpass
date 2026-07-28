@@ -25,6 +25,8 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
 COPY package.json package-lock.json* ./
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/src/lib/permissions.ts ./src/lib/permissions.ts
+COPY --from=builder /app/src/lib/rbac-bootstrap.ts ./src/lib/rbac-bootstrap.ts
 COPY --from=builder /app/src/services/qr.ts ./src/services/qr.ts
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
 EXPOSE 3000

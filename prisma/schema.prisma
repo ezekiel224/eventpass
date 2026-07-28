@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model AppInstallation {
+  id              String   @id
+  initializedAt   DateTime @default(now())
+  initializedById String?
+}
+
 model User {
   id                  String                   @id @default(cuid())
   email               String                   @unique

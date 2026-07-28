@@ -17,13 +17,15 @@ Effective access is calculated as:
 2. Apply direct user overrides.
 3. Explicit deny overrides remove a permission and take precedence over all roles.
 
-The idempotent seed creates:
+The idempotent RBAC bootstrap creates:
 
 - **Admin** — all permissions.
 - **Moderator** — dashboard, events, attendees, passes, check-ins, and raffles.
 - **User** — dashboard access only.
 
 System roles and permissions are visible but immutable. Custom roles and permissions remain editable.
+
+The first administrator is not seeded. When there are no user accounts and no completed installation record, `/login` redirects to the one-time `/signup` flow. Its transaction claims the singleton installation record, prepares RBAC, creates the full-access administrator, writes the audit entry, and closes setup before returning.
 
 ## Security controls
 
@@ -49,6 +51,7 @@ System roles and permissions are visible but immutable. Custom roles and permiss
 - `/admin/settings/accounts`
 - `/admin/settings/permissions`
 - `/change-password`
+- `/signup` — available only before the first administrator is created
 
 ### APIs
 
@@ -62,19 +65,23 @@ System roles and permissions are visible but immutable. Custom roles and permiss
 - `GET /api/admin/audit`
 - `GET /api/auth/csrf`
 - `POST /api/auth/change-password`
+- `POST /api/auth/setup` — available only during first-run setup
 
 Unsafe admin requests must send the `eventpass_csrf` cookie value in the `x-csrf-token` header.
 
 ## Deployment
 
-Apply and seed the schema before enabling account administration:
+For local development with demo event data:
 
 ```bash
-npm run prisma:push
-npm run prisma:seed
+npm run prisma:setup
 ```
 
-The seed is idempotent and attaches the pre-existing admin account to the full-access Admin role. Docker startup already runs `prisma db push` and the seed unless `SKIP_SEED=true`. Do not use `SKIP_SEED=true` for the first RBAC deployment.
+Production Docker startup runs `prisma db push` followed by `npm run prisma:rbac`. It never creates an account from environment variables and does not load demo event data. Visit `/login` after the first deployment and complete the one-time setup form.
+
+The RBAC bootstrap is idempotent and attaches a pre-existing legacy `ADMIN` account to the full-access Admin role when upgrading an existing volume.
+
+Do not expose an empty installation publicly: the first visitor could claim the initial administrator. Docker binds port 3000 to localhost by default so setup can be completed through an SSH tunnel before the public HTTPS proxy or Cloudflare Tunnel is enabled.
 
 Use a long random `AUTH_SECRET`, HTTPS, and secure production cookies. Back up the SQLite volume before applying schema changes.
 
@@ -88,3 +95,4 @@ Use a long random `AUTH_SECRET`, HTTPS, and secure production cookies. Back up t
 6. Role and override changes take effect on the next request.
 7. Account, role, permission, and password changes create audit records.
 8. The final active full-access administrator cannot accidentally alter their own access.
+9. A second initial-setup request returns `409` and `/signup` redirects to `/login`.

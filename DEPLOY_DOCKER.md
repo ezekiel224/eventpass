@@ -33,13 +33,9 @@ Set these values before the first boot:
 DOCKER_DATABASE_URL="file:/app/data/eventpass.db"
 APP_URL="https://your-domain.com"
 AUTH_SECRET="replace-with-a-long-random-secret"
-NEXTAUTH_SECRET="replace-with-a-long-random-secret"
 QR_SIGNING_SECRET="replace-with-a-long-random-secret"
-ADMIN_EMAIL="admin@your-domain.com"
-ADMIN_PASSWORD="replace-with-a-strong-password"
 EMAIL_PROVIDER="console"
 EMAIL_FROM="EventPass <passes@your-domain.com>"
-SKIP_SEED="false"
 ```
 
 Generate strong secrets with:
@@ -48,11 +44,7 @@ Generate strong secrets with:
 openssl rand -base64 48
 ```
 
-Keep `SKIP_SEED="false"` for the first startup so the admin user and demo data are created. After that first successful boot, change it to:
-
-```bash
-SKIP_SEED="true"
-```
+Administrator credentials are not configured through `.env`. The first account is created through the one-time browser setup after the container starts.
 
 ## 3. Build and Start
 
@@ -73,26 +65,19 @@ Check the health endpoint:
 curl http://127.0.0.1:3000/api/health
 ```
 
-Open:
+Keep the application private for first-run setup. From your computer, open an SSH tunnel to the server:
 
-```text
-http://YOUR_SERVER_IP:3000
+```bash
+ssh -L 3000:127.0.0.1:3000 your-user@your-server
 ```
 
-Sign in with the `ADMIN_EMAIL` and `ADMIN_PASSWORD` from `.env`.
+Then open `http://127.0.0.1:3000/login` in your local browser. On a fresh database, `/login` redirects to `/signup`. Enter the initial administrator name, email, username, and password there. The signup route closes permanently as soon as the account is created.
+
+Docker startup applies the schema and prepares system roles and permissions, but it does not create accounts or demo event data. Existing deployments retain their current users and are taken directly to the normal login page.
 
 ## 4. Put It Behind HTTPS
 
-Use one of these common paths.
-
-If a reverse proxy or Cloudflare Tunnel will be the only public entry point, you can bind the app to localhost by changing `docker-compose.yml`:
-
-```yaml
-ports:
-  - "127.0.0.1:3000:3000"
-```
-
-Keep the existing `"3000:3000"` mapping only when you intentionally want port `3000` reachable from the network.
+Only enable the public HTTPS entry point after the initial administrator exists. The Compose file binds the application to `127.0.0.1:3000` by default; keep that setting when using a same-host reverse proxy or Cloudflare Tunnel.
 
 ### Option A: Cloudflare Tunnel
 

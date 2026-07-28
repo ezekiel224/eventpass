@@ -9,10 +9,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint src --max-warnings=0",
-    "prisma:setup": "prisma db push && npm run prisma:seed",
+    "prisma:setup": "prisma db push && npm run prisma:rbac && npm run prisma:seed",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
+    "prisma:rbac": "tsx prisma/bootstrap-rbac.ts",
     "prisma:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {

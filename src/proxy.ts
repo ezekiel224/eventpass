@@ -4,7 +4,7 @@ import { hasTrustedRequestOrigin } from "@/lib/csrf";
 import { permissionForRequest } from "@/lib/permissions";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
-const PUBLIC_API_PATHS = ["/api/auth/login", "/api/auth/logout", "/api/register", "/api/health", "/api/auth/csrf"];
+const PUBLIC_API_PATHS = ["/api/auth/login", "/api/auth/logout", "/api/auth/setup", "/api/register", "/api/health", "/api/auth/csrf"];
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 export async function proxy(request: NextRequest) {

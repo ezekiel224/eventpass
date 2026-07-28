@@ -5,11 +5,15 @@ import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { getCurrentUser } from "@/lib/auth";
 import { getBranding } from "@/lib/branding";
+import { isInitialSetupAvailable } from "@/lib/setup";
 
 export default async function LoginPage() {
   const user = await getCurrentUser();
   if (user) {
     redirect(user.mustChangePassword ? "/change-password" : "/dashboard");
+  }
+  if (await isInitialSetupAvailable()) {
+    redirect("/signup");
   }
 
   const branding = await getBranding();

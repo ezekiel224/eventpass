@@ -1,12 +1,19 @@
 import { z } from "zod";
 
-const passwordSchema = z.string()
+export const passwordSchema = z.string()
   .min(12)
   .max(128)
   .regex(/[a-z]/, "Password must contain a lowercase letter.")
   .regex(/[A-Z]/, "Password must contain an uppercase letter.")
   .regex(/[0-9]/, "Password must contain a number.")
   .regex(/[^A-Za-z0-9]/, "Password must contain a symbol.");
+
+export const initialAdminSetupSchema = z.object({
+  email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()),
+  username: z.string().trim().min(3).max(40).regex(/^[a-zA-Z0-9._-]+$/).transform((value) => value.toLowerCase()),
+  name: z.string().trim().min(1).max(100),
+  password: passwordSchema
+}).strict();
 
 export const createAdminUserSchema = z.object({
   email: z.string().email().max(254).transform((value) => value.trim().toLowerCase()),

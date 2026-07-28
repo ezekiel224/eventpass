@@ -8,9 +8,7 @@ mkdir -p /app/data
 echo "Preparing database at ${DATABASE_URL}"
 npx prisma db push --skip-generate
 
-if [ "${SKIP_SEED:-false}" != "true" ]; then
-  echo "Seeding initial data"
-  npm run prisma:seed
-fi
+echo "Preparing system roles and permissions"
+npm run prisma:rbac
 
 exec node server.js

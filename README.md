@@ -13,9 +13,9 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-`prisma:setup` applies the local SQLite schema and runs the idempotent seed. Run it again whenever you create a fresh database.
+`prisma:setup` applies the local SQLite schema, prepares system roles and permissions, and loads the idempotent demo event data. Run it again whenever you create a fresh local database.
 
-Seeded local admin credentials default to `admin@example.com` / `ChangeMe123!`. Set `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and a long random `AUTH_SECRET` in `.env` before deploying.
+Open `/login` after the first start. When the database has no accounts, EventPass redirects to the one-time `/signup` page so you can choose the initial administrator email, username, and password. No administrator credentials are stored in environment variables or source code.
 
 For mobile testing over Tailscale, this project trusts `100.88.101.67` in `next.config.ts` for Next.js dev-server requests. Camera access on phones usually still requires a secure context, so use HTTPS through Tailscale Serve/Funnel or another trusted local HTTPS URL if the browser blocks camera permissions over plain HTTP.
 
@@ -26,7 +26,19 @@ cp .env.example .env
 docker compose up --build
 ```
 
-The initial Docker setup uses a persistent SQLite database volume at `/app/data/eventpass.db`. On container startup it runs `prisma db push` and seeds the admin account/event data unless `SKIP_SEED=true` is set.
+The Docker deployment uses a persistent SQLite database volume at `/app/data/eventpass.db`. On every container start it applies the schema and idempotently prepares the system roles and permissions. It does not create an account or load demo event data.
+
+Open the deployed `/login` URL after the first start. You will be redirected to the one-time `/signup` page to create the initial administrator. The setup endpoint uses an atomic installation record, so only one initial administrator can be created; after that, `/signup` redirects to `/login`.
+
+The Compose file binds port 3000 to localhost by default. On a remote server, complete first-run setup through an SSH tunnel before enabling a public reverse proxy or Cloudflare Tunnel:
+
+```bash
+ssh -L 3000:127.0.0.1:3000 your-user@your-server
+```
+
+Then open `http://127.0.0.1:3000/login` locally and create the administrator.
+
+Existing Docker volumes keep their current accounts. The RBAC bootstrap automatically attaches a pre-RBAC `ADMIN` account to the full-access Admin role.
 
 Check the container health endpoint:
 
@@ -41,6 +53,8 @@ docker compose --profile tunnel up --build
 ```
 
 Set `APP_URL` to your Cloudflare hostname before testing pass email links, for example `https://events.example.com`.
+
+Before exposing a production container, replace the placeholder `AUTH_SECRET` and `QR_SIGNING_SECRET` values in `.env` with independent long random values. Production still requires HTTPS at the reverse proxy or Cloudflare Tunnel.
 
 PostgreSQL is a later migration step. The current Prisma schema is SQLite, so do not switch `DATABASE_URL` to a PostgreSQL URL until the schema provider and migrations are updated together.
 

@@ -2,7 +2,7 @@ import { forbidden, redirect } from "next/navigation";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import type { PermissionSlug } from "@/lib/permissions";
+import { permissionCatalog, type PermissionSlug } from "@/lib/permissions";
 
 const authorizationInclude = {
   roles: {
@@ -32,15 +32,19 @@ export async function getAuthorizationForUser(userId: string) {
   for (const assignment of user.roles) {
     for (const grant of assignment.role.permissions) permissions.add(grant.permission.slug);
   }
+
+  // Preserve access for the single pre-RBAC administrator while a deployment is
+  // between `prisma db push` and the idempotent RBAC seed. The static catalog is
+  // intentional: an unseeded database does not have Permission rows to query yet.
+  if (user.role === "ADMIN" && user.roles.length === 0) {
+    for (const permission of permissionCatalog) permissions.add(permission.slug);
+  }
+
+  // Direct overrides are evaluated last so an explicit deny always wins,
+  // including during the legacy-admin compatibility window.
   for (const override of user.permissionOverrides) {
     if (override.allowed) permissions.add(override.permission.slug);
     else permissions.delete(override.permission.slug);
-  }
-
-  // Compatibility for the single pre-RBAC admin until the idempotent seed has run.
-  if (user.role === "ADMIN" && user.roles.length === 0) {
-    const legacyPermissions = await prisma.permission.findMany({ select: { slug: true } });
-    for (const permission of legacyPermissions) permissions.add(permission.slug);
   }
 
   return {
