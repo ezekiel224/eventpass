@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, CheckCircle2, Loader2, ShieldAlert, StopCircle } from "lucide-react";
+import { Camera, CheckCircle2, Loader2, Minus, Plus, ShieldAlert, StopCircle } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -20,6 +20,15 @@ type Html5Scanner = {
   ) => Promise<unknown>;
   stop: () => Promise<unknown>;
   clear: () => void;
+  getRunningTrackCapabilities: () => MediaTrackCapabilities & { zoom?: ZoomRange };
+  getRunningTrackSettings: () => MediaTrackSettings & { zoom?: number };
+  applyVideoConstraints: (constraints: MediaTrackConstraints) => Promise<void>;
+};
+
+type ZoomRange = {
+  min: number;
+  max: number;
+  step: number;
 };
 
 type Html5QrcodeClass = {
@@ -39,12 +48,15 @@ export function QrCameraScanner({
   const scanLockedRef = useRef(false);
   const lastScanRef = useRef({ value: "", at: 0 });
   const unlockTimerRef = useRef<number | null>(null);
+  const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
   const [isActive, setIsActive] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState("");
   const [cameras, setCameras] = useState<Array<{ id: string; label: string }>>([]);
   const [cameraId, setCameraId] = useState("");
   const [feedback, setFeedback] = useState<"success" | "error" | null>(null);
+  const [zoomRange, setZoomRange] = useState<ZoomRange | null>(null);
+  const [zoom, setZoom] = useState(1);
 
   function playFeedback(success: boolean) {
     if (!success) return;
@@ -88,11 +100,13 @@ export function QrCameraScanner({
     }
     scanLockedRef.current = false;
     setFeedback(null);
+    setZoomRange(null);
+    pinchRef.current = null;
     setIsActive(false);
     setIsStarting(false);
   }
 
-  async function startCamera() {
+  async function startCamera(requestedCameraId?: string) {
     if (isActive || isStarting) {
       await stopCamera();
       return;
@@ -105,7 +119,7 @@ export function QrCameraScanner({
       const { Html5Qrcode } = await import("html5-qrcode");
       const Qrcode = Html5Qrcode as unknown as Html5QrcodeClass;
       const availableCameras = await Qrcode.getCameras();
-      const preferredCamera = cameraId || availableCameras.find((camera) => /back|rear|environment/i.test(camera.label))?.id || availableCameras[0]?.id || "";
+      const preferredCamera = requestedCameraId || cameraId || availableCameras.find((camera) => /back|rear|environment/i.test(camera.label))?.id || availableCameras[0]?.id || "";
       setCameras(availableCameras);
       setCameraId(preferredCamera);
 
@@ -143,6 +157,16 @@ export function QrCameraScanner({
         () => undefined
       );
 
+      try {
+        const capabilities = scanner.getRunningTrackCapabilities();
+        const settings = scanner.getRunningTrackSettings();
+        if (capabilities.zoom && capabilities.zoom.max > capabilities.zoom.min) {
+          setZoomRange(capabilities.zoom);
+          setZoom(settings.zoom ?? capabilities.zoom.min);
+        }
+      } catch {
+        // Zoom is optional and is not exposed by every browser or camera.
+      }
       setIsActive(true);
     } catch (startError) {
       const detail = startError instanceof Error ? startError.message : "Unknown camera error";
@@ -153,9 +177,63 @@ export function QrCameraScanner({
     }
   }
 
+  async function selectCamera(nextCameraId: string) {
+    setCameraId(nextCameraId);
+    if (!isActive) return;
+    await stopCamera();
+    await startCamera(nextCameraId);
+  }
+
+  async function setCameraZoom(nextZoom: number) {
+    if (!scannerRef.current || !zoomRange) return;
+    const clamped = Math.min(zoomRange.max, Math.max(zoomRange.min, nextZoom));
+    const stepped = Math.round((clamped - zoomRange.min) / zoomRange.step) * zoomRange.step + zoomRange.min;
+    try {
+      await scannerRef.current.applyVideoConstraints({
+        advanced: [{ zoom: stepped } as MediaTrackConstraintSet]
+      });
+      setZoom(stepped);
+    } catch {
+      // Ignore a constraint rejected while a camera is switching or stopping.
+    }
+  }
+
+  function cameraName(camera: { label: string }, index: number) {
+    const label = camera.label.trim();
+    if (!label) return `Camera ${index + 1}`;
+    const direction = /front|user|facetime/i.test(label) ? "Front" : /back|rear|environment/i.test(label) ? "Rear" : "";
+    const lens = /ultra.?wide|0[.,]5x/i.test(label)
+      ? "ultra-wide"
+      : /telephoto|tele|[235]x/i.test(label)
+        ? "telephoto"
+        : /wide/i.test(label)
+          ? "wide"
+          : "";
+    const friendly = [direction, lens].filter(Boolean).join(" ");
+    return friendly ? `${friendly[0].toUpperCase()}${friendly.slice(1)} — ${label}` : label;
+  }
+
+  function pinchDistance(touches: React.TouchList) {
+    return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+  }
+
   return (
     <div className="grid gap-3">
-      <div className={isActive || isStarting ? "relative min-h-72 overflow-hidden rounded-xl border border-border bg-muted" : "hidden"}>
+      <div
+        className={isActive || isStarting ? "relative min-h-72 touch-none overflow-hidden rounded-xl border border-border bg-muted" : "hidden"}
+        onTouchStart={(event) => {
+          if (event.touches.length === 2 && zoomRange) {
+            pinchRef.current = { distance: pinchDistance(event.touches), zoom };
+          }
+        }}
+        onTouchMove={(event) => {
+          if (event.touches.length !== 2 || !pinchRef.current || !zoomRange) return;
+          event.preventDefault();
+          const scale = pinchDistance(event.touches) / pinchRef.current.distance;
+          void setCameraZoom(pinchRef.current.zoom * scale);
+        }}
+        onTouchEnd={() => { pinchRef.current = null; }}
+      >
         <div id={readerId} className="min-h-72 [&_video]:min-h-72 [&_video]:object-cover" />
         <div
           className={`pointer-events-none absolute inset-0 grid place-items-center transition ${feedback === "success" ? "bg-emerald-500/30 opacity-100" : feedback === "error" ? "bg-destructive/25 opacity-100" : "opacity-0"}`}
@@ -165,19 +243,43 @@ export function QrCameraScanner({
             {feedback === "error" ? <ShieldAlert className="h-10 w-10" /> : <CheckCircle2 className="h-10 w-10" />}
           </span>
         </div>
+        {zoomRange ? (
+          <div className="absolute inset-x-3 bottom-3 flex items-center gap-2 rounded-xl bg-background/90 p-2 shadow-lg backdrop-blur">
+            <Button type="button" variant="ghost" className="h-9 w-9 shrink-0 p-0" onClick={() => void setCameraZoom(zoom - zoomRange.step)} aria-label="Zoom out">
+              <Minus className="h-4 w-4" />
+            </Button>
+            <input
+              type="range"
+              min={zoomRange.min}
+              max={zoomRange.max}
+              step={zoomRange.step}
+              value={zoom}
+              onChange={(event) => void setCameraZoom(Number(event.target.value))}
+              className="min-w-0 flex-1 accent-primary"
+              aria-label="Camera zoom"
+            />
+            <span className="w-11 text-center text-xs font-semibold">{zoom.toFixed(1)}×</span>
+            <Button type="button" variant="ghost" className="h-9 w-9 shrink-0 p-0" onClick={() => void setCameraZoom(zoom + zoomRange.step)} aria-label="Zoom in">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : null}
       </div>
       {cameras.length > 1 ? (
-        <select
-          value={cameraId}
-          onChange={(event) => setCameraId(event.target.value)}
-          className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm"
-          disabled={isActive || isStarting}
-          aria-label="Camera"
-        >
-          {cameras.map((camera, index) => (
-            <option key={camera.id} value={camera.id}>{camera.label || `Camera ${index + 1}`}</option>
-          ))}
-        </select>
+        <label className="grid gap-1.5 text-sm font-medium">
+          Camera lens
+          <select
+            value={cameraId}
+            onChange={(event) => void selectCamera(event.target.value)}
+            className="focus-ring h-11 rounded-xl border border-border bg-background px-3 text-sm"
+            disabled={isStarting}
+          >
+            {cameras.map((camera, index) => (
+              <option key={camera.id} value={camera.id}>{cameraName(camera, index)}</option>
+            ))}
+          </select>
+          <span className="text-xs font-normal text-muted-foreground">Choose front, rear, wide, or telephoto when your phone exposes those lenses.</span>
+        </label>
       ) : null}
       {error ? (
         <p className="flex items-start gap-2 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
@@ -191,7 +293,7 @@ export function QrCameraScanner({
           {isStarting ? "Starting camera" : isActive ? stopLabel : startLabel}
         </Button>
       </div>
-      {isActive ? <p className="text-xs text-muted-foreground">Camera stays active after each scan. Hold the next pass in view when feedback clears.</p> : null}
+      {isActive ? <p className="text-xs text-muted-foreground">Camera stays active after each scan. Hold the next pass in view when feedback clears.{zoomRange ? " Pinch the preview or use the zoom controls." : ""}</p> : null}
     </div>
   );
 }
