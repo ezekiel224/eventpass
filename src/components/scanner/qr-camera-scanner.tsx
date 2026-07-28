@@ -14,7 +14,11 @@ type QrCameraScannerProps = {
 type Html5Scanner = {
   start: (
     cameraIdOrConfig: string | { facingMode: string },
-    configuration: { fps: number; qrbox: { width: number; height: number } },
+    configuration: {
+      fps: number;
+      qrbox: { width: number; height: number };
+      videoConstraints?: MediaTrackConstraints;
+    },
     qrCodeSuccessCallback: (decodedText: string) => void,
     qrCodeErrorCallback?: () => void
   ) => Promise<unknown>;
@@ -48,6 +52,7 @@ export function QrCameraScanner({
   const scanLockedRef = useRef(false);
   const lastScanRef = useRef({ value: "", at: 0 });
   const unlockTimerRef = useRef<number | null>(null);
+  const capabilityTimersRef = useRef<number[]>([]);
   const pinchRef = useRef<{ distance: number; zoom: number } | null>(null);
   const [isActive, setIsActive] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
@@ -57,6 +62,7 @@ export function QrCameraScanner({
   const [feedback, setFeedback] = useState<"success" | "error" | null>(null);
   const [zoomRange, setZoomRange] = useState<ZoomRange | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [zoomChecked, setZoomChecked] = useState(false);
 
   function playFeedback(success: boolean) {
     if (!success) return;
@@ -86,6 +92,7 @@ export function QrCameraScanner({
   useEffect(() => {
     return () => {
       if (unlockTimerRef.current) window.clearTimeout(unlockTimerRef.current);
+      capabilityTimersRef.current.forEach((timer) => window.clearTimeout(timer));
       if (scannerRef.current) {
         void scannerRef.current.stop().catch(() => undefined);
       }
@@ -100,14 +107,17 @@ export function QrCameraScanner({
     }
     scanLockedRef.current = false;
     setFeedback(null);
+    capabilityTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    capabilityTimersRef.current = [];
     setZoomRange(null);
+    setZoomChecked(false);
     pinchRef.current = null;
     setIsActive(false);
     setIsStarting(false);
   }
 
   async function startCamera(requestedCameraId?: string) {
-    if (isActive || isStarting) {
+    if (scannerRef.current || isStarting) {
       await stopCamera();
       return;
     }
@@ -125,12 +135,22 @@ export function QrCameraScanner({
 
       const scanner = new Qrcode(readerId);
       scannerRef.current = scanner;
+      const supportedConstraints = navigator.mediaDevices.getSupportedConstraints() as MediaTrackSupportedConstraints & { zoom?: boolean };
+      const videoConstraints = {
+        ...(preferredCamera
+          ? { deviceId: { exact: preferredCamera } }
+          : { facingMode: { ideal: "environment" } }),
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        ...(supportedConstraints.zoom ? { zoom: true } : {})
+      } as MediaTrackConstraints;
 
       await scanner.start(
         preferredCamera || { facingMode: "environment" },
         {
           fps: 10,
-          qrbox: { width: 260, height: 260 }
+          qrbox: { width: 260, height: 260 },
+          videoConstraints
         },
         (decodedText: string) => {
           const now = Date.now();
@@ -157,16 +177,33 @@ export function QrCameraScanner({
         () => undefined
       );
 
-      try {
-        const capabilities = scanner.getRunningTrackCapabilities();
-        const settings = scanner.getRunningTrackSettings();
-        if (capabilities.zoom && capabilities.zoom.max > capabilities.zoom.min) {
-          setZoomRange(capabilities.zoom);
-          setZoom(settings.zoom ?? capabilities.zoom.min);
+      function detectZoom() {
+        if (scannerRef.current !== scanner) return;
+        try {
+          const capabilities = scanner.getRunningTrackCapabilities();
+          const settings = scanner.getRunningTrackSettings();
+          if (capabilities.zoom && capabilities.zoom.max > capabilities.zoom.min) {
+            setZoomRange({
+              min: capabilities.zoom.min,
+              max: capabilities.zoom.max,
+              step: capabilities.zoom.step || 0.1
+            });
+            setZoom(settings.zoom ?? capabilities.zoom.min);
+            setZoomChecked(true);
+            capabilityTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+            capabilityTimersRef.current = [];
+            return;
+          }
+        } catch {
+          // The stream may not have published its capabilities yet.
         }
-      } catch {
-        // Zoom is optional and is not exposed by every browser or camera.
       }
+
+      detectZoom();
+      capabilityTimersRef.current = [250, 750, 1500].map((delay, index, delays) => window.setTimeout(() => {
+        detectZoom();
+        if (index === delays.length - 1 && scannerRef.current === scanner) setZoomChecked(true);
+      }, delay));
       setIsActive(true);
     } catch (startError) {
       const detail = startError instanceof Error ? startError.message : "Unknown camera error";
@@ -294,6 +331,9 @@ export function QrCameraScanner({
         </Button>
       </div>
       {isActive ? <p className="text-xs text-muted-foreground">Camera stays active after each scan. Hold the next pass in view when feedback clears.{zoomRange ? " Pinch the preview or use the zoom controls." : ""}</p> : null}
+      {isActive && zoomChecked && !zoomRange ? (
+        <p className="text-xs text-muted-foreground">This browser did not expose zoom for the selected lens. Try another rear lens from the Camera lens menu or open this page in Chrome.</p>
+      ) : null}
     </div>
   );
 }
