@@ -10,7 +10,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import type { Branding } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 
-export function MobileNavigation({ branding, active }: { branding: Branding; active: string }) {
+export function MobileNavigation({ branding, active, permissions = [] }: { branding: Branding; active: string; permissions?: string[] }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   // The portal target only exists after hydration.
@@ -57,7 +57,7 @@ export function MobileNavigation({ branding, active }: { branding: Branding; act
           <button className="focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-xl hover:bg-muted" onClick={() => setOpen(false)} aria-label="Close navigation"><X className="h-5 w-5" /></button>
         </div>
         <nav className="mt-7 flex-1 space-y-1 overflow-y-auto" aria-label="Dashboard navigation">
-          {dashboardNav.map((item) => (
+          {dashboardNav.filter((item) => permissions.includes(item.permission)).map((item) => (
             <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={cn("flex min-h-12 items-center gap-3 rounded-xl border border-transparent px-3 text-sm font-medium text-muted-foreground", active === item.label && "border-primary/30 bg-primary/10 text-primary")}>
               <item.icon className="h-5 w-5" />{item.label}
             </Link>

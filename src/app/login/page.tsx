@@ -9,7 +9,7 @@ import { getBranding } from "@/lib/branding";
 export default async function LoginPage() {
   const user = await getCurrentUser();
   if (user) {
-    redirect("/dashboard");
+    redirect(user.mustChangePassword ? "/change-password" : "/dashboard");
   }
 
   const branding = await getBranding();

@@ -3,6 +3,7 @@
 import { CheckCircle2, Mail } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AgeChoice } from "@/components/ui/age-choice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -43,6 +44,10 @@ export function RegisterForm({ eventId, allergenOptions }: { eventId: string; al
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (!form.under21 || (form.plusOneEnabled && !form.plusOneUnder21)) {
+      setMessage("Please confirm the age status for each guest.");
+      return;
+    }
     setSaving(true);
     setMessage("");
     const response = await fetch("/api/register", {
@@ -83,17 +88,7 @@ export function RegisterForm({ eventId, allergenOptions }: { eventId: string; al
       <Input value={form.email} onChange={(event) => setField("email", event.target.value)} placeholder="Email" type="email" required />
       <Input value={form.phone} onChange={(event) => setField("phone", event.target.value)} placeholder="Phone (optional)" />
       <Input value={form.company} onChange={(event) => setField("company", event.target.value)} placeholder="Company (optional)" />
-      <select
-        value={form.under21}
-        onChange={(event) => setField("under21", event.target.value)}
-        className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm"
-        aria-label="Guest under 21"
-        required
-      >
-        <option value="">Are you under 21?</option>
-        <option value="no">No</option>
-        <option value="yes">Yes</option>
-      </select>
+      <AgeChoice value={form.under21 as "" | "yes" | "no"} onChange={(value) => setField("under21", value)} />
       {allergenOptions.length > 0 ? (
         <div className="rounded-xl border border-border p-3">
           <p className="text-sm font-medium">Allergens</p>
@@ -122,17 +117,11 @@ export function RegisterForm({ eventId, allergenOptions }: { eventId: string; al
             <Input value={form.plusOneFirstName} onChange={(event) => setField("plusOneFirstName", event.target.value)} placeholder="Plus-one first name" required />
             <Input value={form.plusOneLastName} onChange={(event) => setField("plusOneLastName", event.target.value)} placeholder="Plus-one last name" required />
           </div>
-          <select
-            value={form.plusOneUnder21}
-            onChange={(event) => setField("plusOneUnder21", event.target.value)}
-            className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm"
-            aria-label="Plus-one under 21"
-            required
-          >
-            <option value="">Is your plus-one under 21?</option>
-            <option value="no">No</option>
-            <option value="yes">Yes</option>
-          </select>
+          <AgeChoice
+            value={form.plusOneUnder21 as "" | "yes" | "no"}
+            onChange={(value) => setField("plusOneUnder21", value)}
+            subject="plus-one"
+          />
           {allergenOptions.length > 0 ? (
             <div>
               <p className="text-sm font-medium">Plus-one allergens</p>

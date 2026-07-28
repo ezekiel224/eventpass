@@ -6,8 +6,9 @@ import { getBranding } from "@/lib/branding";
 import type { Branding } from "@/lib/branding";
 import { cn } from "@/lib/utils";
 
-export async function Sidebar({ active = "Dashboard", branding: providedBranding }: { active?: string; branding?: Branding }) {
+export async function Sidebar({ active = "Dashboard", branding: providedBranding, permissions = [] }: { active?: string; branding?: Branding; permissions?: string[] }) {
   const branding = providedBranding ?? await getBranding();
+  const allowedNavigation = dashboardNav.filter((item) => permissions.includes(item.permission));
 
   return (
     <aside className="fixed inset-y-0 left-0 z-50 hidden h-dvh w-72 flex-col overflow-hidden border-r border-border/70 bg-card/95 px-4 py-5 shadow-soft backdrop-blur-2xl lg:flex">
@@ -16,7 +17,7 @@ export async function Sidebar({ active = "Dashboard", branding: providedBranding
         {branding.name}
       </Link>
       <nav className="mt-8 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pb-4">
-        {dashboardNav.map((item) => (
+        {allowedNavigation.map((item) => (
           <Link
             key={item.href}
             href={item.href}

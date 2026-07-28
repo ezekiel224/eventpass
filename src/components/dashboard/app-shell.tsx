@@ -2,18 +2,22 @@ import { Bell, LogOut } from "lucide-react";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { MobileNavigation } from "@/components/dashboard/mobile-navigation";
 import { DashboardSearch } from "@/components/dashboard/dashboard-search";
+import { getCurrentUser } from "@/lib/auth";
+import { getAuthorizationForUser } from "@/lib/authorization";
 import { getBranding } from "@/lib/branding";
 
 export async function AppShell({ children, active = "Dashboard" }: { children: React.ReactNode; active?: string }) {
-  const branding = await getBranding();
+  const [branding, currentUser] = await Promise.all([getBranding(), getCurrentUser()]);
+  const authorization = currentUser ? await getAuthorizationForUser(currentUser.id) : null;
+  const permissions = [...(authorization?.permissions ?? [])];
 
   return (
     <div className="surface-grid min-h-screen">
-      <Sidebar active={active} branding={branding} />
+      <Sidebar active={active} branding={branding} permissions={permissions} />
       <div className="lg:pl-72">
         <header className="sticky top-0 z-30 border-b border-border/70 bg-background/70 backdrop-blur-2xl">
           <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
-            <MobileNavigation branding={branding} active={active} />
+            <MobileNavigation branding={branding} active={active} permissions={permissions} />
             <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:hidden">{active}</span>
             <DashboardSearch />
             <button className="focus-ring hidden h-10 w-10 items-center justify-center rounded-xl border border-border/80 bg-card/72 text-muted-foreground transition hover:border-primary/40 hover:text-foreground sm:flex" aria-label="Notifications">

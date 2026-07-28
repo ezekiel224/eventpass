@@ -1,8 +1,9 @@
 "use client";
 
-import { CalendarDays, Download, ExternalLink, Mail, Search, Star, Trash2, UserPlus } from "lucide-react";
+import { CalendarDays, Download, ExternalLink, Mail, Pencil, Save, Search, Star, Trash2, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { AgeChoice } from "@/components/ui/age-choice";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,10 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
   const [filter, setFilter] = useState("all");
   const [sort, setSort] = useState("name");
   const [form, setForm] = useState(initialForm);
+  const [editingAttendeeId, setEditingAttendeeId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState(initialForm);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editMessage, setEditMessage] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -116,6 +121,10 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
   async function addAttendee(event: FormEvent) {
     event.preventDefault();
     setMessage("");
+    if (!form.under21 || (form.plusOneEnabled && !form.plusOneUnder21)) {
+      setMessage("Confirm the age status for the attendee and plus-one.");
+      return;
+    }
     const response = await fetch("/api/attendees", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -155,6 +164,83 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ vip: !attendee.vip, ticketTier: attendee.vip ? "General" : attendee.ticketTier })
     });
+    await loadData(selectedEventId);
+  }
+
+  function startEditing(attendee: AttendeeSummary) {
+    setEditingAttendeeId(attendee.id);
+    setEditForm({
+      eventId: attendee.eventId,
+      firstName: attendee.firstName,
+      lastName: attendee.lastName,
+      email: attendee.email,
+      phone: attendee.phone ?? "",
+      company: attendee.company ?? "",
+      under21: attendee.under21 ? "yes" : "no",
+      selectedAllergens: attendee.selectedAllergens,
+      plusOneEnabled: attendee.plusOneEnabled,
+      plusOneFirstName: attendee.plusOneFirstName ?? "",
+      plusOneLastName: attendee.plusOneLastName ?? "",
+      plusOneUnder21: attendee.plusOneUnder21 ? "yes" : "no",
+      plusOneAllergens: attendee.plusOneAllergens,
+      ticketTier: attendee.ticketTier,
+      seat: attendee.seat ?? "",
+      notes: attendee.notes ?? "",
+      vip: attendee.vip
+    });
+    setMessage("");
+    setEditMessage("");
+  }
+
+  function setEditField(name: keyof typeof editForm, value: string | boolean | string[]) {
+    setEditForm((current) => ({ ...current, [name]: value }));
+  }
+
+  function toggleEditAllergen(field: "selectedAllergens" | "plusOneAllergens", allergen: string) {
+    setEditForm((current) => {
+      const selected = current[field];
+      return {
+        ...current,
+        [field]: selected.includes(allergen) ? selected.filter((item) => item !== allergen) : [...selected, allergen]
+      };
+    });
+  }
+
+  async function saveAttendee(event: FormEvent) {
+    event.preventDefault();
+    if (!editingAttendeeId) return;
+    setSavingEdit(true);
+    setEditMessage("");
+    const response = await fetch(`/api/attendees/${editingAttendeeId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        firstName: editForm.firstName,
+        lastName: editForm.lastName,
+        email: editForm.email,
+        phone: editForm.phone || undefined,
+        company: editForm.company || undefined,
+        under21: editForm.under21 === "yes",
+        selectedAllergens: editForm.selectedAllergens,
+        plusOneEnabled: editForm.plusOneEnabled,
+        plusOneFirstName: editForm.plusOneEnabled ? editForm.plusOneFirstName : undefined,
+        plusOneLastName: editForm.plusOneEnabled ? editForm.plusOneLastName : undefined,
+        plusOneUnder21: editForm.plusOneEnabled ? editForm.plusOneUnder21 === "yes" : false,
+        plusOneAllergens: editForm.plusOneEnabled ? editForm.plusOneAllergens : [],
+        ticketTier: editForm.ticketTier || "General",
+        seat: editForm.seat || undefined,
+        notes: editForm.notes || undefined,
+        vip: editForm.vip
+      })
+    });
+    const data = await response.json();
+    setSavingEdit(false);
+    if (!response.ok) {
+      setEditMessage(typeof data.error === "string" ? data.error : "Could not update attendee pass.");
+      return;
+    }
+    setMessage(`Pass details updated for ${editForm.firstName} ${editForm.lastName}.`);
+    setEditingAttendeeId(null);
     await loadData(selectedEventId);
   }
 
@@ -227,17 +313,11 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
           <Input value={form.email} onChange={(event) => setField("email", event.target.value)} placeholder="Email" type="email" required />
           <Input value={form.phone} onChange={(event) => setField("phone", event.target.value)} placeholder="Phone" />
           <Input value={form.company} onChange={(event) => setField("company", event.target.value)} placeholder="Company" />
-          <select
-            value={form.under21}
-            onChange={(event) => setField("under21", event.target.value)}
-            className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm"
-            aria-label="Attendee under 21"
-            required
-          >
-            <option value="">Is attendee under 21?</option>
-            <option value="no">No</option>
-            <option value="yes">Yes</option>
-          </select>
+          <AgeChoice
+            value={form.under21 as "" | "yes" | "no"}
+            onChange={(value) => setField("under21", value)}
+            subject="attendee"
+          />
           {selectedEvent?.allergenOptions.length ? (
             <div className="rounded-xl border border-border p-3">
               <p className="text-sm font-medium">Allergens</p>
@@ -266,17 +346,11 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
                 <Input value={form.plusOneFirstName} onChange={(event) => setField("plusOneFirstName", event.target.value)} placeholder="Plus-one first name" />
                 <Input value={form.plusOneLastName} onChange={(event) => setField("plusOneLastName", event.target.value)} placeholder="Plus-one last name" />
               </div>
-              <select
-                value={form.plusOneUnder21}
-                onChange={(event) => setField("plusOneUnder21", event.target.value)}
-                className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm"
-                aria-label="Plus-one under 21"
-                required
-              >
-                <option value="">Is plus-one under 21?</option>
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
-              </select>
+              <AgeChoice
+                value={form.plusOneUnder21 as "" | "yes" | "no"}
+                onChange={(value) => setField("plusOneUnder21", value)}
+                subject="plus-one"
+              />
               {selectedEvent?.allergenOptions.length ? (
                 <div>
                   <p className="text-sm font-medium">Plus-one allergens</p>
@@ -377,6 +451,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
                   <td className="py-4">
                     <div className="flex gap-1">
                       <Link href={`/pass/${attendee.id}`} title="Open event pass" aria-label="Open event pass"><Button variant="ghost" className="h-9 w-9 px-0"><ExternalLink className="h-4 w-4" /></Button></Link>
+                      <Button title="Edit attendee pass" aria-label="Edit attendee pass" variant="ghost" className="h-9 w-9 px-0" onClick={() => startEditing(attendee)}><Pencil className="h-4 w-4" /></Button>
                       <Button title="Send event pass" aria-label="Send event pass" variant="ghost" className="h-9 w-9 px-0" onClick={() => void sendPass(attendee)}><Mail className="h-4 w-4" /></Button>
                       <Button title="Toggle VIP" aria-label="Toggle VIP" variant="ghost" className="h-9 w-9 px-0" onClick={() => void toggleVip(attendee)}><Star className="h-4 w-4" /></Button>
                       <Button title="Delete attendee" aria-label="Delete attendee" variant="ghost" className="h-9 w-9 px-0" onClick={() => void deleteAttendee(attendee.id)}><Trash2 className="h-4 w-4" /></Button>
@@ -389,6 +464,91 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
         </div>
       </Card>
       </div>
+      {editingAttendeeId ? (
+        <Card className="p-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold">Edit attendee pass</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Changes appear on the attendee’s digital pass immediately.</p>
+            </div>
+            <Button type="button" variant="ghost" className="h-9 w-9 px-0" aria-label="Close pass editor" onClick={() => setEditingAttendeeId(null)}><X className="h-4 w-4" /></Button>
+          </div>
+          <form className="mt-5 grid gap-4" onSubmit={saveAttendee}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="grid gap-1.5 text-sm font-medium">First name<Input value={editForm.firstName} onChange={(event) => setEditField("firstName", event.target.value)} required /></label>
+              <label className="grid gap-1.5 text-sm font-medium">Last name<Input value={editForm.lastName} onChange={(event) => setEditField("lastName", event.target.value)} required /></label>
+              <label className="grid gap-1.5 text-sm font-medium">Email<Input value={editForm.email} onChange={(event) => setEditField("email", event.target.value)} type="email" required /></label>
+              <label className="grid gap-1.5 text-sm font-medium">Phone<Input value={editForm.phone} onChange={(event) => setEditField("phone", event.target.value)} /></label>
+              <label className="grid gap-1.5 text-sm font-medium">Company<Input value={editForm.company} onChange={(event) => setEditField("company", event.target.value)} /></label>
+              <label className="grid gap-1.5 text-sm font-medium">Ticket tier<Input value={editForm.ticketTier} onChange={(event) => setEditField("ticketTier", event.target.value)} /></label>
+              <label className="grid gap-1.5 text-sm font-medium">Seat / gate<Input value={editForm.seat} onChange={(event) => setEditField("seat", event.target.value)} /></label>
+              <label className="flex items-center gap-2 self-end rounded-xl border border-border p-3 text-sm">
+                <input type="checkbox" checked={editForm.vip} onChange={(event) => setEditField("vip", event.target.checked)} className="h-4 w-4 accent-primary" />
+                Mark VIP
+              </label>
+            </div>
+
+            <AgeChoice
+              value={editForm.under21 as "" | "yes" | "no"}
+              onChange={(value) => setEditField("under21", value)}
+              subject="attendee"
+            />
+
+            {selectedEvent?.allergenOptions.length ? (
+              <div className="rounded-xl border border-border p-3">
+                <p className="text-sm font-medium">Attendee allergens</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {selectedEvent.allergenOptions.map((allergen) => (
+                    <label key={allergen} className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm">
+                      <input type="checkbox" checked={editForm.selectedAllergens.includes(allergen)} onChange={() => toggleEditAllergen("selectedAllergens", allergen)} className="h-4 w-4 accent-primary" />
+                      {allergen}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
+              <input type="checkbox" checked={editForm.plusOneEnabled} onChange={(event) => setEditField("plusOneEnabled", event.target.checked)} className="h-4 w-4 accent-primary" />
+              Include plus-one
+            </label>
+
+            {editForm.plusOneEnabled ? (
+              <div className="grid gap-4 rounded-2xl border border-border p-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="grid gap-1.5 text-sm font-medium">Plus-one first name<Input value={editForm.plusOneFirstName} onChange={(event) => setEditField("plusOneFirstName", event.target.value)} /></label>
+                  <label className="grid gap-1.5 text-sm font-medium">Plus-one last name<Input value={editForm.plusOneLastName} onChange={(event) => setEditField("plusOneLastName", event.target.value)} /></label>
+                </div>
+                <AgeChoice
+                  value={editForm.plusOneUnder21 as "" | "yes" | "no"}
+                  onChange={(value) => setEditField("plusOneUnder21", value)}
+                  subject="plus-one"
+                />
+                {selectedEvent?.allergenOptions.length ? (
+                  <div>
+                    <p className="text-sm font-medium">Plus-one allergens</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {selectedEvent.allergenOptions.map((allergen) => (
+                        <label key={allergen} className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm">
+                          <input type="checkbox" checked={editForm.plusOneAllergens.includes(allergen)} onChange={() => toggleEditAllergen("plusOneAllergens", allergen)} className="h-4 w-4 accent-primary" />
+                          {allergen}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <label className="grid gap-1.5 text-sm font-medium">Internal notes<Input value={editForm.notes} onChange={(event) => setEditField("notes", event.target.value)} /></label>
+            {editMessage ? <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{editMessage}</p> : null}
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setEditingAttendeeId(null)}>Cancel</Button>
+              <Button type="submit" disabled={savingEdit}><Save className="h-4 w-4" /> {savingEdit ? "Saving…" : "Save pass changes"}</Button>
+            </div>
+          </form>
+        </Card>
+      ) : null}
     </div>
   );
 }

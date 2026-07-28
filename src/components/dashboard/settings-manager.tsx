@@ -1,6 +1,7 @@
 "use client";
 
 import { KeyRound, Palette, Save, Users } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -145,13 +146,15 @@ export function SettingsManager() {
           <Users className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">User management</h2>
         </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          {["Admin", "Staff", "Super Admin"].map((role) => (
-            <div key={role} className="rounded-xl border border-border p-4">
-              <p className="font-semibold">{role}</p>
-              <p className="mt-2 text-sm text-muted-foreground">Role-based permissions for dashboard access and check-in operations.</p>
-            </div>
-          ))}
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <Link href="/admin/settings/accounts" className="focus-ring rounded-xl border border-border p-4 transition hover:border-primary/40 hover:bg-muted/50">
+            <p className="font-semibold">Accounts</p>
+            <p className="mt-2 text-sm text-muted-foreground">Create accounts, assign roles, and set direct permission overrides.</p>
+          </Link>
+          <Link href="/admin/settings/permissions" className="focus-ring rounded-xl border border-border p-4 transition hover:border-primary/40 hover:bg-muted/50">
+            <p className="font-semibold">Roles & permissions</p>
+            <p className="mt-2 text-sm text-muted-foreground">Manage the permission matrix, custom roles, and security audit history.</p>
+          </Link>
         </div>
       </Card>
     </div>

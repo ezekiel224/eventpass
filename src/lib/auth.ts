@@ -51,8 +51,11 @@ export async function getCurrentUser() {
     select: {
       id: true,
       email: true,
+      username: true,
       name: true,
-      role: true
+      role: true,
+      active: true,
+      mustChangePassword: true
     }
   });
 }
@@ -62,6 +65,14 @@ export async function requireAdmin() {
 
   if (!user) {
     redirect("/login");
+  }
+
+  if (!user.active) {
+    redirect("/login");
+  }
+
+  if (user.mustChangePassword) {
+    redirect("/change-password");
   }
 
   return user;

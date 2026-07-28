@@ -6,9 +6,9 @@ import { prisma } from "@/lib/db";
 import { rateLimit } from "@/services/rate-limit";
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  identifier: z.string().trim().min(3).max(254),
   password: z.string().min(1)
-});
+}).strict();
 
 export async function POST(request: NextRequest) {
   const limited = rateLimit(`login:${request.headers.get("x-forwarded-for") ?? "local"}`, 10);
@@ -21,14 +21,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid login request" }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: parsed.data.email.toLowerCase() }
+  const identifier = parsed.data.identifier.toLowerCase();
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email: identifier },
+        { username: identifier }
+      ]
+    }
   });
 
-  if (!user?.passwordHash || !(await compare(parsed.data.password, user.passwordHash))) {
+  if (!user?.passwordHash || !user.active || !(await compare(parsed.data.password, user.passwordHash))) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
   await setSessionCookie(user);
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, mustChangePassword: user.mustChangePassword });
 }
