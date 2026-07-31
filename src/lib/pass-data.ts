@@ -36,6 +36,7 @@ type ExistingPassSource = {
     logoUrl: string | null;
     primaryColor: string;
     accentColor: string;
+    timezone: string;
   };
   qrDataUrl: string | null;
 };
@@ -49,8 +50,8 @@ export function normalizeExistingPass(source: ExistingPassSource): NormalizedPas
   return {
     eventName: source.event.name,
     eventSubtitle: null,
-    eventDate: formatDate(source.event.startsAt),
-    eventTime: `${formatTime(source.event.startsAt)} – ${formatTime(source.event.endsAt)}`,
+    eventDate: formatDate(source.event.startsAt, source.branding.timezone),
+    eventTime: `${formatTime(source.event.startsAt, source.branding.timezone)} – ${formatTime(source.event.endsAt, source.branding.timezone)}`,
     venueName: source.event.venue,
     venueLocation: source.event.address || null,
     gate: source.attendee.seat,

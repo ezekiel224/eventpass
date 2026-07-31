@@ -16,6 +16,7 @@ export interface EventPassDetails {
   passId?: string;
   company?: string;
   accessLevel?: string;
+  raffleTickets?: number | null;
   qrImageUrl?: string | null;
   showMap?: boolean;
 }

@@ -9,6 +9,7 @@ export type Branding = {
   accentColor: string;
   primaryHsl: string;
   accentHsl: string;
+  timezone: string;
 };
 
 const fallbackBranding: Branding = {
@@ -17,7 +18,8 @@ const fallbackBranding: Branding = {
   primaryColor: "#14f1cc",
   accentColor: "#14f1cc",
   primaryHsl: "168 92% 48%",
-  accentHsl: "168 92% 48%"
+  accentHsl: "168 92% 48%",
+  timezone: "America/Chicago"
 };
 
 export const getBranding = cache(async (): Promise<Branding> => {
@@ -30,7 +32,8 @@ export const getBranding = cache(async (): Promise<Branding> => {
       primaryColor: organization.primaryColor,
       accentColor: organization.accentColor,
       primaryHsl: hexToHslParts(organization.primaryColor, fallbackBranding.primaryHsl),
-      accentHsl: hexToHslParts(organization.accentColor, fallbackBranding.accentHsl)
+      accentHsl: hexToHslParts(organization.accentColor, fallbackBranding.accentHsl),
+      timezone: organization.timezone
     };
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {

@@ -2,7 +2,7 @@ import { QrCode, ShieldCheck } from "lucide-react";
 import { notFound } from "next/navigation";
 import { PassDownloadButton } from "@/components/pass/pass-download-button";
 import { CalendarButtons } from "@/components/pass/calendar-buttons";
-import { PassExperience } from "@/components/pass/pass-experience";
+import { LivePassExperience } from "@/components/pass/live-pass-experience";
 import { isPassTheme } from "@/components/pass/pass-system";
 import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
@@ -22,7 +22,14 @@ export default async function PassPage({
   const { attendeeId } = await params;
   const attendee = await prisma.attendee.findUnique({
     where: { id: attendeeId },
-    include: { event: true, pass: true }
+    include: {
+      event: true,
+      pass: true,
+      raffleEntries: {
+        where: { prize: { status: "ACTIVE" } },
+        select: { ticketCount: true }
+      }
+    }
   });
 
   if (!attendee || !attendee.pass) notFound();
@@ -36,6 +43,10 @@ export default async function PassPage({
   const plusOneName = attendee.plusOneEnabled ? `${attendee.plusOneFirstName ?? ""} ${attendee.plusOneLastName ?? ""}`.trim() || null : null;
   const under21Alert = attendee.under21 || attendee.plusOneUnder21;
   const eventTheme = isPassTheme(event.passTheme) ? event.passTheme : "minimal";
+  const remainingRaffleTickets = Math.max(
+    0,
+    attendee.raffleTickets - attendee.raffleEntries.reduce((sum, entry) => sum + entry.ticketCount, 0)
+  );
   const passData = normalizeExistingPass({
     event: {
       name: event.name,
@@ -54,7 +65,7 @@ export default async function PassPage({
       company: attendee.company,
       ticketTier: attendee.ticketTier,
       vip: attendee.vip,
-      raffleTickets: attendee.raffleTickets,
+      raffleTickets: remainingRaffleTickets,
       seat: attendee.seat,
       status: attendee.status,
       plusOneName,
@@ -70,7 +81,7 @@ export default async function PassPage({
   return (
     <main className={styles.passPage} data-pass-theme={eventTheme}>
       <div className={styles.content}>
-        <PassExperience data={passData} theme={eventTheme} />
+        <LivePassExperience attendeeId={attendee.id} initialData={passData} theme={eventTheme} />
 
         <section className={styles.actionDock} aria-label="Pass actions">
           {under21Alert ? (
@@ -89,8 +100,8 @@ export default async function PassPage({
               eventName={event.name}
               organizer={event.organizer}
               venue={event.venue}
-              eventDate={formatDate(event.startsAt)}
-              eventTime={`${formatTime(event.startsAt)} - ${formatTime(event.endsAt)}`}
+              eventDate={formatDate(event.startsAt, branding.timezone)}
+              eventTime={`${formatTime(event.startsAt, branding.timezone)} - ${formatTime(event.endsAt, branding.timezone)}`}
               fallbackCode={attendee.pass.fallbackCode}
               ticketTier={attendee.ticketTier}
               company={attendee.company}

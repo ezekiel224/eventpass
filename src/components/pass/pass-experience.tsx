@@ -45,6 +45,7 @@ export function PassExperience({
         passId={data.passId}
         company={data.company ?? undefined}
         accessLevel={data.accessLevel ?? undefined}
+        raffleTickets={data.raffleTickets}
         showMap={!staticPreview}
         forceReducedMotion={forceReducedMotion}
         face={face}

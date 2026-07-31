@@ -114,6 +114,7 @@ export function IceCreamPass(props: InteractivePassProps) {
     ["Serving", props.ticketType],
     ["Guest", props.guestName],
     ["Access", props.accessLevel ?? props.ticketType],
+    ["Raffle tickets", String(props.raffleTickets ?? 0)],
     ["Date", props.eventDate],
     ["Time", props.eventTime ?? "See event schedule"],
     ["Venue", props.venue ?? "See event details"],
@@ -158,6 +159,9 @@ export function IceCreamPass(props: InteractivePassProps) {
                   <span className={`${styles.flavorSeal} inline-flex items-center gap-1.5 px-3 py-1.5 text-[8px] font-black uppercase tracking-[.18em]`} style={{ color: accent }}>
                     <IceCreamCone className="h-3.5 w-3.5" /> {props.ticketType}
                   </span>
+                  <p className="mt-2 text-[8px] font-black uppercase tracking-[.18em]" aria-live="polite">
+                    {props.raffleTickets ?? 0} raffle {props.raffleTickets === 1 ? "ticket" : "tickets"} remaining
+                  </p>
                   <p className="mt-4 text-[8px] font-black uppercase tracking-[.25em] opacity-50">Hand-packed for</p>
                   <p className="mt-1 line-clamp-2 text-xl font-black leading-none tracking-[-.04em]">{props.guestName}</p>
                 </div>
