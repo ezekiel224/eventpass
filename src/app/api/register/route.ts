@@ -5,6 +5,7 @@ import { attendeeInclude, createPassForAttendee, serializeAttendee, stringifyStr
 import { publicAttendeeRegistrationSchema } from "@/lib/validation";
 import { renderPassEmail, sendEmail } from "@/services/email";
 import { rateLimit } from "@/services/rate-limit";
+import { formatDate, formatTime } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -54,13 +55,24 @@ export async function POST(request: NextRequest) {
 
   try {
     const branding = await getBranding();
+    const qrImageUrl = `${process.env.APP_URL ?? "http://localhost:3000"}/api/pass/${attendee.id}/qr`;
     const delivery = await sendEmail({
       to: parsed.data.email,
       subject: `Your pass for ${event.name}`,
       html: renderPassEmail({
         name: `${parsed.data.firstName} ${parsed.data.lastName}`,
         eventName: event.name,
+        eventDescription: event.description,
+        venue: event.venue,
+        address: event.address,
+        eventDate: formatDate(event.startsAt, branding.timezone),
+        eventTime: `${formatTime(event.startsAt, branding.timezone)} - ${formatTime(event.endsAt, branding.timezone)}`,
+        ticketTier: attendee.ticketTier,
+        seat: attendee.seat,
+        organizer: event.organizer,
+        contactEmail: event.contactEmail,
         passUrl,
+        qrImageUrl,
         fallbackCode: pass.fallbackCode,
         organizationName: branding.name,
         primaryColor: branding.primaryColor

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
 import { renderPassEmail, sendEmail } from "@/services/email";
+import { formatDate, formatTime } from "@/lib/utils";
 
 type Params = { params: Promise<{ attendeeId: string }> };
 
@@ -29,13 +30,24 @@ export async function POST(_request: Request, { params }: Params) {
 
   try {
     const branding = await getBranding();
+    const qrImageUrl = `${process.env.APP_URL ?? "http://localhost:3000"}/api/pass/${attendee.id}/qr`;
     const delivery = await sendEmail({
       to: attendee.email,
       subject,
       html: renderPassEmail({
         name: `${attendee.firstName} ${attendee.lastName}`,
         eventName: attendee.event.name,
+        eventDescription: attendee.event.description,
+        venue: attendee.event.venue,
+        address: attendee.event.address,
+        eventDate: formatDate(attendee.event.startsAt, branding.timezone),
+        eventTime: `${formatTime(attendee.event.startsAt, branding.timezone)} - ${formatTime(attendee.event.endsAt, branding.timezone)}`,
+        ticketTier: attendee.ticketTier,
+        seat: attendee.seat,
+        organizer: attendee.event.organizer,
+        contactEmail: attendee.event.contactEmail,
         passUrl,
+        qrImageUrl,
         fallbackCode: attendee.pass.fallbackCode,
         organizationName: branding.name,
         primaryColor: branding.primaryColor
