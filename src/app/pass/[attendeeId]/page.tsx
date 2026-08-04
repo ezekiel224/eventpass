@@ -71,6 +71,8 @@ export default async function PassPage({
       plusOneName,
       selectedAllergens,
       plusOneAllergens,
+      selectedMenu: attendee.selectedMenu,
+      plusOneMenu: attendee.plusOneMenu,
       under21Alert
     },
     pass: { id: attendee.pass.id, fallbackCode: attendee.pass.fallbackCode },
@@ -106,6 +108,7 @@ export default async function PassPage({
               ticketTier={attendee.ticketTier}
               company={attendee.company}
               selectedAllergens={selectedAllergens}
+              selectedMenu={attendee.selectedMenu}
               plusOneName={plusOneName}
               under21Alert={under21Alert}
               qrDataUrl={qrDataUrl}

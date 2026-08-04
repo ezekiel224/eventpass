@@ -293,10 +293,11 @@ export function CollectiblePass({
               {data.perks.length > 0 ? (
                 <div className={styles.perks}><span>Included</span><ul>{data.perks.map((perk) => <li key={perk}>{perk}</li>)}</ul></div>
               ) : null}
-              {(data.companionName || data.advisories.length > 0 || data.under21Alert) ? (
+              {(data.companionName || data.advisories.length > 0 || data.menuSelections.length > 0 || data.under21Alert) ? (
                 <div className={styles.advisories}>
                   {data.companionName ? <p>Companion: {data.companionName}</p> : null}
                   {data.advisories.length > 0 ? <p>Allergens: {data.advisories.join(", ")}</p> : null}
+                  {data.menuSelections.length > 0 ? <p>Menu: {data.menuSelections.join(" · ")}</p> : null}
                   {data.under21Alert ? <p>Age verification required at check-in</p> : null}
                 </div>
               ) : null}

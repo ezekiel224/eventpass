@@ -15,14 +15,16 @@ const initialForm = {
   company: "",
   under21: "",
   selectedAllergens: [] as string[],
+  selectedMenu: "",
   plusOneEnabled: false,
   plusOneFirstName: "",
   plusOneLastName: "",
   plusOneUnder21: "",
-  plusOneAllergens: [] as string[]
+  plusOneAllergens: [] as string[],
+  plusOneMenu: ""
 };
 
-export function RegisterForm({ eventId, allergenOptions }: { eventId: string; allergenOptions: string[] }) {
+export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventId: string; allergenOptions: string[]; menuOptions: string[] }) {
   const router = useRouter();
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState("");
@@ -62,11 +64,13 @@ export function RegisterForm({ eventId, allergenOptions }: { eventId: string; al
         company: form.company || undefined,
         under21: form.under21 === "yes",
         selectedAllergens: form.selectedAllergens,
+        selectedMenu: form.selectedMenu || undefined,
         plusOneEnabled: form.plusOneEnabled,
         plusOneFirstName: form.plusOneEnabled ? form.plusOneFirstName : undefined,
         plusOneLastName: form.plusOneEnabled ? form.plusOneLastName : undefined,
         plusOneUnder21: form.plusOneEnabled ? form.plusOneUnder21 === "yes" : false,
-        plusOneAllergens: form.plusOneEnabled ? form.plusOneAllergens : []
+        plusOneAllergens: form.plusOneEnabled ? form.plusOneAllergens : [],
+        plusOneMenu: form.plusOneEnabled ? form.plusOneMenu || undefined : undefined
       })
     });
     const data = await response.json();
@@ -107,6 +111,15 @@ export function RegisterForm({ eventId, allergenOptions }: { eventId: string; al
           </div>
         </div>
       ) : null}
+      {menuOptions.length > 0 ? (
+        <label className="grid gap-2 rounded-xl border border-border p-3 text-sm font-medium">
+          Menu selection
+          <select value={form.selectedMenu} onChange={(event) => setField("selectedMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal" required>
+            <option value="">Choose a menu option</option>
+            {menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+          </select>
+        </label>
+      ) : null}
       <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
         <input type="checkbox" checked={form.plusOneEnabled} onChange={(event) => setField("plusOneEnabled", event.target.checked)} className="h-4 w-4 accent-primary" />
         Add a plus-one
@@ -139,6 +152,15 @@ export function RegisterForm({ eventId, allergenOptions }: { eventId: string; al
                 ))}
               </div>
             </div>
+          ) : null}
+          {menuOptions.length > 0 ? (
+            <label className="grid gap-2 text-sm font-medium">
+              Plus-one menu selection
+              <select value={form.plusOneMenu} onChange={(event) => setField("plusOneMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal" required>
+                <option value="">Choose a menu option</option>
+                {menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+              </select>
+            </label>
           ) : null}
         </div>
       ) : null}

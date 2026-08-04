@@ -43,6 +43,7 @@ async function previewData(): Promise<NormalizedPassData> {
       status: null,
       companionName: null,
       advisories: [],
+      menuSelections: [],
       under21Alert: false
     };
   }
@@ -77,6 +78,8 @@ async function previewData(): Promise<NormalizedPassData> {
       plusOneName,
       selectedAllergens,
       plusOneAllergens,
+      selectedMenu: attendee.selectedMenu,
+      plusOneMenu: attendee.plusOneMenu,
       under21Alert: attendee.under21 || attendee.plusOneUnder21
     },
     pass: { id: attendee.pass.id, fallbackCode: attendee.pass.fallbackCode },

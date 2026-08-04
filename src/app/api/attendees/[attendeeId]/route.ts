@@ -20,7 +20,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     data: {
       ...parsed.data,
       selectedAllergens: stringifyStringArray(parsed.data.selectedAllergens),
+      selectedMenu: parsed.data.selectedMenu || null,
       plusOneAllergens: stringifyStringArray(parsed.data.plusOneAllergens),
+      plusOneMenu: parsed.data.plusOneEnabled === false ? null : parsed.data.plusOneMenu || null,
       plusOneUnder21: parsed.data.plusOneEnabled === false ? false : parsed.data.plusOneUnder21,
       customAnswers: parsed.data.customAnswers ? JSON.stringify(parsed.data.customAnswers) : undefined
     },

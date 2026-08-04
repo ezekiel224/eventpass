@@ -9,6 +9,7 @@ export type EventSummary = {
   capacity: number;
   photoUrl: string | null;
   allergenOptions: string[];
+  menuOptions: string[];
   organizer: string;
   contactEmail: string;
   contactPhone: string | null;
@@ -30,17 +31,19 @@ export type AttendeeSummary = {
   firstName: string;
   lastName: string;
   name: string;
-  email: string;
+  email: string | null;
   phone: string | null;
   company: string | null;
   birthDate: string | null;
   selectedAllergens: string[];
+  selectedMenu: string | null;
   plusOneEnabled: boolean;
   plusOneFirstName: string | null;
   plusOneLastName: string | null;
   plusOneName: string | null;
   plusOneBirthDate: string | null;
   plusOneAllergens: string[];
+  plusOneMenu: string | null;
   under21: boolean;
   plusOneUnder21: boolean;
   ticketTier: string;

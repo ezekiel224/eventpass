@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { serializeRaffleAttendee } from "@/lib/raffle-attendee";
 
 type Params = { params: Promise<{ eventId: string }> };
 
@@ -59,26 +60,6 @@ function serializeRaffle(prizes: Awaited<ReturnType<typeof getPrizes>>, attendee
       }))
     })),
     attendees: attendees.map(serializeRaffleAttendee)
-  };
-}
-
-export function serializeRaffleAttendee(attendee: Awaited<ReturnType<typeof getAttendees>>[number]) {
-  const assignedTickets = attendee.raffleEntries.reduce((sum, entry) => sum + entry.ticketCount, 0);
-
-  return {
-    id: attendee.id,
-    name: `${attendee.firstName} ${attendee.lastName}`,
-    email: attendee.email,
-    company: attendee.company,
-    eventId: attendee.eventId,
-    raffleTickets: attendee.raffleTickets,
-    assignedTickets,
-    remainingTickets: attendee.raffleTickets - assignedTickets,
-    entries: attendee.raffleEntries.map((entry) => ({
-      prizeId: entry.prizeId,
-      ticketCount: entry.ticketCount
-    })),
-    fallbackCode: attendee.pass?.fallbackCode ?? null
   };
 }
 

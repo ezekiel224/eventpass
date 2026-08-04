@@ -15,6 +15,7 @@ type PassDownloadButtonProps = {
   ticketTier: string;
   company: string | null;
   selectedAllergens: string[];
+  selectedMenu: string | null;
   plusOneName: string | null;
   under21Alert: boolean;
   qrDataUrl: string;
@@ -47,6 +48,7 @@ export function PassDownloadButton({
   ticketTier,
   company,
   selectedAllergens,
+  selectedMenu,
   plusOneName,
   under21Alert,
   qrDataUrl,
@@ -60,6 +62,7 @@ export function PassDownloadButton({
       eventTime,
       `Fallback: ${fallbackCode}`,
       selectedAllergens.length > 0 ? `Allergens: ${selectedAllergens.join(", ")}` : "",
+      selectedMenu ? `Menu: ${selectedMenu}` : "",
       plusOneName ? `Plus-one: ${plusOneName}` : ""
     ].filter(Boolean);
     const detailRows = details.map((detail, index) => (

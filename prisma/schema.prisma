@@ -136,6 +136,7 @@ model Event {
   bannerImageUrl            String?
   logoUrl                   String?
   allergenOptions           String?
+  menuOptions               String?
   organizer                 String
   contactEmail              String
   contactPhone              String?
@@ -159,16 +160,18 @@ model Attendee {
   event             Event         @relation(fields: [eventId], references: [id])
   firstName         String
   lastName          String
-  email             String
+  email             String?
   phone             String?
   company           String?
   birthDate         DateTime?
   selectedAllergens String?
+  selectedMenu      String?
   plusOneEnabled    Boolean       @default(false)
   plusOneFirstName  String?
   plusOneLastName   String?
   plusOneBirthDate  DateTime?
   plusOneAllergens  String?
+  plusOneMenu       String?
   under21           Boolean       @default(false)
   plusOneUnder21    Boolean       @default(false)
   ticketTier        String        @default("General")

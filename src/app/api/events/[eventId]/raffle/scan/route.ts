@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { serializeRaffleAttendee } from "@/app/api/events/[eventId]/raffle/route";
+import { serializeRaffleAttendee } from "@/lib/raffle-attendee";
 import { qrValidationSchema } from "@/lib/validation";
 import { verifyQrPayload } from "@/services/qr";
 

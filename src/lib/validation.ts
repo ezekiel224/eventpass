@@ -19,6 +19,7 @@ export const eventFieldsSchema = z.object({
     }
   }, "Enter a complete http:// or https:// image URL.").optional(),
   allergenOptions: z.array(z.string().min(1).max(80)).optional(),
+  menuOptions: z.array(z.string().min(1).max(120)).optional(),
   organizer: z.string().trim().min(2, "Enter the organizer name.").max(120, "Keep the organizer name under 120 characters."),
   contactEmail: z.string().trim().email("Enter a valid contact email address."),
   contactPhone: z.string().trim().max(40, "Keep the phone number under 40 characters.").optional(),
@@ -55,16 +56,18 @@ export const attendeeRegistrationSchema = z.object({
   eventId: z.string().min(3),
   firstName: z.string().min(1).max(80),
   lastName: z.string().min(1).max(80),
-  email: z.string().email(),
+  email: z.union([z.string().email(), z.literal(""), z.null()]).optional(),
   phone: z.string().max(40).optional(),
   company: z.string().max(120).optional(),
   under21: z.boolean().optional(),
   selectedAllergens: z.array(z.string().min(1).max(80)).optional(),
+  selectedMenu: z.string().max(120).optional(),
   plusOneEnabled: z.boolean().optional(),
   plusOneFirstName: z.string().max(80).optional(),
   plusOneLastName: z.string().max(80).optional(),
   plusOneUnder21: z.boolean().optional(),
   plusOneAllergens: z.array(z.string().min(1).max(80)).optional(),
+  plusOneMenu: z.string().max(120).optional(),
   ticketTier: z.string().max(80).optional(),
   seat: z.string().max(80).optional(),
   notes: z.string().max(1000).optional(),
@@ -78,7 +81,7 @@ export const publicAttendeeRegistrationSchema = attendeeRegistrationSchema.omit(
   ticketTier: true,
   seat: true,
   customAnswers: true
-});
+}).extend({ email: z.string().email() });
 
 export const attendeeUpdateSchema = attendeeRegistrationSchema.omit({ eventId: true }).partial().extend({
   status: z.string().max(40).optional()

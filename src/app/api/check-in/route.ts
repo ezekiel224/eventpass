@@ -98,11 +98,11 @@ export async function POST(request: NextRequest) {
     duplicate,
     under21Alert: updated.under21 || updated.plusOneUnder21,
     under21Message: updated.under21 && updated.plusOneUnder21
-      ? "Attendee and plus-one self-identified as under 21."
+      ? "Primary attendee and guest self-identified as under 21."
       : updated.under21
-        ? "Attendee self-identified as under 21."
+        ? "Primary attendee self-identified as under 21."
         : updated.plusOneUnder21
-          ? "Plus-one self-identified as under 21."
+          ? "Guest self-identified as under 21."
           : null,
     checkedInAt: checkIn.scannedAt.toISOString(),
     attendee: serializeAttendee(updated)

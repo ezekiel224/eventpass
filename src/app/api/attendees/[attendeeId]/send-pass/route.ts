@@ -21,6 +21,9 @@ export async function POST(_request: Request, { params }: Params) {
   if (!attendee || !attendee.pass) {
     return NextResponse.json({ error: "Attendee or pass not found" }, { status: 404 });
   }
+  if (!attendee.email) {
+    return NextResponse.json({ error: "Add an email address before sending this pass" }, { status: 400 });
+  }
 
   const passUrl = `${process.env.APP_URL ?? "http://localhost:3000"}/pass/${attendee.id}`;
   const subject = `Your pass for ${attendee.event.name}`;

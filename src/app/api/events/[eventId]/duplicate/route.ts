@@ -37,6 +37,7 @@ export async function POST(_request: Request, { params }: Params) {
       bannerImageUrl: original.bannerImageUrl,
       logoUrl: original.logoUrl,
       allergenOptions: original.allergenOptions,
+      menuOptions: original.menuOptions,
       organizer: original.organizer,
       contactEmail: original.contactEmail,
       contactPhone: original.contactPhone,

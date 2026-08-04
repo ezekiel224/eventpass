@@ -26,6 +26,7 @@ const initialForm = {
   capacity: "100",
   photoUrl: "",
   allergenOptions: "",
+  menuOptions: "",
   registrationEnabled: true,
   qrPassesEnabled: true,
   emailConfirmationsEnabled: false,
@@ -53,6 +54,7 @@ const fieldIds: Record<EventFormField, string> = {
   capacity: "event-capacity",
   photoUrl: "event-photo-url",
   allergenOptions: "event-allergens",
+  menuOptions: "event-menu",
   registrationEnabled: "event-registration-enabled",
   qrPassesEnabled: "event-qr-enabled",
   emailConfirmationsEnabled: "event-email-enabled",
@@ -101,6 +103,8 @@ function validateEventForm(form: EventForm) {
 
   const longAllergen = form.allergenOptions.split(",").map((item) => item.trim()).find((item) => item.length > 80);
   if (longAllergen) errors.allergenOptions = `Keep each allergen option under 80 characters ("${longAllergen.slice(0, 24)}…" is too long).`;
+  const longMenuOption = form.menuOptions.split(",").map((item) => item.trim()).find((item) => item.length > 120);
+  if (longMenuOption) errors.menuOptions = `Keep each menu option under 120 characters ("${longMenuOption.slice(0, 24)}…" is too long).`;
 
   if (form.photoUrl.trim()) {
     try {
@@ -211,6 +215,7 @@ export function EventsManager() {
           capacity: Number(form.capacity),
           photoUrl: form.photoUrl || undefined,
           allergenOptions: form.allergenOptions.split(",").map((item) => item.trim()).filter(Boolean),
+          menuOptions: form.menuOptions.split(",").map((item) => item.trim()).filter(Boolean),
           organizer: form.organizer,
           contactEmail: form.contactEmail,
           contactPhone: form.contactPhone || undefined,
@@ -396,6 +401,9 @@ export function EventsManager() {
             <FieldShell id={fieldIds.allergenOptions} label="Selectable allergens" error={errors.allergenOptions} hint="Optional. Separate choices with commas, for example: Peanuts, Dairy, Gluten.">
               <Input id={fieldIds.allergenOptions} value={form.allergenOptions} onChange={(event) => setField("allergenOptions", event.target.value)} placeholder="Peanuts, Dairy, Gluten" aria-invalid={Boolean(errors.allergenOptions)} aria-describedby={errors.allergenOptions ? `${fieldIds.allergenOptions}-error` : undefined} />
             </FieldShell>
+            <FieldShell id={fieldIds.menuOptions} label="Menu choices" error={errors.menuOptions} hint="Optional. Separate choices with commas. The menu section stays hidden when this is empty.">
+              <Input id={fieldIds.menuOptions} value={form.menuOptions} onChange={(event) => setField("menuOptions", event.target.value)} placeholder="Chicken, Vegetarian, Vegan" aria-invalid={Boolean(errors.menuOptions)} aria-describedby={errors.menuOptions ? `${fieldIds.menuOptions}-error` : undefined} />
+            </FieldShell>
             <div className="grid gap-3 text-sm sm:grid-cols-2">
             {[
               ["registrationEnabled", "Enable registration"],
@@ -459,6 +467,12 @@ export function EventsManager() {
                     {event.allergenOptions.map((allergen) => (
                       <span key={allergen} className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">{allergen}</span>
                     ))}
+                  </div>
+                ) : null}
+                {event.menuOptions.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-semibold text-muted-foreground">Menu:</span>
+                    {event.menuOptions.map((option) => <span key={option} className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary">{option}</span>)}
                   </div>
                 ) : null}
               </div>

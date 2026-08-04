@@ -32,6 +32,7 @@ export type NormalizedPassData = {
   status: string | null;
   companionName: string | null;
   advisories: string[];
+  menuSelections: string[];
   under21Alert: boolean;
 };
 

@@ -42,6 +42,7 @@ export function PassThemePreview({ baseData }: { baseData: NormalizedPassData })
       customMessage: null,
       companionName: null,
       advisories: [],
+      menuSelections: [],
       perks: [],
       sponsorLogos: []
     } : {})

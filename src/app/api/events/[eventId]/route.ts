@@ -41,7 +41,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     data: {
       ...parsed.data,
       photoUrl: parsed.data.photoUrl || undefined,
-      allergenOptions: stringifyStringArray(parsed.data.allergenOptions)
+      allergenOptions: stringifyStringArray(parsed.data.allergenOptions),
+      menuOptions: stringifyStringArray(parsed.data.menuOptions)
     },
     include: eventQueryInclude()
   });

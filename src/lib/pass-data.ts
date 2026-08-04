@@ -25,6 +25,8 @@ type ExistingPassSource = {
     plusOneName: string | null;
     selectedAllergens: string[];
     plusOneAllergens: string[];
+    selectedMenu: string | null;
+    plusOneMenu: string | null;
     under21Alert: boolean;
   };
   pass: {
@@ -75,6 +77,10 @@ export function normalizeExistingPass(source: ExistingPassSource): NormalizedPas
     status: source.attendee.status || null,
     companionName: source.attendee.plusOneName,
     advisories,
+    menuSelections: [
+      source.attendee.selectedMenu ? `Primary attendee: ${source.attendee.selectedMenu}` : "",
+      source.attendee.plusOneMenu ? `Guest: ${source.attendee.plusOneMenu}` : ""
+    ].filter(Boolean),
     under21Alert: source.attendee.under21Alert
   };
 }

@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
         ...parsed.data,
         photoUrl: parsed.data.photoUrl || undefined,
         allergenOptions: stringifyStringArray(parsed.data.allergenOptions),
+        menuOptions: stringifyStringArray(parsed.data.menuOptions),
         organizationId: organization.id,
         status: requestedStatus
       },

@@ -57,6 +57,7 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
   const latest = logs[0];
   const latestUnder21 = Boolean(latest && (latest.attendee.under21 || latest.attendee.plusOneUnder21));
   const latestAlert = Boolean(latest?.duplicate || latestUnder21);
+  const latestPartySize = latest?.attendee.plusOneEnabled ? 2 : 1;
 
   return (
     <main className="surface-grid min-h-screen bg-background px-4 py-6 text-foreground sm:px-8">
@@ -87,6 +88,7 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
                 <span className={`grid h-20 w-20 place-items-center rounded-3xl text-2xl font-semibold ${latestAlert ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary"}`}>{initials(latest.attendee.name)}</span>
                 <div className="mt-5 flex flex-wrap items-center gap-3">
                   <h2 className="text-4xl font-semibold leading-none sm:text-5xl">{latest.attendee.firstName} {latest.attendee.lastName}</h2>
+                  <span className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-black text-primary" title={`${latestPartySize} ${latestPartySize === 1 ? "person" : "people"} on this pass`}><Users className="h-4 w-4" /> {latestPartySize}</span>
                   {latest.attendee.vip ? <span className="flex items-center gap-1 rounded-full bg-amber-400/15 px-3 py-1 text-sm font-bold text-amber-500"><Star className="h-4 w-4 fill-current" /> VIP</span> : null}
                 </div>
                 <p className="mt-3 text-lg text-muted-foreground">{latest.attendee.ticketTier} · {latest.attendee.eventName}</p>
@@ -94,7 +96,7 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
                 {latestUnder21 ? (
                   <div className="mt-5 flex items-start gap-3 rounded-2xl border border-destructive/50 bg-destructive/15 p-4 text-destructive" role="alert">
                     <ShieldAlert className="mt-0.5 h-6 w-6 shrink-0" />
-                    <div><p className="text-base font-black uppercase tracking-[0.08em]">Under 21 warning</p><p className="mt-1 text-sm font-semibold">{latest.attendee.under21 && latest.attendee.plusOneUnder21 ? "Guest and plus-one are under 21." : latest.attendee.under21 ? "Guest is under 21." : "Plus-one is under 21."}</p></div>
+                    <div><p className="text-base font-black uppercase tracking-[0.08em]">Under 21 warning</p><p className="mt-1 text-sm font-semibold">{latest.attendee.under21 && latest.attendee.plusOneUnder21 ? `${latest.attendee.firstName} (primary attendee) and ${latest.attendee.plusOneName ?? "the guest"} are under 21.` : latest.attendee.under21 ? `${latest.attendee.firstName} is the primary attendee and is under 21.` : `${latest.attendee.plusOneName ?? "The guest"} is the guest and is under 21.`}</p></div>
                   </div>
                 ) : null}
                 <p className={`mt-5 flex items-center gap-2 rounded-2xl border p-4 font-bold ${latest.duplicate ? "border-destructive/60 bg-destructive/20 text-destructive" : "border-emerald-500/25 bg-emerald-500/10 text-emerald-500"}`} role={latest.duplicate ? "alert" : "status"}>
@@ -122,10 +124,12 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate font-bold">{log.attendee.firstName} {log.attendee.lastName}</p>
                       {log.attendee.vip ? <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-500">VIP</span> : null}
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-black text-primary" title={`${log.attendee.plusOneEnabled ? 2 : 1} people on this pass`}><Users className="h-3 w-3" /> {log.attendee.plusOneEnabled ? 2 : 1}</span>
                       {under21 ? <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-black uppercase text-destructive">Under 21</span> : null}
                       {log.duplicate ? <span className="rounded-full bg-destructive px-2 py-0.5 text-[10px] font-black uppercase text-white">Duplicate</span> : null}
                     </div>
                     <p className="truncate text-sm text-muted-foreground">{log.attendee.ticketTier}{log.attendee.plusOneName ? ` · +1 ${log.attendee.plusOneName}` : ""}</p>
+                    {under21 ? <p className="truncate text-xs font-semibold text-destructive">{log.attendee.under21 && log.attendee.plusOneUnder21 ? "Primary attendee + guest under 21" : log.attendee.under21 ? "Primary attendee under 21" : "Guest under 21"}</p> : null}
                   </div>
                   <span className="flex shrink-0 items-center gap-1 text-sm text-muted-foreground"><Clock3 className="h-4 w-4" /> {new Date(log.scannedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}</span>
                 </div>

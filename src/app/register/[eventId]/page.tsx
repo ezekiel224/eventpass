@@ -37,7 +37,7 @@ export default async function RegisterPage({ params }: { params: Promise<{ event
       <Card className="animate-fade-up p-6">
         <h2 className="text-2xl font-semibold">Register for your pass</h2>
         <p className="mt-2 text-sm text-muted-foreground">Your personalized QR pass is generated after registration.</p>
-        <RegisterForm eventId={event.id} allergenOptions={parseStringArray(event.allergenOptions)} />
+        <RegisterForm eventId={event.id} allergenOptions={parseStringArray(event.allergenOptions)} menuOptions={parseStringArray(event.menuOptions)} />
       </Card>
     </main>
   );

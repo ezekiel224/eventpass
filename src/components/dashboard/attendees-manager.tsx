@@ -4,6 +4,7 @@ import { CalendarDays, Download, ExternalLink, Mail, Pencil, Save, Search, Star,
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AgeChoice } from "@/components/ui/age-choice";
+import { AttendeeCsvImport } from "@/components/dashboard/attendee-csv-import";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,11 +20,13 @@ const initialForm = {
   company: "",
   under21: "",
   selectedAllergens: [] as string[],
+  selectedMenu: "",
   plusOneEnabled: false,
   plusOneFirstName: "",
   plusOneLastName: "",
   plusOneUnder21: "",
   plusOneAllergens: [] as string[],
+  plusOneMenu: "",
   ticketTier: "General",
   seat: "",
   notes: "",
@@ -57,13 +60,13 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
     setEvents(loadedEvents);
     setSelectedEventId(nextEventId);
     setAttendees(attendeeData.attendees ?? []);
-    setForm((current) => ({ ...current, eventId: nextEventId, selectedAllergens: current.eventId === nextEventId ? current.selectedAllergens : [], plusOneAllergens: current.eventId === nextEventId ? current.plusOneAllergens : [] }));
+    setForm((current) => ({ ...current, eventId: nextEventId, selectedAllergens: current.eventId === nextEventId ? current.selectedAllergens : [], selectedMenu: current.eventId === nextEventId ? current.selectedMenu : "", plusOneAllergens: current.eventId === nextEventId ? current.plusOneAllergens : [], plusOneMenu: current.eventId === nextEventId ? current.plusOneMenu : "" }));
     setLoading(false);
   }
 
   async function selectEvent(eventId: string) {
     setSelectedEventId(eventId);
-    setForm((current) => ({ ...current, eventId, selectedAllergens: [], plusOneAllergens: [] }));
+    setForm((current) => ({ ...current, eventId, selectedAllergens: [], selectedMenu: "", plusOneAllergens: [], plusOneMenu: "" }));
     setLoading(true);
     const response = await fetch(`/api/attendees?eventId=${encodeURIComponent(eventId)}`, { cache: "no-store" });
     const data = await response.json();
@@ -137,11 +140,13 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
         company: form.company || undefined,
         under21: form.under21 === "yes",
         selectedAllergens: form.selectedAllergens,
+        selectedMenu: form.selectedMenu || undefined,
         plusOneEnabled: form.plusOneEnabled,
         plusOneFirstName: form.plusOneEnabled ? form.plusOneFirstName : undefined,
         plusOneLastName: form.plusOneEnabled ? form.plusOneLastName : undefined,
         plusOneUnder21: form.plusOneEnabled ? form.plusOneUnder21 === "yes" : false,
         plusOneAllergens: form.plusOneEnabled ? form.plusOneAllergens : [],
+        plusOneMenu: form.plusOneEnabled ? form.plusOneMenu || undefined : undefined,
         ticketTier: form.ticketTier || "General",
         seat: form.seat || undefined,
         notes: form.notes || undefined,
@@ -173,16 +178,18 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
       eventId: attendee.eventId,
       firstName: attendee.firstName,
       lastName: attendee.lastName,
-      email: attendee.email,
+      email: attendee.email ?? "",
       phone: attendee.phone ?? "",
       company: attendee.company ?? "",
       under21: attendee.under21 ? "yes" : "no",
       selectedAllergens: attendee.selectedAllergens,
+      selectedMenu: attendee.selectedMenu ?? "",
       plusOneEnabled: attendee.plusOneEnabled,
       plusOneFirstName: attendee.plusOneFirstName ?? "",
       plusOneLastName: attendee.plusOneLastName ?? "",
       plusOneUnder21: attendee.plusOneUnder21 ? "yes" : "no",
       plusOneAllergens: attendee.plusOneAllergens,
+      plusOneMenu: attendee.plusOneMenu ?? "",
       ticketTier: attendee.ticketTier,
       seat: attendee.seat ?? "",
       notes: attendee.notes ?? "",
@@ -217,16 +224,18 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
       body: JSON.stringify({
         firstName: editForm.firstName,
         lastName: editForm.lastName,
-        email: editForm.email,
+        email: editForm.email || null,
         phone: editForm.phone || undefined,
         company: editForm.company || undefined,
         under21: editForm.under21 === "yes",
         selectedAllergens: editForm.selectedAllergens,
+        selectedMenu: editForm.selectedMenu || undefined,
         plusOneEnabled: editForm.plusOneEnabled,
         plusOneFirstName: editForm.plusOneEnabled ? editForm.plusOneFirstName : undefined,
         plusOneLastName: editForm.plusOneEnabled ? editForm.plusOneLastName : undefined,
         plusOneUnder21: editForm.plusOneEnabled ? editForm.plusOneUnder21 === "yes" : false,
         plusOneAllergens: editForm.plusOneEnabled ? editForm.plusOneAllergens : [],
+        plusOneMenu: editForm.plusOneEnabled ? editForm.plusOneMenu || undefined : undefined,
         ticketTier: editForm.ticketTier || "General",
         seat: editForm.seat || undefined,
         notes: editForm.notes || undefined,
@@ -250,6 +259,10 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
   }
 
   async function sendPass(attendee: AttendeeSummary) {
+    if (!attendee.email) {
+      setMessage("This attendee has no email address. Add one before sending the pass.");
+      return;
+    }
     const response = await fetch(`/api/attendees/${attendee.id}/send-pass`, { method: "POST" });
     const data = await response.json();
     setMessage(response.ok ? `Pass email queued for ${attendee.email}.` : data.error ?? "Could not send pass email.");
@@ -257,19 +270,22 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
 
   function exportCsv() {
     const rows = [
-      ["Event", "Name", "Email", "Phone", "Company", "Ticket", "VIP", "Under 21", "Allergens", "Plus One", "Plus One Under 21", "Status", "Checked In", "Pass ID", "Fallback Code"],
+      ["Event", "Name", "Email", "Phone", "Company", "Ticket", "VIP", "Under 21", "Allergens", "Menu Selection", "Plus One", "Plus One Under 21", "Plus One Allergens", "Plus One Menu Selection", "Status", "Checked In", "Pass ID", "Fallback Code"],
       ...filtered.map((attendee) => [
         attendee.eventName,
         attendee.name,
-        attendee.email,
+        attendee.email ?? "",
         attendee.phone ?? "",
         attendee.company ?? "",
         attendee.ticketTier,
         attendee.vip ? "Yes" : "No",
         attendee.under21 ? "Yes" : "No",
         attendee.selectedAllergens.join("; "),
+        attendee.selectedMenu ?? "",
         attendee.plusOneName ?? "",
         attendee.plusOneUnder21 ? "Yes" : "No",
+        attendee.plusOneAllergens.join("; "),
+        attendee.plusOneMenu ?? "",
         attendee.status,
         attendee.checkedIn ? "Yes" : "No",
         attendee.passId ?? "",
@@ -301,6 +317,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
           </select>
         </label>
       </Card>
+      <AttendeeCsvImport event={selectedEvent} onImported={() => loadData(selectedEventId)} />
       <div className="grid gap-4 xl:grid-cols-[0.78fr_1.22fr]">
       <Card className="p-5">
         <h2 className="text-lg font-semibold">Add attendee</h2>
@@ -310,7 +327,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
             <Input value={form.firstName} onChange={(event) => setField("firstName", event.target.value)} placeholder="First name" required />
             <Input value={form.lastName} onChange={(event) => setField("lastName", event.target.value)} placeholder="Last name" required />
           </div>
-          <Input value={form.email} onChange={(event) => setField("email", event.target.value)} placeholder="Email" type="email" required />
+          <Input value={form.email} onChange={(event) => setField("email", event.target.value)} placeholder="Email (optional)" type="email" />
           <Input value={form.phone} onChange={(event) => setField("phone", event.target.value)} placeholder="Phone" />
           <Input value={form.company} onChange={(event) => setField("company", event.target.value)} placeholder="Company" />
           <AgeChoice
@@ -335,6 +352,9 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
                 ))}
               </div>
             </div>
+          ) : null}
+          {selectedEvent?.menuOptions.length ? (
+            <label className="grid gap-2 text-sm font-medium">Menu selection<select value={form.selectedMenu} onChange={(event) => setField("selectedMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal"><option value="">Not selected</option>{selectedEvent.menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
           ) : null}
           <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
             <input type="checkbox" checked={form.plusOneEnabled} onChange={(event) => setField("plusOneEnabled", event.target.checked)} className="h-4 w-4 accent-primary" />
@@ -368,6 +388,9 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
                     ))}
                   </div>
                 </div>
+              ) : null}
+              {selectedEvent?.menuOptions.length ? (
+                <label className="grid gap-2 text-sm font-medium">Plus-one menu selection<select value={form.plusOneMenu} onChange={(event) => setField("plusOneMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal"><option value="">Not selected</option>{selectedEvent.menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
               ) : null}
             </div>
           ) : null}
@@ -437,7 +460,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
                       <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 font-semibold text-primary">{initials(attendee.name)}</span>
                       <div>
                         <p className="flex items-center gap-2 font-medium">{attendee.name} {attendee.vip ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-500"><Star className="h-3 w-3 fill-current" /> VIP</span> : null}</p>
-                        <p className="text-muted-foreground">{attendee.email}</p>
+                        <p className="text-muted-foreground">{attendee.email ?? "No email"}</p>
                         {attendee.notes ? <p className="mt-1 line-clamp-2 max-w-sm text-xs text-muted-foreground"><span className="font-semibold text-foreground/70">Internal:</span> {attendee.notes}</p> : null}
                         {attendee.under21 || attendee.plusOneUnder21 ? <p className="text-xs font-medium text-destructive">Under 21 alert</p> : null}
                         {attendee.plusOneName ? <p className="text-xs text-muted-foreground">Plus-one: {attendee.plusOneName}</p> : null}
@@ -452,7 +475,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
                     <div className="flex gap-1">
                       <Link href={`/pass/${attendee.id}`} title="Open event pass" aria-label="Open event pass"><Button variant="ghost" className="h-9 w-9 px-0"><ExternalLink className="h-4 w-4" /></Button></Link>
                       <Button title="Edit attendee pass" aria-label="Edit attendee pass" variant="ghost" className="h-9 w-9 px-0" onClick={() => startEditing(attendee)}><Pencil className="h-4 w-4" /></Button>
-                      <Button title="Send event pass" aria-label="Send event pass" variant="ghost" className="h-9 w-9 px-0" onClick={() => void sendPass(attendee)}><Mail className="h-4 w-4" /></Button>
+                      <Button title={attendee.email ? "Send event pass" : "No email address"} aria-label="Send event pass" variant="ghost" className="h-9 w-9 px-0" disabled={!attendee.email} onClick={() => void sendPass(attendee)}><Mail className="h-4 w-4" /></Button>
                       <Button title="Toggle VIP" aria-label="Toggle VIP" variant="ghost" className="h-9 w-9 px-0" onClick={() => void toggleVip(attendee)}><Star className="h-4 w-4" /></Button>
                       <Button title="Delete attendee" aria-label="Delete attendee" variant="ghost" className="h-9 w-9 px-0" onClick={() => void deleteAttendee(attendee.id)}><Trash2 className="h-4 w-4" /></Button>
                     </div>
@@ -477,7 +500,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium">First name<Input value={editForm.firstName} onChange={(event) => setEditField("firstName", event.target.value)} required /></label>
               <label className="grid gap-1.5 text-sm font-medium">Last name<Input value={editForm.lastName} onChange={(event) => setEditField("lastName", event.target.value)} required /></label>
-              <label className="grid gap-1.5 text-sm font-medium">Email<Input value={editForm.email} onChange={(event) => setEditField("email", event.target.value)} type="email" required /></label>
+              <label className="grid gap-1.5 text-sm font-medium">Email (optional)<Input value={editForm.email} onChange={(event) => setEditField("email", event.target.value)} type="email" /></label>
               <label className="grid gap-1.5 text-sm font-medium">Phone<Input value={editForm.phone} onChange={(event) => setEditField("phone", event.target.value)} /></label>
               <label className="grid gap-1.5 text-sm font-medium">Company<Input value={editForm.company} onChange={(event) => setEditField("company", event.target.value)} /></label>
               <label className="grid gap-1.5 text-sm font-medium">Ticket tier<Input value={editForm.ticketTier} onChange={(event) => setEditField("ticketTier", event.target.value)} /></label>
@@ -506,6 +529,9 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
                   ))}
                 </div>
               </div>
+            ) : null}
+            {selectedEvent?.menuOptions.length ? (
+              <label className="grid gap-2 text-sm font-medium">Attendee menu selection<select value={editForm.selectedMenu} onChange={(event) => setEditField("selectedMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal"><option value="">Not selected</option>{selectedEvent.menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
             ) : null}
 
             <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
@@ -536,6 +562,9 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
                       ))}
                     </div>
                   </div>
+                ) : null}
+                {selectedEvent?.menuOptions.length ? (
+                  <label className="grid gap-2 text-sm font-medium">Plus-one menu selection<select value={editForm.plusOneMenu} onChange={(event) => setEditField("plusOneMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal"><option value="">Not selected</option>{selectedEvent.menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
                 ) : null}
               </div>
             ) : null}
