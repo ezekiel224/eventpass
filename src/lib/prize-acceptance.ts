@@ -17,7 +17,7 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
-export async function issuePrizeAcceptance(prizeId: string, origin: string) {
+export async function issuePrizeAcceptance(prizeId: string, fallbackOrigin: string) {
   const prize = await prisma.rafflePrize.findUnique({
     where: { id: prizeId },
     include: { event: true }
@@ -39,7 +39,8 @@ export async function issuePrizeAcceptance(prizeId: string, origin: string) {
 
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + PRIZE_ACCEPTANCE_DAYS * 24 * 60 * 60 * 1000);
-  const acceptanceUrl = `${origin.replace(/\/$/, "")}/prize-acceptance/${token}`;
+  const appBaseUrl = process.env.APP_URL?.trim() || fallbackOrigin;
+  const acceptanceUrl = `${appBaseUrl.replace(/\/+$/, "")}/prize-acceptance/${token}`;
 
   await prisma.rafflePrize.update({
     where: { id: prize.id },
