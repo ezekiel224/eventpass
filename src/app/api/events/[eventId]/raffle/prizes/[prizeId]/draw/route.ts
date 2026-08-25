@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { issuePrizeAcceptance } from "@/lib/prize-acceptance";
 
 type Params = { params: Promise<{ eventId: string; prizeId: string }> };
 
@@ -116,12 +117,18 @@ export async function POST(request: NextRequest, { params }: Params) {
     const updatedRows = parsed.data.override
       ? await transaction.$executeRaw`
           UPDATE RafflePrize
-          SET winnerName = ${winnerName}, winnerAttendeeId = ${winnerEntry.attendeeId}, drawnAt = ${drawnAt}, rerollCount = ${nextRerollCount}, updatedAt = ${drawnAt}
+          SET winnerName = ${winnerName}, winnerAttendeeId = ${winnerEntry.attendeeId}, drawnAt = ${drawnAt}, rerollCount = ${nextRerollCount}, updatedAt = ${drawnAt},
+              acceptanceStatus = 'NOT_SENT', acceptanceTokenHash = NULL, acceptanceExpiresAt = NULL,
+              acceptanceSignerName = NULL, acceptanceSapId = NULL, taxAcknowledged = false,
+              signatureDataUrl = NULL, acceptedAt = NULL, acceptedIp = NULL, acceptedUserAgent = NULL
           WHERE id = ${prize.id} AND winnerName = ${metadata.winnerName} AND drawnAt = ${metadata.drawnAt}
         `
       : await transaction.$executeRaw`
           UPDATE RafflePrize
-          SET winnerName = ${winnerName}, winnerAttendeeId = ${winnerEntry.attendeeId}, drawnAt = ${drawnAt}, rerollCount = ${nextRerollCount}, updatedAt = ${drawnAt}
+          SET winnerName = ${winnerName}, winnerAttendeeId = ${winnerEntry.attendeeId}, drawnAt = ${drawnAt}, rerollCount = ${nextRerollCount}, updatedAt = ${drawnAt},
+              acceptanceStatus = 'NOT_SENT', acceptanceTokenHash = NULL, acceptanceExpiresAt = NULL,
+              acceptanceSignerName = NULL, acceptanceSapId = NULL, taxAcknowledged = false,
+              signatureDataUrl = NULL, acceptedAt = NULL, acceptedIp = NULL, acceptedUserAgent = NULL
           WHERE id = ${prize.id} AND winnerName IS NULL
         `;
     if (updatedRows !== 1) {
@@ -150,5 +157,11 @@ export async function POST(request: NextRequest, { params }: Params) {
   if ("error" in result) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
-  return NextResponse.json(result);
+  let acceptance = null;
+  try {
+    acceptance = await issuePrizeAcceptance(result.prize.id, request.nextUrl.origin);
+  } catch (error) {
+    console.error("Could not issue prize acceptance", error);
+  }
+  return NextResponse.json({ ...result, acceptance });
 }

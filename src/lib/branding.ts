@@ -1,24 +1,21 @@
-import { hexToHslParts } from "@/lib/color";
 import { getDefaultOrganization } from "@/lib/prisma-helpers";
 import { cache } from "react";
+
+export const SYSTEM_ACCENT_COLOR = "#315CF5";
 
 export type Branding = {
   name: string;
   logoUrl: string | null;
   primaryColor: string;
   accentColor: string;
-  primaryHsl: string;
-  accentHsl: string;
   timezone: string;
 };
 
 const fallbackBranding: Branding = {
   name: "EventPass",
   logoUrl: null,
-  primaryColor: "#14f1cc",
-  accentColor: "#14f1cc",
-  primaryHsl: "168 92% 48%",
-  accentHsl: "168 92% 48%",
+  primaryColor: SYSTEM_ACCENT_COLOR,
+  accentColor: SYSTEM_ACCENT_COLOR,
   timezone: "America/Chicago"
 };
 
@@ -29,10 +26,8 @@ export const getBranding = cache(async (): Promise<Branding> => {
     return {
       name: organization.name,
       logoUrl: organization.logoUrl,
-      primaryColor: organization.primaryColor,
-      accentColor: organization.accentColor,
-      primaryHsl: hexToHslParts(organization.primaryColor, fallbackBranding.primaryHsl),
-      accentHsl: hexToHslParts(organization.accentColor, fallbackBranding.accentHsl),
+      primaryColor: SYSTEM_ACCENT_COLOR,
+      accentColor: SYSTEM_ACCENT_COLOR,
       timezone: organization.timezone
     };
   } catch (error) {

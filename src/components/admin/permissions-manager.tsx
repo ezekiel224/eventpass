@@ -143,7 +143,7 @@ export function PermissionsManager() {
       <Card className="p-5">
         <div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary" /><div><h2 className="text-lg font-semibold">Role permission matrix</h2><p className="mt-1 text-sm text-muted-foreground">System roles are visible but locked. Custom roles can be changed independently.</p></div></div>
         <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[900px] border-separate border-spacing-0 text-sm">
+          <table className="data-table w-full min-w-[900px] border-separate border-spacing-0 text-sm">
             <thead><tr><th className="sticky left-0 z-10 border-b border-border bg-card p-3 text-left">Permission</th>{roles.map((role) => <th key={role.id} className="min-w-32 border-b border-border p-3 text-center"><span className="block">{role.name}</span><span className="mt-1 block text-[10px] font-normal uppercase tracking-wider text-muted-foreground">{role.system ? "System" : `${role.userCount} users`}</span></th>)}</tr></thead>
             <tbody>
               {permissions.map((permission) => (

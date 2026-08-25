@@ -1,5 +1,6 @@
 import { NormalizedPassData, safePassAsset, safePassColor } from "@/components/pass/pass-system";
 import { formatDate, formatTime } from "@/lib/utils";
+import { SYSTEM_ACCENT_COLOR } from "@/lib/branding";
 
 type ExistingPassSource = {
   event: {
@@ -70,8 +71,8 @@ export function normalizeExistingPass(source: ExistingPassSource): NormalizedPas
     organizerName: source.event.organizer || source.branding.name,
     organizerLogo: safePassAsset(source.event.logoUrl) ?? safePassAsset(source.branding.logoUrl),
     sponsorLogos: [],
-    accentColor: safePassColor(source.branding.primaryColor, "#14f1cc"),
-    secondaryColor: safePassColor(source.branding.accentColor, "#7c3aed"),
+    accentColor: safePassColor(source.branding.primaryColor, SYSTEM_ACCENT_COLOR),
+    secondaryColor: safePassColor(source.branding.accentColor, SYSTEM_ACCENT_COLOR),
     backgroundImage: safePassAsset(source.event.bannerImageUrl) ?? safePassAsset(source.event.photoUrl),
     customMessage: source.event.description || null,
     status: source.attendee.status || null,

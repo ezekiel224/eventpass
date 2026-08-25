@@ -1,3 +1,5 @@
+import { SYSTEM_ACCENT_COLOR } from "@/lib/branding";
+
 export type EmailMessage = {
   to: string;
   subject: string;
@@ -65,7 +67,7 @@ export function renderPassEmail({
   qrImageUrl,
   fallbackCode,
   organizationName = "EventPass",
-  primaryColor = "#2563eb"
+  primaryColor = SYSTEM_ACCENT_COLOR
 }: {
   name: string;
   eventName: string;
@@ -98,7 +100,7 @@ export function renderPassEmail({
     organizer: escapeHtml(organizer), contactEmail: escapeHtml(contactEmail),
     passUrl: escapeHtml(passUrl), qrImageUrl: escapeHtml(qrImageUrl),
     fallbackCode: escapeHtml(fallbackCode), organizationName: escapeHtml(organizationName),
-    primaryColor: /^#[0-9a-f]{6}$/i.test(primaryColor) ? primaryColor : "#2563eb"
+    primaryColor: /^#[0-9a-f]{6}$/i.test(primaryColor) ? primaryColor : SYSTEM_ACCENT_COLOR
   };
 
   return `

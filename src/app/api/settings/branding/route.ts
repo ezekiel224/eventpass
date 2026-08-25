@@ -6,8 +6,6 @@ import { prisma } from "@/lib/db";
 const brandingSchema = z.object({
   name: z.string().min(2).max(120),
   logoUrl: z.string().url().or(z.literal("")).optional(),
-  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a valid hex color like #14f1cc"),
-  accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a valid hex color like #14f1cc"),
   timezone: z.string().min(2).max(80),
   domain: z.string().max(160).optional()
 });
@@ -18,7 +16,13 @@ export async function GET() {
   const organization = await getDefaultOrganization();
 
   return NextResponse.json({
-    organization,
+    organization: {
+      id: organization.id,
+      name: organization.name,
+      logoUrl: organization.logoUrl,
+      timezone: organization.timezone,
+      domain: organization.domain
+    },
     email: {
       provider: process.env.EMAIL_PROVIDER ?? "console",
       from: process.env.EMAIL_FROM ?? "",
@@ -40,12 +44,18 @@ export async function PATCH(request: NextRequest) {
     data: {
       name: parsed.data.name,
       logoUrl: parsed.data.logoUrl || null,
-      primaryColor: parsed.data.primaryColor,
-      accentColor: parsed.data.accentColor,
       timezone: parsed.data.timezone,
       domain: parsed.data.domain || null
     }
   });
 
-  return NextResponse.json({ organization: updated });
+  return NextResponse.json({
+    organization: {
+      id: updated.id,
+      name: updated.name,
+      logoUrl: updated.logoUrl,
+      timezone: updated.timezone,
+      domain: updated.domain
+    }
+  });
 }

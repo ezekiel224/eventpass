@@ -19,18 +19,18 @@ export function AgeChoice({
     : `Is the ${subject} 21 or older?`;
 
   return (
-    <fieldset className={cn("grid gap-2", className)}>
-      <legend className="text-sm font-medium">{question}</legend>
+    <fieldset className={cn("grid gap-3", className)}>
+      <legend className="text-sm font-semibold">{question}</legend>
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
           aria-pressed={value === "no"}
           onClick={() => onChange("no")}
           className={cn(
-            "focus-ring flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-bold transition",
+            "focus-ring flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-bold transition duration-300 ease-luxury",
             value === "no"
-              ? "border-emerald-500 bg-emerald-500 text-white shadow-soft"
-              : "border-emerald-500/35 bg-emerald-500/[0.08] text-emerald-700 hover:border-emerald-500/70 hover:bg-emerald-500/[0.14] dark:text-emerald-300"
+              ? "border-primary bg-primary text-primary-foreground shadow-[0_12px_30px_hsl(var(--primary)/0.22)]"
+              : "border-border/80 bg-background/50 text-muted-foreground hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/[0.05] hover:text-foreground"
           )}
         >
           <Check className="h-4 w-4" aria-hidden="true" />
@@ -41,10 +41,10 @@ export function AgeChoice({
           aria-pressed={value === "yes"}
           onClick={() => onChange("yes")}
           className={cn(
-            "focus-ring flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-bold transition",
+            "focus-ring flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-bold transition duration-300 ease-luxury",
             value === "yes"
-              ? "border-rose-500 bg-rose-500 text-white shadow-soft"
-              : "border-rose-500/35 bg-rose-500/[0.08] text-rose-700 hover:border-rose-500/70 hover:bg-rose-500/[0.14] dark:text-rose-300"
+              ? "border-destructive bg-destructive text-white shadow-[0_12px_30px_hsl(var(--destructive)/0.18)]"
+              : "border-border/80 bg-background/50 text-muted-foreground hover:-translate-y-0.5 hover:border-destructive/40 hover:bg-destructive/[0.05] hover:text-foreground"
           )}
         >
           <X className="h-4 w-4" aria-hidden="true" />

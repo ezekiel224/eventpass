@@ -126,7 +126,7 @@ export function RaffleTicketStation() {
   }
 
   return (
-    <div className="mt-6 grid gap-5">
+    <div className="mt-7 grid gap-5">
       <GlassCard className="p-5">
         <div className="grid gap-4 lg:grid-cols-[1fr_1.25fr] lg:items-end">
           <label className="grid gap-2 text-sm text-muted-foreground">Event
@@ -134,13 +134,13 @@ export function RaffleTicketStation() {
               {events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}
             </select>
           </label>
-          <div className="rounded-xl bg-primary/10 p-3 text-sm text-primary">Scan a guest, distribute their tickets, save, then scan the next pass. The camera stays open throughout.</div>
+          <div className="control-panel border-primary/20 bg-primary/[0.05] p-3 text-sm text-muted-foreground">Scan a guest, distribute their tickets, save, then scan the next pass. The camera stays open throughout.</div>
         </div>
       </GlassCard>
 
       <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
-        <Card className="p-5">
-          <h2 className="flex items-center gap-2 text-lg font-semibold"><UserCheck className="h-5 w-5 text-primary" /> Verify attendee</h2>
+        <Card className="p-5 sm:p-6">
+          <p className="panel-label">Step 01</p><h2 className="mt-2 flex items-center gap-2 text-lg font-semibold"><UserCheck className="h-5 w-5 text-primary" /> Verify attendee</h2>
           <div className="mt-5 grid gap-3">
             <QrCameraScanner onScan={(decodedText) => findPass({ qrPayload: decodedText })} disabled={!eventId} startLabel="Start pass scanner" />
             <form className="flex gap-2" onSubmit={submitLookup}>
@@ -150,14 +150,14 @@ export function RaffleTicketStation() {
           </div>
 
           {attendee ? (
-            <div className="mt-5 rounded-2xl border border-primary/25 bg-primary/5 p-5">
+            <div className="form-section mt-5 border-primary/25 bg-primary/[0.045] p-5">
               <div className="flex items-start justify-between gap-4">
                 <div><p className="text-xl font-semibold">{attendee.name}</p><p className="text-sm text-muted-foreground">{attendee.email}</p></div>
                 <CheckCircle2 className="h-6 w-6 text-emerald-500" />
               </div>
               <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-xl bg-card p-3"><p className="text-xs text-muted-foreground">Allotted</p><p className="text-xl font-semibold">{attendee.raffleTickets}</p></div>
-                <div className="rounded-xl bg-card p-3"><p className="text-xs text-muted-foreground">Selected</p><p className="text-xl font-semibold">{usedTickets}</p></div>
+                <div className="control-panel p-3"><p className="panel-label">Allotted</p><p className="mt-2 text-xl font-semibold">{attendee.raffleTickets}</p></div>
+                <div className="control-panel p-3"><p className="panel-label">Selected</p><p className="mt-2 text-xl font-semibold">{usedTickets}</p></div>
                 <div className={`rounded-xl p-3 ${usedTickets > attendee.raffleTickets ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-500"}`}><p className="text-xs">Remaining</p><p className="text-xl font-semibold">{remainingTickets}</p></div>
               </div>
               <Button type="button" variant="ghost" className="mt-4" onClick={() => { setAttendee(null); setAllocations({}); setMessage(""); }}><RotateCcw className="h-4 w-4" /> Clear guest</Button>
@@ -166,16 +166,16 @@ export function RaffleTicketStation() {
           {message ? <p className="mt-4 rounded-xl bg-muted p-3 text-sm text-muted-foreground" role="status">{message}</p> : null}
         </Card>
 
-        <Card className="p-5">
+        <Card className="p-5 sm:p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div><h2 className="flex items-center gap-2 text-lg font-semibold"><Ticket className="h-5 w-5 text-primary" /> Choose prizes</h2><p className="mt-1 text-sm text-muted-foreground">Enter the exact number of tickets for each prize.</p></div>
+            <div><p className="panel-label">Step 02</p><h2 className="mt-2 flex items-center gap-2 text-lg font-semibold"><Ticket className="h-5 w-5 text-primary" /> Choose prizes</h2><p className="mt-1 text-sm text-muted-foreground">Enter the exact number of tickets for each prize.</p></div>
             <Button type="button" onClick={() => void saveAllocations()} disabled={!attendee || saving || usedTickets > (attendee?.raffleTickets ?? 0)}><CheckCircle2 className="h-4 w-4" /> {saving ? "Saving…" : "Confirm selections"}</Button>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {prizes.map((prize) => {
               const count = allocations[prize.id] ?? 0;
               return (
-                <article key={prize.id} className={`overflow-hidden rounded-2xl border p-4 transition ${count > 0 ? "border-primary/50 bg-primary/5" : "border-border"}`}>
+                <article key={prize.id} className={`overflow-hidden rounded-2xl border p-4 transition duration-300 ease-luxury ${count > 0 ? "border-primary/50 bg-primary/[0.055] shadow-[0_14px_36px_hsl(var(--primary)/0.10)]" : "border-border/70 bg-background/35 hover:-translate-y-0.5 hover:border-primary/30"}`}>
                   {prize.imageUrl ? <div className="mb-4 aspect-[16/8] rounded-xl bg-cover bg-center" style={{ backgroundImage: `url(${prize.imageUrl})` }} /> : null}
                   <div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold">{prize.name}</h3>{prize.value ? <p className="text-xs font-medium text-primary">{prize.value}</p> : null}</div>{count > 0 ? <Star className="h-5 w-5 fill-primary text-primary" /> : null}</div>
                   {prize.description ? <p className="mt-2 text-sm text-muted-foreground">{prize.description}</p> : null}

@@ -1,6 +1,6 @@
-import type { CSSProperties } from "react";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { GlobalBackdrop } from "@/components/layout/global-backdrop";
 import { getBranding } from "@/lib/branding";
 
 export async function generateMetadata() {
@@ -12,22 +12,14 @@ export async function generateMetadata() {
   };
 }
 
-type BrandStyle = CSSProperties & {
-  "--primary": string;
-  "--accent": string;
-};
-
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const branding = await getBranding();
-  const brandStyle: BrandStyle = {
-    "--primary": branding.primaryHsl,
-    "--accent": branding.accentHsl
-  };
-
   return (
-    <html lang="en" style={brandStyle} suppressHydrationWarning>
-      <body className="font-sans antialiased">
-        <Providers>{children}</Providers>
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-dvh font-sans antialiased">
+        <Providers>
+          <GlobalBackdrop />
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -40,15 +40,15 @@ export function LoginForm() {
   }
 
   return (
-    <form className="mt-7 space-y-3" onSubmit={handleSubmit}>
-      <Input autoComplete="username" name="identifier" placeholder="Email or username" required />
-      <Input autoComplete="current-password" name="password" placeholder="Password" required type="password" />
+    <form className="mt-7 grid gap-4" onSubmit={handleSubmit}>
+      <label className="grid gap-2 text-sm font-semibold">Email or username<Input autoComplete="username" name="identifier" placeholder="operator@company.com" required /></label>
+      <label className="grid gap-2 text-sm font-semibold">Password<Input autoComplete="current-password" name="password" placeholder="Enter your password" required type="password" /></label>
       {error ? (
         <p className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive" role="alert">
           {error}
         </p>
       ) : null}
-      <Button className="mt-3 h-11 w-full" disabled={isSubmitting} type="submit">
+      <Button className="mt-2 h-12 w-full" disabled={isSubmitting} type="submit">
         {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
         Sign in
       </Button>

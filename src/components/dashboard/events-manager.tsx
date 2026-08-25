@@ -8,6 +8,7 @@ import { PassThemeId, isPassTheme, passThemeIds, passThemeRegistry } from "@/com
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { LiquidModal } from "@/components/ui/liquid-modal";
 import { formatDate, formatTime } from "@/lib/utils";
 import { EventSummary } from "@/types/domain";
 
@@ -157,6 +158,7 @@ export function EventsManager() {
   const [notice, setNotice] = useState<Notice>(null);
   const [errors, setErrors] = useState<EventFormErrors>({});
   const [showArchived, setShowArchived] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   async function loadEvents() {
     setLoading(true);
@@ -246,6 +248,7 @@ export function EventsManager() {
       setForm(initialForm);
       setNotice({ tone: "success", text: status === "PUBLISHED" ? "Event published successfully." : "Event saved safely as a draft." });
       await loadEvents();
+      setCreateOpen(false);
     } catch {
       setNotice({ tone: "error", text: "The server could not be reached. No event was created; check your connection and try again." });
     } finally {
@@ -253,24 +256,47 @@ export function EventsManager() {
     }
   }
 
-  async function updateEvent(eventId: string, body: Record<string, unknown>, reload = true) {
-    await fetch(`/api/events/${eventId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    if (reload) {
-      await loadEvents();
+  async function updateEvent(eventId: string, body: Record<string, unknown>, successText = "Event updated.", reload = true) {
+    setNotice(null);
+    try {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setNotice({ tone: "error", text: typeof data.error === "string" ? data.error : "The event could not be updated." });
+        return false;
+      }
+      setNotice({ tone: "success", text: successText });
+      if (reload) await loadEvents();
+      return true;
+    } catch {
+      setNotice({ tone: "error", text: "The server could not be reached. No event changes were made." });
+      return false;
     }
   }
 
   async function duplicateEvent(eventId: string) {
-    await fetch(`/api/events/${eventId}/duplicate`, { method: "POST" });
+    setNotice(null);
+    const response = await fetch(`/api/events/${eventId}/duplicate`, { method: "POST" });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setNotice({ tone: "error", text: typeof data.error === "string" ? data.error : "The event could not be duplicated." });
+      return;
+    }
+    setNotice({ tone: "success", text: "Event duplicated as a draft." });
     await loadEvents();
   }
 
   async function exportEvent(event: EventSummary) {
     const response = await fetch(`/api/events/${event.id}/export`);
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setNotice({ tone: "error", text: typeof data.error === "string" ? data.error : "The attendee export could not be created." });
+      return;
+    }
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -278,6 +304,7 @@ export function EventsManager() {
     link.download = `${event.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "event"}-registrations.csv`;
     link.click();
     URL.revokeObjectURL(url);
+    setNotice({ tone: "success", text: `Exported registrations for ${event.name}.` });
   }
 
   function setField(name: keyof typeof form, value: string | boolean) {
@@ -299,16 +326,10 @@ export function EventsManager() {
   const visibleEvents = showArchived ? events : events.filter((event) => event.status !== "ARCHIVED");
 
   return (
-    <div className="mt-6 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-      <Card className="p-5 sm:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">New event</p>
-            <h2 className="mt-1 text-xl font-semibold">Create Event</h2>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">Fields marked with <span className="text-destructive">*</span> are required. Save as a draft when the details are ready but should not be public yet.</p>
-          </div>
-        </div>
-        <form className="mt-6 grid gap-4" onSubmit={submit} noValidate>
+    <div className="mt-7 space-y-5">
+      <LiquidModal open={createOpen} onClose={() => setCreateOpen(false)} title="Create event" description="Build the event, registration rules, and invitation-pass configuration in one focused workspace." size="xl">
+      <div>
+        <form className="grid gap-4" onSubmit={submit} noValidate>
           {notice ? (
             <div role={notice.tone === "error" ? "alert" : "status"} className={`flex items-start gap-2 rounded-xl border p-3 text-sm ${notice.tone === "error" ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-primary/30 bg-primary/10 text-foreground"}`}>
               {notice.tone === "error" ? <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />}
@@ -316,7 +337,7 @@ export function EventsManager() {
             </div>
           ) : null}
 
-          <fieldset className="grid gap-4 rounded-2xl border border-border/80 p-4">
+          <fieldset className="form-section grid gap-4 p-4">
             <legend className="px-2 text-sm font-semibold">Event details</legend>
             <FieldShell id={fieldIds.name} label="Event name" error={errors.name} required>
               <Input id={fieldIds.name} value={form.name} onChange={(event) => setField("name", event.target.value)} placeholder="Annual Innovation Summit" autoComplete="off" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? `${fieldIds.name}-error` : undefined} />
@@ -337,7 +358,7 @@ export function EventsManager() {
             </FieldShell>
           </fieldset>
 
-          <fieldset className="grid gap-4 rounded-2xl border border-border/80 p-4">
+          <fieldset className="form-section grid gap-4 p-4">
             <legend className="px-2 text-sm font-semibold">Schedule and capacity</legend>
             <div className="grid gap-4 sm:grid-cols-3">
               <FieldShell id={fieldIds.date} label="Event date" error={errors.date} required>
@@ -355,7 +376,7 @@ export function EventsManager() {
             </FieldShell>
           </fieldset>
 
-          <fieldset className="grid gap-4 rounded-2xl border border-border/80 p-4">
+          <fieldset className="form-section grid gap-4 p-4">
             <legend className="px-2 text-sm font-semibold">Organizer contact</legend>
             <div className="grid gap-4 sm:grid-cols-2">
               <FieldShell id={fieldIds.organizer} label="Organizer" error={errors.organizer} required>
@@ -370,7 +391,7 @@ export function EventsManager() {
             </FieldShell>
           </fieldset>
 
-          <fieldset id={fieldIds.passTheme} className="rounded-2xl border border-border/80 p-4">
+          <fieldset id={fieldIds.passTheme} className="form-section p-4">
             <legend className="flex items-center gap-2 px-2 text-sm font-semibold"><Palette className="h-4 w-4 text-primary" /> Digital pass design</legend>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">Every attendee pass for this event will use this design. You can change it later.</p>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -383,7 +404,7 @@ export function EventsManager() {
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setField("passTheme", themeId)}
-                    className={`focus-ring rounded-xl border p-3 text-left transition ${selected ? "border-primary bg-primary/10 shadow-soft" : "border-border bg-background hover:border-primary/45"}`}
+                    className={`focus-ring rounded-xl border p-3 text-left transition duration-300 ease-luxury ${selected ? "border-primary/50 bg-primary/[0.08] shadow-[0_14px_36px_hsl(var(--primary)/0.12)]" : "border-border/70 bg-background/50 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/[0.04]"}`}
                   >
                     <span className={`mb-3 flex h-12 items-end overflow-hidden rounded-lg bg-gradient-to-br p-2 ${themeSwatches[themeId]}`} aria-hidden="true">
                       <span className="h-1 w-10 rounded-full bg-white/70 shadow-[0_0_14px_rgba(255,255,255,.55)]" />
@@ -396,7 +417,7 @@ export function EventsManager() {
             </div>
           </fieldset>
 
-          <fieldset className="grid gap-4 rounded-2xl border border-border/80 p-4">
+          <fieldset className="form-section grid gap-4 p-4">
             <legend className="px-2 text-sm font-semibold">Registration options</legend>
             <FieldShell id={fieldIds.allergenOptions} label="Selectable allergens" error={errors.allergenOptions} hint="Optional. Separate choices with commas, for example: Peanuts, Dairy, Gluten.">
               <Input id={fieldIds.allergenOptions} value={form.allergenOptions} onChange={(event) => setField("allergenOptions", event.target.value)} placeholder="Peanuts, Dairy, Gluten" aria-invalid={Boolean(errors.allergenOptions)} aria-describedby={errors.allergenOptions ? `${fieldIds.allergenOptions}-error` : undefined} />
@@ -411,7 +432,7 @@ export function EventsManager() {
               ["emailConfirmationsEnabled", "Email confirmations"],
               ["waitlistEnabled", "Enable waitlist"]
             ].map(([name, label]) => (
-              <label key={name} htmlFor={fieldIds[name as EventFormField]} className="flex cursor-pointer items-center gap-2 rounded-xl border border-border p-3 transition hover:border-primary/40 hover:bg-muted/50">
+              <label key={name} htmlFor={fieldIds[name as EventFormField]} className="choice-tile flex cursor-pointer items-center gap-2 p-3">
                 <input
                   id={fieldIds[name as EventFormField]}
                   type="checkbox"
@@ -433,24 +454,31 @@ export function EventsManager() {
             <Button disabled={saving} type="button" variant="secondary" onClick={() => void createEvent("DRAFT")} className="sm:min-w-32">Save Draft</Button>
           </div>
         </form>
-      </Card>
+      </div>
+      </LiquidModal>
+      {!createOpen && notice ? (
+        <div role={notice.tone === "error" ? "alert" : "status"} className={`liquid-notice ${notice.tone === "error" ? "border-destructive/30 text-destructive" : "border-primary/25 text-foreground"}`}>
+          {notice.tone === "error" ? <AlertCircle className="h-4 w-4 shrink-0" /> : <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />}
+          <span>{notice.text}</span>
+        </div>
+      ) : null}
       <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card/78 p-3">
+        <div className="control-panel flex items-center justify-between gap-3 p-3.5">
           <p className="text-sm text-muted-foreground">
             {showArchived ? `Showing all ${events.length} events` : `${visibleEvents.length} active events`}
           </p>
-          <Button type="button" variant="secondary" onClick={() => setShowArchived((current) => !current)}>
+          <div className="flex flex-wrap gap-2"><Button type="button" onClick={() => { setNotice(null); setCreateOpen(true); }}><Plus className="h-4 w-4" /> Create event</Button><Button type="button" variant="secondary" onClick={() => setShowArchived((current) => !current)}>
             {showArchived ? "Hide archived" : "Show all"}
-          </Button>
+          </Button></div>
         </div>
         {loading ? <Card className="p-5 text-sm text-muted-foreground">Loading events...</Card> : null}
         {!loading && events.length === 0 ? <Card className="p-5 text-sm text-muted-foreground">No events yet. Create your first one.</Card> : null}
         {!loading && events.length > 0 && visibleEvents.length === 0 ? <Card className="p-5 text-sm text-muted-foreground">All events are archived. Use Show all to view them.</Card> : null}
         {visibleEvents.map((event) => (
-          <Card key={event.id} className="p-5 transition duration-200 hover:-translate-y-1 hover:shadow-glow">
+          <Card key={event.id} className="group p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               {event.photoUrl ? (
-                <div className="h-32 rounded-2xl bg-cover bg-center sm:w-44" style={{ backgroundImage: `url(${event.photoUrl})` }} />
+                <div className="h-36 rounded-2xl border border-border/50 bg-cover bg-center shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)] sm:w-48" style={{ backgroundImage: `url(${event.photoUrl})` }} />
               ) : null}
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -481,15 +509,15 @@ export function EventsManager() {
               </Link>
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-border p-3">
+              <div className="control-panel p-3.5">
                 <p className="text-xs text-muted-foreground">Registered</p>
                 <p className="mt-1 font-semibold">{event.attendeeCount}/{event.capacity}</p>
               </div>
-              <div className="rounded-xl border border-border p-3">
+              <div className="control-panel p-3.5">
                 <p className="text-xs text-muted-foreground">Checked in</p>
                 <p className="mt-1 font-semibold">{event.checkedInCount}</p>
               </div>
-              <div className="rounded-xl border border-border p-3">
+              <div className="control-panel p-3.5">
                 <p className="text-xs text-muted-foreground">Registration</p>
                 <p className="mt-1 font-semibold">{event.registrationEnabled ? "Open" : "Closed"}</p>
               </div>
@@ -500,19 +528,19 @@ export function EventsManager() {
                 <span className="sr-only">Pass design for {event.name}</span>
                 <select
                   value={isPassTheme(event.passTheme) ? event.passTheme : "minimal"}
-                  onChange={(changeEvent) => void updateEvent(event.id, { passTheme: changeEvent.target.value })}
+                  onChange={(changeEvent) => void updateEvent(event.id, { passTheme: changeEvent.target.value }, "Pass design updated.")}
                   className="focus-ring min-w-0 bg-transparent text-sm"
                   aria-label={`Pass design for ${event.name}`}
                 >
                   {passThemeIds.map((themeId) => <option key={themeId} value={themeId}>{passThemeRegistry[themeId].label}</option>)}
                 </select>
               </label>
-              <Button variant="secondary" onClick={() => void updateEvent(event.id, { status: event.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED" })}>
+              <Button variant="secondary" onClick={() => void updateEvent(event.id, { status: event.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED" }, event.status === "PUBLISHED" ? "Event moved to draft." : "Event published.")}>
                 <RotateCcw className="h-4 w-4" /> {event.status === "PUBLISHED" ? "Move to Draft" : "Publish"}
               </Button>
               <Button variant="secondary" onClick={() => void exportEvent(event)}><Download className="h-4 w-4" /> Export CSV</Button>
               <Button variant="secondary" onClick={() => void duplicateEvent(event.id)}><Copy className="h-4 w-4" /> Duplicate</Button>
-              <Button variant="secondary" onClick={() => void updateEvent(event.id, { status: "ARCHIVED" })}><Archive className="h-4 w-4" /> Archive</Button>
+              <Button variant="secondary" onClick={() => { if (window.confirm(`Archive ${event.name}? It will be removed from active workflows but can be restored later.`)) void updateEvent(event.id, { status: "ARCHIVED" }, "Event archived."); }}><Archive className="h-4 w-4" /> Archive</Button>
             </div>
           </Card>
         ))}

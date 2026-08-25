@@ -5,6 +5,7 @@ import { Copy, KeyRound, Loader2, RefreshCw, Save, UserPlus } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { LiquidModal } from "@/components/ui/liquid-modal";
 import { useCsrfToken } from "@/hooks/useCsrfToken";
 
 type Role = { id: string; name: string; slug: string; description: string; system: boolean; assignable: boolean; permissionIds: string[] };
@@ -211,7 +212,7 @@ export function AccountsManager({ currentUserId }: { currentUserId: string }) {
           <Button variant="ghost" className="h-9 w-9 px-0" aria-label="Refresh accounts" onClick={() => void load()}><RefreshCw className="h-4 w-4" /></Button>
         </div>
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="data-table w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-border text-muted-foreground"><tr><th className="py-3">Account</th><th>Roles</th><th>Status</th><th>First login</th><th className="text-right">Action</th></tr></thead>
             <tbody className="divide-y divide-border">
               {loading ? <tr><td className="py-6 text-muted-foreground" colSpan={5}>Loading accounts…</td></tr> : null}
@@ -229,23 +230,21 @@ export function AccountsManager({ currentUserId }: { currentUserId: string }) {
         </div>
       </Card>
 
-      {editingUser ? (
-        <Card className="p-5">
-          <h2 className="text-lg font-semibold">Manage {editingUser.email}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Assigned roles: {effectiveRoleSummary || "None"}. Direct overrides take precedence over inherited role permissions.</p>
-          <div className="mt-5 grid gap-5">
-            <fieldset>
+      <LiquidModal open={Boolean(editingUser)} onClose={() => setEditingUser(null)} title={editingUser ? `Manage ${editingUser.email}` : "Manage account"} description={`Assigned roles: ${effectiveRoleSummary || "None"}. Direct overrides take precedence over inherited role permissions.`} size="lg">
+        {editingUser ? (
+          <div className="grid gap-5">
+            <fieldset className="form-section p-4">
               <legend className="text-sm font-medium">Assigned roles</legend>
               <div className="mt-2 flex flex-wrap gap-2">
-                {roles.map((role) => <label key={role.id} className="flex items-center gap-2 rounded-full border border-border px-3 py-2 text-sm"><input type="checkbox" checked={editRoleIds.includes(role.id)} onChange={() => toggleRole(role.id, true)} className="h-4 w-4 accent-primary" />{role.name}</label>)}
+                {roles.map((role) => <label key={role.id} className="choice-tile flex items-center gap-2 px-3 py-2 text-sm"><input type="checkbox" checked={editRoleIds.includes(role.id)} onChange={() => toggleRole(role.id, true)} className="h-4 w-4 accent-primary" />{role.name}</label>)}
               </div>
             </fieldset>
-            <label className="flex items-center gap-3 rounded-xl border border-border p-3 text-sm font-medium"><input type="checkbox" checked={editActive} onChange={(event) => setEditActive(event.target.checked)} className="h-4 w-4 accent-primary" />Account active</label>
-            <fieldset>
+            <label className="choice-tile flex items-center gap-3 p-4 text-sm font-medium"><input type="checkbox" checked={editActive} onChange={(event) => setEditActive(event.target.checked)} className="h-4 w-4 accent-primary" />Account active</label>
+            <fieldset className="form-section p-4">
               <legend className="text-sm font-medium">Direct permission overrides</legend>
               <div className="mt-3 grid gap-2 md:grid-cols-2">
                 {permissions.map((permission) => (
-                  <label key={permission.id} className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-border p-3">
+                  <label key={permission.id} className="choice-tile grid grid-cols-[1fr_auto] items-center gap-3 p-3">
                     <span><b className="block text-sm">{permission.slug}</b><span className="mt-1 block text-xs text-muted-foreground">{permission.description}</span></span>
                     <select className="focus-ring h-9 rounded-lg border border-border bg-background px-2 text-xs" value={editOverrides[permission.id] ?? "inherit"} onChange={(event) => setEditOverrides((current) => ({ ...current, [permission.id]: event.target.value as "inherit" | "allow" | "deny" }))}>
                       <option value="inherit">Inherit</option><option value="allow">Allow</option><option value="deny">Deny</option>
@@ -259,8 +258,8 @@ export function AccountsManager({ currentUserId }: { currentUserId: string }) {
               <Button type="button" disabled={saving || !csrf.token || !editRoleIds.length} onClick={() => void saveAccess()}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save access</Button>
             </div>
           </div>
-        </Card>
-      ) : null}
+        ) : null}
+      </LiquidModal>
     </div>
   );
 }

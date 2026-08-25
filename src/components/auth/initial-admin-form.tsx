@@ -58,10 +58,10 @@ export function InitialAdminForm() {
   }
 
   return (
-    <form className="mt-7 grid gap-3" onSubmit={submit}>
-      <Input name="name" autoComplete="name" placeholder="Full name" maxLength={100} required />
-      <Input name="email" type="email" autoComplete="email" placeholder="Email address" maxLength={254} required />
-      <Input
+    <form className="mt-7 grid gap-4" onSubmit={submit}>
+      <label className="grid gap-2 text-sm font-semibold">Full name<Input name="name" autoComplete="name" placeholder="Administrator name" maxLength={100} required /></label>
+      <label className="grid gap-2 text-sm font-semibold">Email address<Input name="email" type="email" autoComplete="email" placeholder="admin@company.com" maxLength={254} required /></label>
+      <label className="grid gap-2 text-sm font-semibold">Username<Input
         name="username"
         autoComplete="username"
         placeholder="Username"
@@ -69,9 +69,11 @@ export function InitialAdminForm() {
         maxLength={40}
         pattern="[A-Za-z0-9._-]+"
         required
-      />
-      <Input name="password" type="password" autoComplete="new-password" placeholder="Password" minLength={12} maxLength={128} required />
-      <Input name="confirmPassword" type="password" autoComplete="new-password" placeholder="Confirm password" minLength={12} maxLength={128} required />
+      /></label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="grid gap-2 text-sm font-semibold">Password<Input name="password" type="password" autoComplete="new-password" placeholder="12+ characters" minLength={12} maxLength={128} required /></label>
+        <label className="grid gap-2 text-sm font-semibold">Confirm password<Input name="confirmPassword" type="password" autoComplete="new-password" placeholder="Repeat password" minLength={12} maxLength={128} required /></label>
+      </div>
       <p className="text-xs leading-5 text-muted-foreground">
         Use at least 12 characters with uppercase, lowercase, a number, and a symbol.
       </p>
@@ -80,7 +82,7 @@ export function InitialAdminForm() {
           {csrf.error || error}
         </p>
       ) : null}
-      <Button className="mt-2 h-11" type="submit" disabled={saving || !csrf.token}>
+      <Button className="mt-2 h-12" type="submit" disabled={saving || !csrf.token}>
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
         Create administrator
       </Button>

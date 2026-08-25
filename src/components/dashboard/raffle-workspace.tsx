@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Gift, ImagePlus, LayoutDashboard, Plus, RefreshCcw, Save, Search, Shuffle, SlidersHorizontal, Sparkles, Ticket, Trash2, UserCheck, Users } from "lucide-react";
+import { ArrowRight, Copy, Download, FileSignature, Gift, ImagePlus, LayoutDashboard, Plus, RefreshCcw, Save, Search, Send, Shuffle, SlidersHorizontal, Sparkles, Ticket, Trash2, UserCheck, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
@@ -18,6 +18,10 @@ type RafflePrize = {
   winnerName: string | null;
   drawnAt: string | null;
   rerollCount: number;
+  acceptanceStatus: "NOT_SENT" | "PENDING" | "SIGNED";
+  acceptanceExpiresAt: string | null;
+  acceptanceSignerName: string | null;
+  acceptedAt: string | null;
   totalTickets: number;
   entries: {
     attendeeId: string;
@@ -100,6 +104,8 @@ export function RaffleWorkspace() {
   const [globalTickets, setGlobalTickets] = useState("4");
   const [ticketEdits, setTicketEdits] = useState<Record<string, string>>({});
   const [prizeForm, setPrizeForm] = useState({ name: "", description: "", value: "", imageUrl: "" });
+  const [receiptForm, setReceiptForm] = useState({ submitter: "", extension: "", fundingSource: "INSIGHT" });
+  const [acceptanceLink, setAcceptanceLink] = useState("");
   const [winner, setWinner] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -115,6 +121,8 @@ export function RaffleWorkspace() {
     setEvents(nextEvents);
     const nextEventId = nextEvents.some((event: EventSummary) => event.id === eventId) ? eventId : nextEvents[0]?.id || "";
     setEventId(nextEventId);
+    const nextEvent = nextEvents.find((event: EventSummary) => event.id === nextEventId);
+    if (nextEvent) setReceiptForm({ submitter: nextEvent.prizeReceiptSubmitter || "", extension: nextEvent.prizeReceiptExtension || "", fundingSource: nextEvent.prizeFundingSource || "INSIGHT" });
     setLoading(false);
     if (nextEventId) {
       await loadRaffle(nextEventId, searchTerm);
@@ -164,6 +172,9 @@ export function RaffleWorkspace() {
     setSelectedAttendee(null);
     setSearchTerm("");
     setMessage("");
+    setAcceptanceLink("");
+    const nextEvent = events.find((event) => event.id === nextEventId);
+    if (nextEvent) setReceiptForm({ submitter: nextEvent.prizeReceiptSubmitter || "", extension: nextEvent.prizeReceiptExtension || "", fundingSource: nextEvent.prizeFundingSource || "INSIGHT" });
     await loadRaffle(nextEventId, "");
   }
 
@@ -357,7 +368,69 @@ export function RaffleWorkspace() {
     setWinner(override
       ? `${data.overriddenWinner} was overridden. ${data.winner.name} is now the final winner of ${data.prize.name}.`
       : `${data.winner.name} is the final winner of ${data.prize.name}.`);
+    if (data.acceptance?.acceptanceUrl) {
+      setAcceptanceLink(data.acceptance.acceptanceUrl);
+      setMessage(data.acceptance.delivery === "NO_EMAIL" ? "The winner has no email address. Copy or open the signing link below." : "A secure prize-receipt signing link was created and sent to the winner.");
+    }
     await loadRaffle();
+  }
+
+  async function saveReceiptSettings(event: FormEvent) {
+    event.preventDefault();
+    const response = await fetch(`/api/events/${eventId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prizeReceiptSubmitter: receiptForm.submitter || null,
+        prizeReceiptExtension: receiptForm.extension || null,
+        prizeFundingSource: receiptForm.fundingSource || null
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(data.error ?? "Could not save payroll receipt settings.");
+      return;
+    }
+    setEvents((current) => current.map((item) => item.id === eventId ? data.event : item));
+    setMessage("Payroll prize-receipt settings saved for this event.");
+  }
+
+  async function requestAcceptance(prize: RafflePrize) {
+    const response = await fetch(`/api/events/${eventId}/raffle/prizes/${prize.id}/acceptance`, { method: "POST" });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(data.error ?? "Could not create the signature request.");
+      return;
+    }
+    setAcceptanceLink(data.acceptance.acceptanceUrl);
+    setMessage(data.acceptance.delivery === "NO_EMAIL" ? "No winner email is available. Copy or open the signing link below." : "A new signing link was created; any older link is now invalid.");
+    await loadRaffle();
+  }
+
+  async function exportPrizeReceipts() {
+    const response = await fetch(`/api/events/${eventId}/prize-receipts/export`, { cache: "no-store" });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setMessage(data.error ?? "Could not export the payroll workbook.");
+      return;
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${(currentEvent?.name || "event").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}-prize-receipts.xlsx`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage("Signed payroll prize-receipt workbook downloaded.");
+  }
+
+  async function copyAcceptanceLink() {
+    try {
+      await navigator.clipboard.writeText(acceptanceLink);
+      setMessage("Secure signing link copied to the clipboard.");
+    } catch {
+      setMessage("The link could not be copied automatically. Open it and copy it from the browser address bar.");
+    }
   }
 
   async function lookupScannedPayload(decodedText: string) {
@@ -406,7 +479,7 @@ export function RaffleWorkspace() {
                   aria-selected={selected}
                   aria-controls={`raffle-panel-${id}`}
                   onClick={() => setActiveTab(id)}
-                  className={`focus-ring flex items-center gap-3 rounded-xl px-4 py-3 text-left transition ${selected ? "bg-primary text-primary-foreground shadow-soft" : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"}`}
+                  className={`focus-ring flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition duration-300 ease-luxury ${selected ? "border-primary bg-primary text-primary-foreground shadow-[0_12px_34px_hsl(var(--primary)/0.22)]" : "border-transparent text-muted-foreground hover:-translate-y-0.5 hover:border-border/70 hover:bg-muted/60 hover:text-foreground"}`}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
                   <span>
@@ -423,6 +496,7 @@ export function RaffleWorkspace() {
       <div aria-live="polite" className="grid gap-2">
         {message ? <p className="rounded-xl border border-border/70 bg-muted/70 p-3 text-sm text-muted-foreground">{message}</p> : null}
         {winner ? <p className="rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm font-semibold text-foreground"><Sparkles className="mr-2 inline h-4 w-4 text-primary" />{winner}</p> : null}
+        {acceptanceLink ? <div className="flex flex-wrap items-center gap-3 rounded-xl border border-primary/30 bg-primary/10 p-3 text-sm"><span className="min-w-0 flex-1"><span className="block font-semibold">Secure signing link ready</span><span className="text-xs text-muted-foreground">Share only with the selected winner. Reissuing invalidates the previous link.</span></span><Button type="button" variant="secondary" onClick={() => void copyAcceptanceLink()}><Copy className="h-4 w-4" /> Copy link</Button><Button type="button" variant="secondary" onClick={() => window.open(acceptanceLink, "_blank", "noopener,noreferrer")}>Open form <ArrowRight className="h-4 w-4" /></Button></div> : null}
       </div>
 
       {activeTab === "overview" ? (
@@ -442,10 +516,10 @@ export function RaffleWorkspace() {
               {statCards.map(({ label, icon: Icon, getValue }) => (
                 <div key={label} className="bg-card p-5">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+                  <p className="panel-label">{label}</p>
                     <Icon className="h-4 w-4 text-primary" />
                   </div>
-                  <p className="mt-5 text-3xl font-semibold tabular-nums">{getValue(raffle)}</p>
+                  <p className="mt-5 font-display text-3xl font-semibold tracking-[-0.05em] tabular-nums">{getValue(raffle)}</p>
                 </div>
               ))}
             </div>
@@ -471,7 +545,7 @@ export function RaffleWorkspace() {
               <p className="mt-1 text-sm text-muted-foreground">Open the workspace for the task at hand.</p>
               <div className="mt-4 grid gap-2">
                 {workspaceTabs.slice(1).map(({ id, label, icon: Icon }) => (
-                  <button key={id} type="button" onClick={() => setActiveTab(id)} className="focus-ring flex items-center justify-between rounded-xl border border-border p-3 text-left text-sm font-medium transition hover:border-primary/40 hover:bg-muted/60">
+                  <button key={id} type="button" onClick={() => setActiveTab(id)} className="choice-tile focus-ring flex items-center justify-between p-3 text-left text-sm font-medium">
                     <span className="flex items-center gap-3"><Icon className="h-4 w-4 text-primary" />{label}</span>
                     <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   </button>
@@ -503,14 +577,14 @@ export function RaffleWorkspace() {
             <p className="mt-1 text-sm text-muted-foreground">A final event winner is automatically excluded from every later prize draw.</p>
 
             {selectedAttendee ? (
-              <div className="mt-5 rounded-2xl border border-primary/25 bg-primary/5 p-5">
+              <div className="form-section mt-5 border-primary/25 bg-primary/[0.045] p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div><p className="text-lg font-semibold">{selectedAttendee.name}</p><p className="text-sm text-muted-foreground">{selectedAttendee.email}{selectedAttendee.company ? ` · ${selectedAttendee.company}` : ""}</p></div>
                   <span className="rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary">Guest loaded</span>
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   {[{ label: "Total", value: selectedAttendee.raffleTickets }, { label: "Assigned", value: selectedAttendee.assignedTickets }, { label: "Remaining", value: selectedAttendee.remainingTickets }].map((item) => (
-                    <div key={item.label} className="rounded-xl border border-border/70 bg-card p-3"><p className="text-xs text-muted-foreground">{item.label}</p><p className="mt-1 text-xl font-semibold tabular-nums">{item.value}</p></div>
+                    <div key={item.label} className="control-panel p-3"><p className="panel-label">{item.label}</p><p className="mt-2 font-display text-xl font-semibold tabular-nums">{item.value}</p></div>
                   ))}
                 </div>
               </div>
@@ -531,6 +605,18 @@ export function RaffleWorkspace() {
 
       {activeTab === "prizes" ? (
         <section id="raffle-panel-prizes" role="tabpanel" className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]" aria-label="Prizes and drawing">
+          <Card className="p-6 xl:col-span-2">
+            <div className="grid gap-5 xl:grid-cols-[1fr_1.4fr] xl:items-end">
+              <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Payroll workflow</p><h2 className="mt-2 flex items-center gap-2 text-xl font-semibold"><FileSignature className="h-5 w-5 text-primary" /> Prize receipt settings</h2><p className="mt-1 text-sm text-muted-foreground">Saved per event and placed in the signed Excel workbook. Export is unlocked after every final winner signs.</p></div>
+              <form className="grid gap-3 sm:grid-cols-[1fr_9rem_1fr_auto]" onSubmit={saveReceiptSettings}>
+                <Input value={receiptForm.submitter} onChange={(event) => setReceiptForm((current) => ({ ...current, submitter: event.target.value }))} placeholder="Submitted to Payroll by" required />
+                <Input value={receiptForm.extension} onChange={(event) => setReceiptForm((current) => ({ ...current, extension: event.target.value }))} placeholder="Extension" required />
+                <select className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm" value={receiptForm.fundingSource} onChange={(event) => setReceiptForm((current) => ({ ...current, fundingSource: event.target.value }))} aria-label="Prize funding designation"><option value="SUPPLIER">Supplier paid</option><option value="INSIGHT">Insight paid</option><option value="PAYCARD">PayCard (VP approval)</option></select>
+                <Button type="submit"><Save className="h-4 w-4" /> Save</Button>
+              </form>
+            </div>
+            <div className="mt-4 flex justify-end"><Button type="button" variant="secondary" onClick={() => void exportPrizeReceipts()} disabled={!eventId}><Download className="h-4 w-4" /> Download signed Excel</Button></div>
+          </Card>
           <Card className="h-fit p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Prize catalog</p>
             <h2 className="mt-2 text-xl font-semibold">Add a prize</h2>
@@ -538,9 +624,9 @@ export function RaffleWorkspace() {
             <form className="mt-5 grid gap-3" onSubmit={createPrize}>
               <Input value={prizeForm.name} onChange={(event) => setPrizeForm((current) => ({ ...current, name: event.target.value }))} placeholder="Prize name" />
               <Input value={prizeForm.description} onChange={(event) => setPrizeForm((current) => ({ ...current, description: event.target.value }))} placeholder="Description" />
-              <Input value={prizeForm.value} onChange={(event) => setPrizeForm((current) => ({ ...current, value: event.target.value }))} placeholder="Value or sponsor" />
+              <Input type="number" min="0.01" step="0.01" value={prizeForm.value} onChange={(event) => setPrizeForm((current) => ({ ...current, value: event.target.value }))} placeholder="Fair-market value" required />
               <Input value={prizeForm.imageUrl} onChange={(event) => setPrizeForm((current) => ({ ...current, imageUrl: event.target.value }))} placeholder="Prize photo URL" />
-              <div className="grid gap-3 rounded-xl border border-border p-3 sm:grid-cols-[8rem_1fr] sm:items-center">
+              <div className="form-section grid gap-3 p-3 sm:grid-cols-[8rem_1fr] sm:items-center">
                 <div className="flex aspect-[4/3] items-center justify-center rounded-xl border border-border bg-primary/10 bg-cover bg-center text-primary" style={prizeForm.imageUrl ? { backgroundImage: `url(${prizeForm.imageUrl})` } : undefined}>{prizeForm.imageUrl ? null : <ImagePlus className="h-7 w-7" />}</div>
                 <label className="grid gap-2 text-sm text-muted-foreground">Import prize photo<Input type="file" accept="image/*" onChange={(event) => importPrizePhoto(event.target.files?.[0])} /></label>
               </div>
@@ -553,14 +639,14 @@ export function RaffleWorkspace() {
             <div className="mt-5 grid gap-3">
               {raffle.prizes.length === 0 ? <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No prizes yet. Add the first prize to start collecting entries.</div> : null}
               {raffle.prizes.map((prize) => (
-                <article key={prize.id} className="rounded-2xl border border-border p-4">
+                <article key={prize.id} className="control-panel p-4 transition duration-300 ease-luxury hover:border-primary/30 hover:shadow-soft">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="flex min-w-0 flex-1 gap-4">
                       <div className="flex h-24 w-28 shrink-0 items-center justify-center rounded-xl border border-border bg-primary/10 bg-cover bg-center text-primary" style={prize.imageUrl ? { backgroundImage: `url(${prize.imageUrl})` } : undefined}>{prize.imageUrl ? null : <Gift className="h-7 w-7" />}</div>
-                      <div className="min-w-0"><p className="font-semibold">{prize.name}</p><p className="mt-1 text-sm text-muted-foreground">{prize.totalTickets} tickets entered{prize.value ? ` · ${prize.value}` : ""}</p>{prize.description ? <p className="mt-2 text-sm text-muted-foreground">{prize.description}</p> : null}{prize.winnerName ? <p className="mt-3 inline-flex rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">Final winner: {prize.winnerName}{prize.rerollCount > 0 ? ` · ${prize.rerollCount} reroll${prize.rerollCount === 1 ? "" : "s"}` : ""}</p> : null}</div>
+                      <div className="min-w-0"><p className="font-semibold">{prize.name}</p><p className="mt-1 text-sm text-muted-foreground">{prize.totalTickets} tickets entered{prize.value ? ` · $${Number(prize.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</p>{prize.description ? <p className="mt-2 text-sm text-muted-foreground">{prize.description}</p> : null}{prize.winnerName ? <div className="mt-3 flex flex-wrap gap-2"><span className="inline-flex rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">Final winner: {prize.winnerName}{prize.rerollCount > 0 ? ` · ${prize.rerollCount} reroll${prize.rerollCount === 1 ? "" : "s"}` : ""}</span><span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${prize.acceptanceStatus === "SIGNED" ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-600"}`}>{prize.acceptanceStatus === "SIGNED" ? `Signed${prize.acceptanceSignerName ? ` by ${prize.acceptanceSignerName}` : ""}${prize.acceptedAt ? ` · ${new Date(prize.acceptedAt).toLocaleDateString()}` : ""}` : prize.acceptanceStatus === "PENDING" ? "Signature pending" : "Signature not requested"}</span></div> : null}</div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {prize.winnerName ? <Button type="button" variant="danger" onClick={() => void drawWinner(prize, true)} disabled={prize.totalTickets === 0}><RefreshCcw className="h-4 w-4" /> Override &amp; reroll</Button> : <Button type="button" variant="secondary" onClick={() => void drawWinner(prize)} disabled={prize.totalTickets === 0}><Shuffle className="h-4 w-4" /> Draw &amp; reveal</Button>}
+                      {prize.winnerName ? <>{prize.acceptanceStatus !== "SIGNED" ? <Button type="button" variant="secondary" onClick={() => void requestAcceptance(prize)}><Send className="h-4 w-4" /> {prize.acceptanceStatus === "PENDING" ? "Resend signing link" : "Send signing link"}</Button> : null}<Button type="button" variant="danger" onClick={() => void drawWinner(prize, true)} disabled={prize.totalTickets === 0}><RefreshCcw className="h-4 w-4" /> Override &amp; reroll</Button></> : <Button type="button" variant="secondary" onClick={() => void drawWinner(prize)} disabled={prize.totalTickets === 0}><Shuffle className="h-4 w-4" /> Draw &amp; reveal</Button>}
                       <Button type="button" variant="ghost" className="h-10 w-10 px-0" onClick={() => void archivePrize(prize.id)} aria-label={`Remove ${prize.name}`} title="Remove prize"><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </div>

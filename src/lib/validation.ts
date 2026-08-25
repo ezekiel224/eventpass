@@ -49,7 +49,10 @@ function validateEventTiming(data: EventTiming, context: z.RefinementCtx) {
 export const eventSchema = eventFieldsSchema.superRefine(validateEventTiming);
 
 export const eventUpdateSchema = eventFieldsSchema.partial().extend({
-  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional()
+  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
+  prizeReceiptSubmitter: z.string().trim().max(120).nullable().optional(),
+  prizeReceiptExtension: z.string().trim().max(40).nullable().optional(),
+  prizeFundingSource: z.enum(["SUPPLIER", "INSIGHT", "PAYCARD"]).nullable().optional()
 }).superRefine(validateEventTiming);
 
 export const attendeeRegistrationSchema = z.object({

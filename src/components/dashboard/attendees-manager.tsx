@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Download, ExternalLink, Mail, Pencil, Save, Search, Star, Trash2, UserPlus, X } from "lucide-react";
+import { CalendarDays, Download, ExternalLink, Mail, Pencil, Save, Search, Star, Trash2, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { AgeChoice } from "@/components/ui/age-choice";
@@ -8,6 +8,7 @@ import { AttendeeCsvImport } from "@/components/dashboard/attendee-csv-import";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { LiquidModal } from "@/components/ui/liquid-modal";
 import { initials } from "@/lib/utils";
 import { AttendeeSummary, EventSummary } from "@/types/domain";
 
@@ -42,6 +43,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
   const [sort, setSort] = useState("name");
   const [form, setForm] = useState(initialForm);
   const [editingAttendeeId, setEditingAttendeeId] = useState<string | null>(null);
+  const [addingAttendee, setAddingAttendee] = useState(false);
   const [editForm, setEditForm] = useState(initialForm);
   const [savingEdit, setSavingEdit] = useState(false);
   const [editMessage, setEditMessage] = useState("");
@@ -158,17 +160,24 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
       setMessage("Attendee added and pass generated.");
       setForm((current) => ({ ...initialForm, eventId: current.eventId }));
       await loadData(form.eventId);
+      setAddingAttendee(false);
     } else {
       setMessage("Could not add attendee. Emails must be unique per event.");
     }
   }
 
   async function toggleVip(attendee: AttendeeSummary) {
-    await fetch(`/api/attendees/${attendee.id}`, {
+    const response = await fetch(`/api/attendees/${attendee.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ vip: !attendee.vip, ticketTier: attendee.vip ? "General" : attendee.ticketTier })
     });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setMessage(typeof data.error === "string" ? data.error : "VIP status could not be updated.");
+      return;
+    }
+    setMessage(`${attendee.name} ${attendee.vip ? "removed from" : "added to"} VIP.`);
     await loadData(selectedEventId);
   }
 
@@ -253,8 +262,15 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
     await loadData(selectedEventId);
   }
 
-  async function deleteAttendee(attendeeId: string) {
-    await fetch(`/api/attendees/${attendeeId}`, { method: "DELETE" });
+  async function deleteAttendee(attendee: AttendeeSummary) {
+    if (!window.confirm(`Delete ${attendee.name}? Their pass, check-ins, and raffle entries will also be removed. This cannot be undone.`)) return;
+    const response = await fetch(`/api/attendees/${attendee.id}`, { method: "DELETE" });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      setMessage(typeof data.error === "string" ? data.error : "The attendee could not be deleted.");
+      return;
+    }
+    setMessage(`${attendee.name} was deleted.`);
     await loadData(selectedEventId);
   }
 
@@ -303,12 +319,13 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
   }
 
   return (
-    <div className="mt-6 space-y-4">
+    <div className="mt-7 space-y-5">
       <Card className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
         <div className="flex items-center gap-3">
           <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><CalendarDays className="h-5 w-5" aria-hidden="true" /></span>
           <div><p className="text-sm font-semibold">Event attendees</p><p className="text-xs text-muted-foreground">Archived events are excluded from active workflows.</p></div>
         </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <label className="grid gap-1.5 sm:min-w-72">
           <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Active event</span>
           <select value={selectedEventId} onChange={(event) => void selectEvent(event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 text-sm" disabled={events.length === 0}>
@@ -316,12 +333,13 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
             {events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}
           </select>
         </label>
+        <Button type="button" onClick={() => { setMessage(""); setAddingAttendee(true); }} disabled={!selectedEvent}><UserPlus className="h-4 w-4" /> Add attendee</Button>
+        </div>
       </Card>
+      {!addingAttendee && message ? <p className="liquid-notice" role="status">{message}</p> : null}
       <AttendeeCsvImport event={selectedEvent} onImported={() => loadData(selectedEventId)} />
-      <div className="grid gap-4 xl:grid-cols-[0.78fr_1.22fr]">
-      <Card className="p-5">
-        <h2 className="text-lg font-semibold">Add attendee</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{selectedEvent ? `Adding to ${selectedEvent.name}` : "Create or restore an active event before adding attendees."}</p>
+      <LiquidModal open={addingAttendee} onClose={() => setAddingAttendee(false)} title="Add attendee" description={selectedEvent ? `Create a registration and digital pass for ${selectedEvent.name}.` : "Select an active event before adding attendees."} size="lg">
+      <div>
         <form className="mt-5 grid gap-3" onSubmit={addAttendee}>
           <div className="grid gap-3 sm:grid-cols-2">
             <Input value={form.firstName} onChange={(event) => setField("firstName", event.target.value)} placeholder="First name" required />
@@ -336,11 +354,11 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
             subject="attendee"
           />
           {selectedEvent?.allergenOptions.length ? (
-            <div className="rounded-xl border border-border p-3">
+            <div className="form-section p-3.5">
               <p className="text-sm font-medium">Allergens</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {selectedEvent.allergenOptions.map((allergen) => (
-                  <label key={allergen} className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm">
+                  <label key={allergen} className="choice-tile flex items-center gap-2 px-3 py-2 text-sm">
                     <input
                       type="checkbox"
                       checked={form.selectedAllergens.includes(allergen)}
@@ -356,12 +374,12 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
           {selectedEvent?.menuOptions.length ? (
             <label className="grid gap-2 text-sm font-medium">Menu selection<select value={form.selectedMenu} onChange={(event) => setField("selectedMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal"><option value="">Not selected</option>{selectedEvent.menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
           ) : null}
-          <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
+          <label className="choice-tile flex items-center gap-2 p-3 text-sm">
             <input type="checkbox" checked={form.plusOneEnabled} onChange={(event) => setField("plusOneEnabled", event.target.checked)} className="h-4 w-4 accent-primary" />
             Add plus-one
           </label>
           {form.plusOneEnabled ? (
-            <div className="grid gap-3 rounded-2xl border border-border p-3">
+            <div className="form-section grid gap-3 p-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input value={form.plusOneFirstName} onChange={(event) => setField("plusOneFirstName", event.target.value)} placeholder="Plus-one first name" />
                 <Input value={form.plusOneLastName} onChange={(event) => setField("plusOneLastName", event.target.value)} placeholder="Plus-one last name" />
@@ -376,7 +394,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
                   <p className="text-sm font-medium">Plus-one allergens</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {selectedEvent.allergenOptions.map((allergen) => (
-                      <label key={allergen} className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm">
+                      <label key={allergen} className="choice-tile flex items-center gap-2 px-3 py-2 text-sm">
                         <input
                           type="checkbox"
                           checked={form.plusOneAllergens.includes(allergen)}
@@ -399,14 +417,15 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
             <Input value={form.seat} onChange={(event) => setField("seat", event.target.value)} placeholder="Seat" />
           </div>
           <Input value={form.notes} onChange={(event) => setField("notes", event.target.value)} placeholder="Internal notes (admin only)" />
-          <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
+          <label className="choice-tile flex items-center gap-2 p-3 text-sm">
             <input type="checkbox" checked={form.vip} onChange={(event) => setField("vip", event.target.checked)} className="h-4 w-4 accent-primary" />
             Mark VIP
           </label>
           {message ? <p className="rounded-xl bg-muted p-3 text-sm text-muted-foreground">{message}</p> : null}
           <Button type="submit" disabled={!selectedEvent}><UserPlus className="h-4 w-4" /> Add attendee</Button>
         </form>
-      </Card>
+      </div>
+      </LiquidModal>
       <Card className="p-5">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0 flex-1">
@@ -435,7 +454,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
           </div>
         </div>
         <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="data-table w-full min-w-[900px] text-left text-sm">
             <thead className="border-b border-border text-muted-foreground">
               <tr>
                 <th className="py-3 font-medium">Attendee</th>
@@ -454,7 +473,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
                 <tr><td className="py-6 text-muted-foreground" colSpan={6}>No attendees found.</td></tr>
               ) : null}
               {filtered.map((attendee) => (
-                <tr key={attendee.id} className={attendee.vip ? "bg-amber-400/5" : undefined}>
+                <tr key={attendee.id} className={attendee.vip ? "bg-amber-400/[0.04]" : undefined}>
                   <td className="py-4">
                     <div className="flex items-center gap-3">
                       <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 font-semibold text-primary">{initials(attendee.name)}</span>
@@ -477,7 +496,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
                       <Button title="Edit attendee pass" aria-label="Edit attendee pass" variant="ghost" className="h-9 w-9 px-0" onClick={() => startEditing(attendee)}><Pencil className="h-4 w-4" /></Button>
                       <Button title={attendee.email ? "Send event pass" : "No email address"} aria-label="Send event pass" variant="ghost" className="h-9 w-9 px-0" disabled={!attendee.email} onClick={() => void sendPass(attendee)}><Mail className="h-4 w-4" /></Button>
                       <Button title="Toggle VIP" aria-label="Toggle VIP" variant="ghost" className="h-9 w-9 px-0" onClick={() => void toggleVip(attendee)}><Star className="h-4 w-4" /></Button>
-                      <Button title="Delete attendee" aria-label="Delete attendee" variant="ghost" className="h-9 w-9 px-0" onClick={() => void deleteAttendee(attendee.id)}><Trash2 className="h-4 w-4" /></Button>
+                      <Button title="Delete attendee" aria-label="Delete attendee" variant="ghost" className="h-9 w-9 px-0" onClick={() => void deleteAttendee(attendee)}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </td>
                 </tr>
@@ -486,17 +505,9 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
           </table>
         </div>
       </Card>
-      </div>
-      {editingAttendeeId ? (
-        <Card className="p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-semibold">Edit attendee pass</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Changes appear on the attendee’s digital pass immediately.</p>
-            </div>
-            <Button type="button" variant="ghost" className="h-9 w-9 px-0" aria-label="Close pass editor" onClick={() => setEditingAttendeeId(null)}><X className="h-4 w-4" /></Button>
-          </div>
-          <form className="mt-5 grid gap-4" onSubmit={saveAttendee}>
+      <LiquidModal open={Boolean(editingAttendeeId)} onClose={() => setEditingAttendeeId(null)} title="Edit attendee details" description="Update identity, access, guest, and operational details without leaving the attendee table." size="lg">
+        {editingAttendeeId ? (
+          <form className="grid gap-4" onSubmit={saveAttendee}>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium">First name<Input value={editForm.firstName} onChange={(event) => setEditField("firstName", event.target.value)} required /></label>
               <label className="grid gap-1.5 text-sm font-medium">Last name<Input value={editForm.lastName} onChange={(event) => setEditField("lastName", event.target.value)} required /></label>
@@ -505,7 +516,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
               <label className="grid gap-1.5 text-sm font-medium">Company<Input value={editForm.company} onChange={(event) => setEditField("company", event.target.value)} /></label>
               <label className="grid gap-1.5 text-sm font-medium">Ticket tier<Input value={editForm.ticketTier} onChange={(event) => setEditField("ticketTier", event.target.value)} /></label>
               <label className="grid gap-1.5 text-sm font-medium">Seat / gate<Input value={editForm.seat} onChange={(event) => setEditField("seat", event.target.value)} /></label>
-              <label className="flex items-center gap-2 self-end rounded-xl border border-border p-3 text-sm">
+              <label className="choice-tile flex items-center gap-2 self-end p-3 text-sm">
                 <input type="checkbox" checked={editForm.vip} onChange={(event) => setEditField("vip", event.target.checked)} className="h-4 w-4 accent-primary" />
                 Mark VIP
               </label>
@@ -518,11 +529,11 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
             />
 
             {selectedEvent?.allergenOptions.length ? (
-              <div className="rounded-xl border border-border p-3">
+              <div className="form-section p-3">
                 <p className="text-sm font-medium">Attendee allergens</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {selectedEvent.allergenOptions.map((allergen) => (
-                    <label key={allergen} className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm">
+                    <label key={allergen} className="choice-tile flex items-center gap-2 px-3 py-2 text-sm">
                       <input type="checkbox" checked={editForm.selectedAllergens.includes(allergen)} onChange={() => toggleEditAllergen("selectedAllergens", allergen)} className="h-4 w-4 accent-primary" />
                       {allergen}
                     </label>
@@ -534,13 +545,13 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
               <label className="grid gap-2 text-sm font-medium">Attendee menu selection<select value={editForm.selectedMenu} onChange={(event) => setEditField("selectedMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal"><option value="">Not selected</option>{selectedEvent.menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
             ) : null}
 
-            <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
+            <label className="choice-tile flex items-center gap-2 p-3 text-sm">
               <input type="checkbox" checked={editForm.plusOneEnabled} onChange={(event) => setEditField("plusOneEnabled", event.target.checked)} className="h-4 w-4 accent-primary" />
               Include plus-one
             </label>
 
             {editForm.plusOneEnabled ? (
-              <div className="grid gap-4 rounded-2xl border border-border p-4">
+              <div className="form-section grid gap-4 p-4">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="grid gap-1.5 text-sm font-medium">Plus-one first name<Input value={editForm.plusOneFirstName} onChange={(event) => setEditField("plusOneFirstName", event.target.value)} /></label>
                   <label className="grid gap-1.5 text-sm font-medium">Plus-one last name<Input value={editForm.plusOneLastName} onChange={(event) => setEditField("plusOneLastName", event.target.value)} /></label>
@@ -555,7 +566,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
                     <p className="text-sm font-medium">Plus-one allergens</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {selectedEvent.allergenOptions.map((allergen) => (
-                        <label key={allergen} className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm">
+                        <label key={allergen} className="choice-tile flex items-center gap-2 px-3 py-2 text-sm">
                           <input type="checkbox" checked={editForm.plusOneAllergens.includes(allergen)} onChange={() => toggleEditAllergen("plusOneAllergens", allergen)} className="h-4 w-4 accent-primary" />
                           {allergen}
                         </label>
@@ -576,8 +587,8 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
               <Button type="submit" disabled={savingEdit}><Save className="h-4 w-4" /> {savingEdit ? "Saving…" : "Save pass changes"}</Button>
             </div>
           </form>
-        </Card>
-      ) : null}
+        ) : null}
+      </LiquidModal>
     </div>
   );
 }

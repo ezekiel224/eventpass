@@ -1,10 +1,11 @@
-import { Bell, LogOut } from "lucide-react";
+import { Command, LogOut, UserRound } from "lucide-react";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { MobileNavigation } from "@/components/dashboard/mobile-navigation";
 import { DashboardSearch } from "@/components/dashboard/dashboard-search";
 import { getCurrentUser } from "@/lib/auth";
 import { getAuthorizationForUser } from "@/lib/authorization";
 import { getBranding } from "@/lib/branding";
+import { PageTransition } from "@/components/layout/page-transition";
 
 export async function AppShell({ children, active = "Dashboard" }: { children: React.ReactNode; active?: string }) {
   const [branding, currentUser] = await Promise.all([getBranding(), getCurrentUser()]);
@@ -12,29 +13,34 @@ export async function AppShell({ children, active = "Dashboard" }: { children: R
   const permissions = [...(authorization?.permissions ?? [])];
 
   return (
-    <div className="surface-grid min-h-screen">
+    <div className="relative min-h-dvh overflow-x-clip">
       <Sidebar active={active} branding={branding} permissions={permissions} />
       <div className="lg:pl-72">
-        <header className="sticky top-0 z-30 border-b border-border/70 bg-background/70 backdrop-blur-2xl">
-          <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-40 px-2 pt-2 sm:px-3">
+          <div className="liquid-command-dock mx-auto flex h-[4.5rem] max-w-[112rem] items-center gap-3 px-3 sm:px-5 lg:px-6 xl:px-8">
             <MobileNavigation branding={branding} active={active} permissions={permissions} />
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold sm:hidden">{active}</span>
+            <div className="min-w-0 flex-1">
+              <div className="hidden items-center gap-2 sm:flex">
+                <Command className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Operations command center</span>
+              </div>
+              <p className="mt-0.5 truncate text-sm font-semibold tracking-[-0.01em] sm:text-base">{active}</p>
+            </div>
             <DashboardSearch />
-            <button className="focus-ring hidden h-10 w-10 items-center justify-center rounded-xl border border-border/80 bg-card/72 text-muted-foreground transition hover:border-primary/40 hover:text-foreground sm:flex" aria-label="Notifications">
-              <Bell className="h-4 w-4" />
-            </button>
-            <form action="/api/auth/logout" method="post">
-              <button className="focus-ring flex h-10 w-10 items-center justify-center rounded-xl border border-border/80 bg-card/72 text-muted-foreground transition hover:border-primary/40 hover:text-foreground" aria-label="Sign out" type="submit">
-                <LogOut className="h-4 w-4" />
-              </button>
-            </form>
-            <div className="hidden h-10 items-center gap-3 rounded-xl border border-border/80 bg-card/72 px-3 backdrop-blur sm:flex">
-              <span className="h-2.5 w-2.5 rounded-full bg-primary shadow-glow" />
-              <span className="text-sm font-medium">{branding.name}</span>
+            <div className="liquid-account flex h-11 items-center overflow-hidden rounded-2xl">
+              <div className="hidden min-w-0 items-center gap-2.5 border-r border-border/70 px-3.5 sm:flex">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><UserRound className="h-3.5 w-3.5" /></span>
+                <span className="max-w-40 truncate text-sm font-medium">{currentUser?.name || currentUser?.username || currentUser?.email || "Account"}</span>
+              </div>
+              <form action="/api/auth/logout" method="post">
+                <button className="focus-ring flex h-11 w-11 items-center justify-center text-muted-foreground hover:bg-muted/70 hover:text-foreground" aria-label="Sign out" title="Sign out" type="submit">
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </form>
             </div>
           </div>
         </header>
-        <main className="animate-fade-up px-4 py-7 sm:px-6 lg:px-8">{children}</main>
+        <PageTransition className="px-4 py-8 sm:px-6 sm:py-10 lg:px-8 xl:px-10">{children}</PageTransition>
       </div>
     </div>
   );

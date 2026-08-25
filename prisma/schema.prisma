@@ -111,8 +111,9 @@ model Organization {
   id           String   @id @default(cuid())
   name         String
   logoUrl      String?
-  primaryColor String   @default("#14f1cc")
-  accentColor  String   @default("#14f1cc")
+  // Retained for database compatibility. Application presentation uses immutable system tokens.
+  primaryColor String   @default("#315CF5")
+  accentColor  String   @default("#315CF5")
   timezone     String   @default("America/Chicago")
   domain       String?
   events       Event[]
@@ -147,6 +148,9 @@ model Event {
   emailConfirmationsEnabled Boolean       @default(true)
   waitlistEnabled           Boolean       @default(false)
   registrationDeadline      DateTime?
+  prizeReceiptSubmitter     String?
+  prizeReceiptExtension     String?
+  prizeFundingSource        String?
   attendees                 Attendee[]
   emailLogs                 EmailLog[]
   rafflePrizes              RafflePrize[]
@@ -228,21 +232,31 @@ model EmailLog {
 }
 
 model RafflePrize {
-  id               String        @id @default(cuid())
-  eventId          String
-  event            Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  name             String
-  description      String?
-  value            String?
-  imageUrl         String?
-  status           String        @default("ACTIVE")
-  winnerName       String?
-  winnerAttendeeId String?
-  drawnAt          DateTime?
-  rerollCount      Int           @default(0)
-  entries          RaffleEntry[]
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id                   String        @id @default(cuid())
+  eventId              String
+  event                Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name                 String
+  description          String?
+  value                String?
+  imageUrl             String?
+  status               String        @default("ACTIVE")
+  winnerName           String?
+  winnerAttendeeId     String?
+  drawnAt              DateTime?
+  rerollCount          Int           @default(0)
+  acceptanceStatus     String        @default("NOT_SENT")
+  acceptanceTokenHash  String?       @unique
+  acceptanceExpiresAt  DateTime?
+  acceptanceSignerName String?
+  acceptanceSapId      String?
+  taxAcknowledged      Boolean       @default(false)
+  signatureDataUrl     String?
+  acceptedAt           DateTime?
+  acceptedIp           String?
+  acceptedUserAgent    String?
+  entries              RaffleEntry[]
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   @@index([eventId, status])
 }

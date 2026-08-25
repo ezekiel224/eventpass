@@ -50,9 +50,9 @@ export function AttendeeCsvImport({ event, onImported }: { event?: EventSummary;
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-muted/25 p-4">
+    <div className="control-panel p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div><p className="font-semibold">Mass registration</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Upload up to 5,000 rows. Email may be blank, N/A, NA, none, null, or “-”. Lists use semicolons.</p></div>
+        <div><p className="panel-label">Bulk operations</p><p className="mt-2 font-semibold">Mass registration</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Upload up to 5,000 rows. Email may be blank, N/A, NA, none, null, or “-”. Lists use semicolons.</p></div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="secondary" onClick={downloadTemplate} disabled={!event}><FileDown className="h-4 w-4" /> Template</Button>
           <Button type="button" onClick={() => inputRef.current?.click()} disabled={!event || busy}><FileUp className="h-4 w-4" /> {busy ? "Importing…" : "Upload CSV"}</Button>

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 const prizeSchema = z.object({
   name: z.string().min(2).max(120),
   description: z.string().max(600).optional(),
-  value: z.string().max(80).optional(),
+  value: z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/, "Enter a fair-market value with up to two decimal places."),
   imageUrl: z.string().max(300000).optional()
 });
 
@@ -51,6 +51,10 @@ function serializeRaffle(prizes: Awaited<ReturnType<typeof getPrizes>>, attendee
       winnerAttendeeId: prize.winnerAttendeeId,
       drawnAt: prize.drawnAt?.toISOString() ?? null,
       rerollCount: prize.rerollCount,
+      acceptanceStatus: prize.acceptanceStatus,
+      acceptanceExpiresAt: prize.acceptanceExpiresAt?.toISOString() ?? null,
+      acceptanceSignerName: prize.acceptanceSignerName,
+      acceptedAt: prize.acceptedAt?.toISOString() ?? null,
       totalTickets: prize.entries.reduce((sum, entry) => sum + entry.ticketCount, 0),
       entries: prize.entries.map((entry) => ({
         id: entry.id,
@@ -149,7 +153,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const parsed = prizeSchema.safeParse(await request.json());
 
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Review the prize details." }, { status: 400 });
   }
 
   const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });

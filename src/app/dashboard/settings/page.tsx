@@ -5,7 +5,7 @@ import { SettingsManager } from "@/components/dashboard/settings-manager";
 export default function SettingsPage() {
   return (
     <AppShell active="Settings">
-      <PageTitle eyebrow="Workspace settings" title="Branding, domain, and environment-backed email." />
+      <PageTitle eyebrow="Workspace settings" title="Identity, domain, and environment-backed email." />
       <SettingsManager />
     </AppShell>
   );

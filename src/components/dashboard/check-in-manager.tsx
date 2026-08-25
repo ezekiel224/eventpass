@@ -100,10 +100,10 @@ export function CheckInManager() {
 
   return (
     <>
-      <div className="mt-6 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <GlassCard className="p-5">
+      <div className="mt-7 grid gap-5 xl:grid-cols-[1.08fr_0.92fr]">
+        <GlassCard className="self-start p-5 sm:p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Pass scanner</h2>
+            <div><p className="panel-label">Access validation</p><h2 className="mt-2 text-lg font-semibold">Pass scanner</h2></div>
           </div>
           <form className="mt-5 grid gap-4" onSubmit={submit}>
             <QrCameraScanner onScan={submitScannedPayload} startLabel="Scan pass" stopLabel="Stop camera" />
@@ -134,14 +134,14 @@ export function CheckInManager() {
           </form>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {["Signed QR validation", "Duplicate scan log", "Persistent check-ins"].map((item) => (
-              <div key={item} className="rounded-xl border border-border bg-card p-3 text-sm">{item}</div>
+              <div key={item} className="control-panel p-3 text-xs font-medium text-muted-foreground">{item}</div>
             ))}
           </div>
         </GlassCard>
-        <Card className="p-5">
-          <h2 className="text-lg font-semibold">Latest scan</h2>
+        <Card className="p-5 sm:p-6">
+          <p className="panel-label">Verification result</p><h2 className="mt-2 text-lg font-semibold">Latest scan</h2>
           {displayAttendee ? (
-            <div className="mt-5 rounded-2xl border border-border p-4">
+            <div className="form-section mt-5 p-4 sm:p-5">
               <div className="flex items-center gap-4">
                 <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-lg font-semibold text-primary">{initials(displayAttendee.name)}</span>
                 <div>
@@ -150,11 +150,11 @@ export function CheckInManager() {
                 </div>
               </div>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl bg-muted p-3">
+                <div className="control-panel p-3.5">
                   <p className="text-xs text-muted-foreground">Ticket type</p>
                   <p className="font-semibold">{displayAttendee.ticketTier}</p>
                 </div>
-                <div className="rounded-xl bg-muted p-3">
+                <div className="control-panel p-3.5">
                   <p className="text-xs text-muted-foreground">Fallback code</p>
                   <p className="font-semibold">{displayAttendee.fallbackCode}</p>
                 </div>
@@ -201,7 +201,7 @@ export function CheckInManager() {
             {logs.map((log) => {
               const alert = log.duplicate || log.attendee.under21 || log.attendee.plusOneUnder21;
               return (
-                <div key={log.id} className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-sm ${alert ? "border-destructive/45 bg-destructive/[0.07]" : "border-border"}`}>
+                <div key={log.id} className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-sm transition ${alert ? "border-destructive/45 bg-destructive/[0.07]" : "border-border/70 bg-background/40 hover:border-primary/30"}`}>
                   <span className="font-medium">{log.attendee.name}{log.attendee.under21 || log.attendee.plusOneUnder21 ? " · Under 21" : ""}</span>
                   <span className={alert ? "shrink-0 font-bold text-destructive" : "shrink-0 text-accent"}>{log.duplicate ? "Duplicate scan" : log.attendee.under21 || log.attendee.plusOneUnder21 ? "Age alert" : "Checked in"}</span>
                 </div>

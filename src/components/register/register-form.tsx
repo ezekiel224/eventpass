@@ -29,6 +29,7 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [waitlisted, setWaitlisted] = useState(false);
 
   function setField(name: keyof typeof form, value: string | boolean | string[]) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -76,29 +77,40 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
     const data = await response.json();
 
     if (response.ok) {
-      router.push(data.passUrl.replace(/^https?:\/\/[^/]+/, ""));
+      if (data.waitlisted) setWaitlisted(true);
+      else router.push(data.passUrl.replace(/^https?:\/\/[^/]+/, ""));
     } else {
       setMessage(data.error ?? "Could not register. Try a different email or check event availability.");
     }
     setSaving(false);
   }
 
+  if (waitlisted) {
+    return <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/10 p-6 text-center"><CheckCircle2 className="mx-auto h-10 w-10 text-primary" /><h3 className="mt-3 text-xl font-semibold">You’re on the waitlist</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">Your information was saved. The event organizer will contact you if space becomes available.</p></div>;
+  }
+
   return (
-    <form className="mt-6 grid gap-4" onSubmit={submit}>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Input value={form.firstName} onChange={(event) => setField("firstName", event.target.value)} placeholder="First name" required />
-        <Input value={form.lastName} onChange={(event) => setField("lastName", event.target.value)} placeholder="Last name" required />
+    <form className="mt-6 grid gap-5" onSubmit={submit}>
+      <div className="form-section grid gap-4 p-4 sm:p-5">
+        <p className="panel-label">Primary attendee</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-2 text-sm font-semibold">First name<Input value={form.firstName} onChange={(event) => setField("firstName", event.target.value)} placeholder="First name" required /></label>
+          <label className="grid gap-2 text-sm font-semibold">Last name<Input value={form.lastName} onChange={(event) => setField("lastName", event.target.value)} placeholder="Last name" required /></label>
+        </div>
+        <label className="grid gap-2 text-sm font-semibold">Email address<Input value={form.email} onChange={(event) => setField("email", event.target.value)} placeholder="name@company.com" type="email" required /></label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-2 text-sm font-semibold">Phone <span className="sr-only">optional</span><Input value={form.phone} onChange={(event) => setField("phone", event.target.value)} placeholder="Optional" /></label>
+          <label className="grid gap-2 text-sm font-semibold">Company <span className="sr-only">optional</span><Input value={form.company} onChange={(event) => setField("company", event.target.value)} placeholder="Optional" /></label>
+        </div>
+        <AgeChoice value={form.under21 as "" | "yes" | "no"} onChange={(value) => setField("under21", value)} />
       </div>
-      <Input value={form.email} onChange={(event) => setField("email", event.target.value)} placeholder="Email" type="email" required />
-      <Input value={form.phone} onChange={(event) => setField("phone", event.target.value)} placeholder="Phone (optional)" />
-      <Input value={form.company} onChange={(event) => setField("company", event.target.value)} placeholder="Company (optional)" />
-      <AgeChoice value={form.under21 as "" | "yes" | "no"} onChange={(value) => setField("under21", value)} />
       {allergenOptions.length > 0 ? (
-        <div className="rounded-xl border border-border p-3">
-          <p className="text-sm font-medium">Allergens</p>
+        <div className="form-section p-4 sm:p-5">
+          <p className="panel-label">Dietary requirements</p>
+          <p className="mt-2 text-sm font-semibold">Allergens</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {allergenOptions.map((allergen) => (
-              <label key={allergen} className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm">
+              <label key={allergen} className="choice-tile flex cursor-pointer items-center gap-2 px-3 py-2 text-sm">
                 <input
                   type="checkbox"
                   checked={form.selectedAllergens.includes(allergen)}
@@ -112,7 +124,7 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
         </div>
       ) : null}
       {menuOptions.length > 0 ? (
-        <label className="grid gap-2 rounded-xl border border-border p-3 text-sm font-medium">
+        <label className="form-section grid gap-2 p-4 text-sm font-semibold sm:p-5">
           Menu selection
           <select value={form.selectedMenu} onChange={(event) => setField("selectedMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal" required>
             <option value="">Choose a menu option</option>
@@ -120,12 +132,13 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
           </select>
         </label>
       ) : null}
-      <label className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm">
+      <label className="choice-tile flex min-h-14 cursor-pointer items-center gap-3 p-4 text-sm font-semibold">
         <input type="checkbox" checked={form.plusOneEnabled} onChange={(event) => setField("plusOneEnabled", event.target.checked)} className="h-4 w-4 accent-primary" />
         Add a plus-one
       </label>
       {form.plusOneEnabled ? (
-        <div className="grid gap-4 rounded-2xl border border-border p-4">
+        <div className="form-section grid gap-4 p-4 sm:p-5">
+          <p className="panel-label">Additional guest</p>
           <div className="grid gap-4 sm:grid-cols-2">
             <Input value={form.plusOneFirstName} onChange={(event) => setField("plusOneFirstName", event.target.value)} placeholder="Plus-one first name" required />
             <Input value={form.plusOneLastName} onChange={(event) => setField("plusOneLastName", event.target.value)} placeholder="Plus-one last name" required />
@@ -140,7 +153,7 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
               <p className="text-sm font-medium">Plus-one allergens</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {allergenOptions.map((allergen) => (
-                  <label key={allergen} className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-sm">
+                  <label key={allergen} className="choice-tile flex cursor-pointer items-center gap-2 px-3 py-2 text-sm">
                     <input
                       type="checkbox"
                       checked={form.plusOneAllergens.includes(allergen)}
@@ -165,10 +178,10 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
         </div>
       ) : null}
       {message ? <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{message}</p> : null}
-      <Button className="h-12" disabled={saving} type="submit">Register and generate pass</Button>
+      <Button className="h-12" disabled={saving} type="submit">{saving ? "Creating registration…" : "Register and generate pass"}</Button>
       <div className="grid gap-3 sm:grid-cols-2">
-        <div className="flex items-center gap-2 rounded-xl bg-accent/10 p-3 text-sm text-accent"><CheckCircle2 className="h-4 w-4" /> Unique attendee ID</div>
-        <div className="flex items-center gap-2 rounded-xl bg-primary/10 p-3 text-sm text-primary"><Mail className="h-4 w-4" /> Email can be enabled later</div>
+        <div className="control-panel flex items-center gap-2 p-3 text-xs text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> Unique attendee identity</div>
+        <div className="control-panel flex items-center gap-2 p-3 text-xs text-muted-foreground"><Mail className="h-4 w-4 text-primary" /> Secure delivery workflow</div>
       </div>
     </form>
   );

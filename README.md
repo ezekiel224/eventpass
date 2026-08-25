@@ -13,6 +13,8 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+Before merging or deploying structural changes, run `npm run verify` and complete the focused workflow checklist in `SMOKE_TESTS.md`.
+
 `prisma:setup` applies the local SQLite schema, prepares system roles and permissions, and loads the idempotent demo event data. Run it again whenever you create a fresh local database.
 
 Open `/login` after the first start. When the database has no accounts, EventPass redirects to the one-time `/signup` page so you can choose the initial administrator email, username, and password. No administrator credentials are stored in environment variables or source code.
@@ -89,8 +91,9 @@ curl -X POST http://127.0.0.1:3000/api/email/test \
 ## Included
 
 - Next.js App Router, TypeScript, Tailwind CSS, Framer Motion, Lucide icons
-- Landing page, auth screens, admin dashboard, event and attendee management
+- Auth screens, permission-aware admin dashboard, event and attendee management
 - QR pass generation and validation API shape
 - Scanner UI with duplicate check-in handling flow
+- Raffle operations, secure winner acknowledgment, and legal-template Excel prize receipts
 - Prisma schema for users, roles, events, attendees, passes, check-ins, email logs, settings
 - Dockerfile, Docker Compose, health endpoint, environment examples

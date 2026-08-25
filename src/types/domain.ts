@@ -20,6 +20,9 @@ export type EventSummary = {
   emailConfirmationsEnabled: boolean;
   waitlistEnabled: boolean;
   registrationDeadline: string | null;
+  prizeReceiptSubmitter: string | null;
+  prizeReceiptExtension: string | null;
+  prizeFundingSource: string | null;
   attendeeCount: number;
   checkedInCount: number;
 };

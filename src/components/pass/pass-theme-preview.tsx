@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Eye, Monitor, Moon, Smartphone, Sun } from "lucide-react";
+import { Eye, Monitor, Moon, RotateCcw, Smartphone, Sun } from "lucide-react";
 import { PassExperience } from "@/components/pass/pass-experience";
 import {
   GenericVariant,
@@ -18,7 +18,6 @@ import { Input } from "@/components/ui/input";
 export function PassThemePreview({ baseData }: { baseData: NormalizedPassData }) {
   const [theme, setTheme] = useState<PassThemeId>("gala");
   const [face, setFace] = useState<PassFace>("front");
-  const [accentColor, setAccentColor] = useState(baseData.accentColor);
   const [passType, setPassType] = useState(baseData.passType);
   const [attendeeName, setAttendeeName] = useState(baseData.attendeeName);
   const [mobileWidth, setMobileWidth] = useState(false);
@@ -32,7 +31,6 @@ export function PassThemePreview({ baseData }: { baseData: NormalizedPassData })
     attendeeName: longContent ? "Alexandria Montgomery-Worthington the Third" : attendeeName || "Attendee",
     eventName: longContent ? "International Symposium for Extraordinary Emerging Ideas and Discovery" : baseData.eventName,
     passType: passType || "General",
-    accentColor,
     ...(missingOptional ? {
       eventSubtitle: null,
       company: null,
@@ -46,12 +44,12 @@ export function PassThemePreview({ baseData }: { baseData: NormalizedPassData })
       perks: [],
       sponsorLogos: []
     } : {})
-  }), [accentColor, attendeeName, baseData, longContent, missingOptional, passType]);
+  }), [attendeeName, baseData, longContent, missingOptional, passType]);
 
   return (
     <div className="mt-6 grid gap-6">
       <GlassCard className="p-5">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <label className="grid gap-2 text-sm font-medium">Theme
             <select value={theme} onChange={(event) => setTheme(event.target.value as PassThemeId)} className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm">
               {passThemeIds.map((themeId) => <option key={themeId} value={themeId}>{passThemeRegistry[themeId].label}</option>)}
@@ -62,12 +60,6 @@ export function PassThemePreview({ baseData }: { baseData: NormalizedPassData })
           </label>
           <label className="grid gap-2 text-sm font-medium">Pass type
             <Input value={passType} onChange={(event) => setPassType(event.target.value)} />
-          </label>
-          <label className="grid gap-2 text-sm font-medium">Organizer accent
-            <span className="flex h-10 items-center gap-3 rounded-xl border border-border bg-background px-3">
-              <input type="color" value={accentColor} onChange={(event) => setAccentColor(event.target.value)} className="h-7 w-10 cursor-pointer border-0 bg-transparent" aria-label="Organizer accent color" />
-              <span className="font-mono text-xs text-muted-foreground">{accentColor}</span>
-            </span>
           </label>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -142,5 +134,5 @@ export function PassThemePreview({ baseData }: { baseData: NormalizedPassData })
 }
 
 function RotatePreviewIcon() {
-  return <span className="text-base leading-none" aria-hidden="true">↻</span>;
+  return <RotateCcw className="h-4 w-4" aria-hidden="true" />;
 }

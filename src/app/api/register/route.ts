@@ -21,8 +21,16 @@ export async function POST(request: NextRequest) {
   }
 
   const event = await prisma.event.findUnique({ where: { id: parsed.data.eventId } });
-  if (!event || !event.registrationEnabled || event.status === "ARCHIVED") {
+  if (!event || !event.registrationEnabled || event.status !== "PUBLISHED") {
     return NextResponse.json({ error: "Registration is not open for this event" }, { status: 400 });
+  }
+  if (event.registrationDeadline && event.registrationDeadline < new Date()) {
+    return NextResponse.json({ error: "The registration deadline has passed" }, { status: 400 });
+  }
+  const registrationCount = await prisma.attendee.count({ where: { eventId: event.id, status: { not: "WAITLIST" } } });
+  const waitlisted = registrationCount >= event.capacity;
+  if (waitlisted && !event.waitlistEnabled) {
+    return NextResponse.json({ error: "This event has reached capacity" }, { status: 409 });
   }
 
   const attendee = await prisma.attendee.create({
@@ -44,9 +52,15 @@ export async function POST(request: NextRequest) {
       plusOneUnder21: parsed.data.plusOneEnabled ? parsed.data.plusOneUnder21 ?? false : false,
       ticketTier: "General",
       notes: null,
-      vip: false
+      vip: false,
+      status: waitlisted ? "WAITLIST" : "REGISTERED"
     }
   });
+
+  if (waitlisted) {
+    const created = await prisma.attendee.findUniqueOrThrow({ where: { id: attendee.id }, include: attendeeInclude });
+    return NextResponse.json({ attendee: serializeAttendee(created), waitlisted: true }, { status: 201 });
+  }
 
   const pass = await createPassForAttendee(attendee.id, attendee.eventId);
   const passUrl = `${process.env.APP_URL ?? "http://localhost:3000"}/pass/${attendee.id}`;

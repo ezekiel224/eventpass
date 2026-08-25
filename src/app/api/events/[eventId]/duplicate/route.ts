@@ -48,6 +48,9 @@ export async function POST(_request: Request, { params }: Params) {
       emailConfirmationsEnabled: original.emailConfirmationsEnabled,
       waitlistEnabled: original.waitlistEnabled,
       registrationDeadline: original.registrationDeadline,
+      prizeReceiptSubmitter: original.prizeReceiptSubmitter,
+      prizeReceiptExtension: original.prizeReceiptExtension,
+      prizeFundingSource: original.prizeFundingSource,
       rafflePrizes: {
         create: original.rafflePrizes.map((prize) => ({
           name: prize.name,

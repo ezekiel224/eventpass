@@ -68,6 +68,9 @@ export function serializeEvent(event: Prisma.EventGetPayload<{ include: typeof e
     emailConfirmationsEnabled: event.emailConfirmationsEnabled,
     waitlistEnabled: event.waitlistEnabled,
     registrationDeadline: event.registrationDeadline?.toISOString() ?? null,
+    prizeReceiptSubmitter: event.prizeReceiptSubmitter,
+    prizeReceiptExtension: event.prizeReceiptExtension,
+    prizeFundingSource: event.prizeFundingSource,
     attendeeCount,
     checkedInCount
   };
