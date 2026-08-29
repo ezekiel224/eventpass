@@ -123,9 +123,9 @@ model Organization {
 }
 
 model Event {
-  id                        String        @id @default(cuid())
+  id                        String           @id @default(cuid())
   organizationId            String
-  organization              Organization  @relation(fields: [organizationId], references: [id])
+  organization              Organization     @relation(fields: [organizationId], references: [id])
   name                      String
   description               String
   venue                     String
@@ -141,21 +141,31 @@ model Event {
   organizer                 String
   contactEmail              String
   contactPhone              String?
-  passTheme                 String        @default("minimal")
-  status                    String        @default("DRAFT")
-  registrationEnabled       Boolean       @default(true)
-  qrPassesEnabled           Boolean       @default(true)
-  emailConfirmationsEnabled Boolean       @default(true)
-  waitlistEnabled           Boolean       @default(false)
+  passTheme                 String           @default("minimal")
+  status                    String           @default("DRAFT")
+  registrationEnabled       Boolean          @default(true)
+  qrPassesEnabled           Boolean          @default(true)
+  emailConfirmationsEnabled Boolean          @default(true)
+  waitlistEnabled           Boolean          @default(false)
   registrationDeadline      DateTime?
+  raffleName                String?
+  raffleDescription         String?
+  raffleStatus              String           @default("DRAFT")
+  raffleTicketSalesOpen     Boolean          @default(false)
+  raffleVisible             Boolean          @default(false)
+  raffleStartsAt            DateTime?
+  raffleEndsAt              DateTime?
+  raffleTicketPriceCents    Int              @default(0)
   prizeReceiptSubmitter     String?
   prizeReceiptExtension     String?
   prizeFundingSource        String?
   attendees                 Attendee[]
   emailLogs                 EmailLog[]
   rafflePrizes              RafflePrize[]
-  createdAt                 DateTime      @default(now())
-  updatedAt                 DateTime      @updatedAt
+  raffleDisplays            RaffleDisplay[]
+  raffleActivities          RaffleActivity[]
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
 }
 
 model Attendee {
@@ -240,6 +250,9 @@ model RafflePrize {
   value                String?
   imageUrl             String?
   status               String        @default("ACTIVE")
+  sortOrder            Int           @default(0)
+  quantity             Int           @default(1)
+  eligibility          String?
   winnerName           String?
   winnerAttendeeId     String?
   drawnAt              DateTime?
@@ -273,6 +286,39 @@ model RaffleEntry {
 
   @@unique([prizeId, attendeeId])
   @@index([attendeeId])
+}
+
+model RaffleActivity {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([eventId, createdAt])
+}
+
+model RaffleDisplay {
+  id               String    @id @default(cuid())
+  eventId          String
+  event            Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name             String
+  mode             String    @default("WALL")
+  tokenHash        String?   @unique
+  pairingCodeHash  String?   @unique
+  pairingExpiresAt DateTime?
+  pairedAt         DateTime?
+  lastSeenAt       DateTime?
+  viewportWidth    Int?
+  viewportHeight   Int?
+  paused           Boolean   @default(false)
+  forcedPrizeId    String?
+  rotationSeconds  Int       @default(12)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([eventId, mode, lastSeenAt])
 }
 
 model Setting {

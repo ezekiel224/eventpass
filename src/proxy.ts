@@ -16,7 +16,8 @@ export async function proxy(request: NextRequest) {
   const isPublicPassCalendar = /^\/api\/attendees\/[^/]+\/calendar$/.test(pathname);
   const isPublicPassQr = /^\/api\/pass\/[^/]+\/qr$/.test(pathname);
   const isPublicPrizeAcceptance = /^\/api\/prize-acceptance\/[^/]+$/.test(pathname);
-  const isPublicApi = isPublicPassCalendar || isPublicPassQr || isPublicPrizeAcceptance || PUBLIC_API_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const isPublicRaffleDisplay = pathname === "/api/raffle-display/pair" || pathname === "/api/raffle-display/session";
+  const isPublicApi = isPublicPassCalendar || isPublicPassQr || isPublicPrizeAcceptance || isPublicRaffleDisplay || PUBLIC_API_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
   const requiresAuth = pathname.startsWith("/dashboard")
     || pathname.startsWith("/admin")
     || pathname === "/change-password"
