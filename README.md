@@ -88,7 +88,7 @@ curl -X POST http://127.0.0.1:3000/api/email/test \
   -d '{"to":"you@yourdomain.com"}'
 ```
 
-## Included
+## Features
 
 - Next.js App Router, TypeScript, Tailwind CSS, Framer Motion, Lucide icons
 - Auth screens, permission-aware admin dashboard, event and attendee management

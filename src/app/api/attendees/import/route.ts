@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { normalizeCsvHeader, parseCsv } from "@/lib/csv";
 import { stringifyStringArray } from "@/lib/prisma-helpers";
+import { normalizePersonName } from "@/lib/text";
 import { createQrPayload, tokenHash } from "@/services/qr";
 
 export const dynamic = "force-dynamic";
@@ -43,8 +44,8 @@ export async function POST(request: NextRequest) {
 
   for (const [rowIndex, cells] of rows.slice(1).entries()) {
     const values = Object.fromEntries(headers.map((header, index) => [header, cells[index]?.trim() ?? ""]));
-    const firstName = values.firstname;
-    const lastName = values.lastname;
+    const firstName = normalizePersonName(values.firstname ?? "");
+    const lastName = normalizePersonName(values.lastname ?? "");
     const name = `${firstName ?? ""} ${lastName ?? ""}`.trim() || `Row ${rowIndex + 2}`;
     if (!firstName || !lastName) {
       results.push({ row: rowIndex + 2, name, ok: false, error: "First Name and Last Name are required." });
@@ -82,8 +83,8 @@ export async function POST(request: NextRequest) {
           selectedMenu: values.menuselection?.slice(0, 120) || null,
           under21: booleanValue(values.under21),
           plusOneEnabled,
-          plusOneFirstName: plusOneEnabled ? values.plusonefirstname?.slice(0, 80) || null : null,
-          plusOneLastName: plusOneEnabled ? values.plusonelastname?.slice(0, 80) || null : null,
+          plusOneFirstName: plusOneEnabled ? normalizePersonName(values.plusonefirstname ?? "").slice(0, 80) || null : null,
+          plusOneLastName: plusOneEnabled ? normalizePersonName(values.plusonelastname ?? "").slice(0, 80) || null : null,
           plusOneBirthDate: plusOneEnabled ? plusOneBirthDate : null,
           plusOneAllergens: stringifyStringArray(plusOneEnabled ? splitList(values.plusoneallergens) : []),
           plusOneMenu: plusOneEnabled ? values.plusonemenuselection?.slice(0, 120) || null : null,

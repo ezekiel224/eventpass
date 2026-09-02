@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { storedImageSchema } from "@/lib/image-schema";
 import { serializeRaffleAttendee } from "@/lib/raffle-attendee";
 
 type Params = { params: Promise<{ eventId: string }> };
@@ -11,7 +12,7 @@ const prizeSchema = z.object({
   name: z.string().min(2).max(120),
   description: z.string().max(600).optional(),
   value: z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/, "Enter a fair-market value with up to two decimal places."),
-  imageUrl: z.string().max(300000).optional()
+  imageUrl: storedImageSchema.optional()
 });
 
 function serializeRaffle(prizes: Awaited<ReturnType<typeof getPrizes>>, attendees: Awaited<ReturnType<typeof getAttendees>>, attendeeTotal: number) {

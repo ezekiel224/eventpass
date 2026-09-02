@@ -8,7 +8,7 @@ import Link from "next/link";
 export default function CheckInPage() {
   return (
     <AppShell active="Check In">
-      <PageTitle eyebrow="QR scanner" title="Validate passes and prevent duplicate check-ins." />
+      <PageTitle eyebrow="Access" title="Event Check-In" />
       <div className="mt-4 flex justify-end">
         <Link href="/dashboard/check-in/display"><Button type="button" variant="secondary"><MonitorUp className="h-4 w-4" /> Open Live Display</Button></Link>
       </div>

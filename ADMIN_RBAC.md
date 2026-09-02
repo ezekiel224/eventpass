@@ -1,4 +1,4 @@
-# Admin accounts and permission administration
+# Account and Permission Administration
 
 ## Architecture
 

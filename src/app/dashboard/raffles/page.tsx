@@ -8,7 +8,7 @@ import Link from "next/link";
 export default function RafflesPage() {
   return (
     <AppShell active="Raffles">
-      <PageTitle eyebrow="Raffle operations" title="Manage prizes, scan passes, and assign raffle tickets." />
+      <PageTitle eyebrow="Operations" title="Raffles" />
       <div className="mt-4 flex flex-wrap justify-end gap-2">
         <Link href="/dashboard/raffles/displays">
           <Button type="button"><MonitorCog className="h-4 w-4" /> Display Control</Button>

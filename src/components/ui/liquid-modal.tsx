@@ -110,7 +110,7 @@ export function LiquidModal({
           >
             <header className="relative z-10 flex shrink-0 items-start justify-between gap-5 border-b border-white/15 px-5 py-5 dark:border-white/10 sm:px-7 sm:py-6">
               <div className="min-w-0">
-                <p className="panel-label text-primary">Focused workspace</p>
+                <p className="panel-label text-primary">Editor</p>
                 <h2 id={titleId} className="mt-2 font-display text-2xl font-semibold tracking-[-0.04em] sm:text-3xl">{title}</h2>
                 {description ? <p id={descriptionId} className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p> : null}
               </div>

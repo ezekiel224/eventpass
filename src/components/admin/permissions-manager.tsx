@@ -141,7 +141,7 @@ export function PermissionsManager() {
       {(csrf.error || error || message) ? <p className={`rounded-xl border p-3 text-sm ${csrf.error || error ? "border-destructive/20 bg-destructive/10 text-destructive" : "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"}`}>{csrf.error || error || message}</p> : null}
 
       <Card className="p-5">
-        <div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary" /><div><h2 className="text-lg font-semibold">Role permission matrix</h2><p className="mt-1 text-sm text-muted-foreground">System roles are visible but locked. Custom roles can be changed independently.</p></div></div>
+        <div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary" /><div><h2 className="text-lg font-semibold">Role Permissions</h2><p className="mt-1 text-sm text-muted-foreground">System roles are visible but locked. Custom roles can be changed independently.</p></div></div>
         <div className="mt-5 overflow-x-auto">
           <table className="data-table w-full min-w-[900px] border-separate border-spacing-0 text-sm">
             <thead><tr><th className="sticky left-0 z-10 border-b border-border bg-card p-3 text-left">Permission</th>{roles.map((role) => <th key={role.id} className="min-w-32 border-b border-border p-3 text-center"><span className="block">{role.name}</span><span className="mt-1 block text-[10px] font-normal uppercase tracking-wider text-muted-foreground">{role.system ? "System" : `${role.userCount} users`}</span></th>)}</tr></thead>
@@ -163,7 +163,7 @@ export function PermissionsManager() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card className="p-5">
-          <h2 className="text-lg font-semibold">Create custom role</h2>
+          <h2 className="text-lg font-semibold">New Role</h2>
           <p className="mt-1 text-sm text-muted-foreground">New roles start with no permissions.</p>
           <form className="mt-4 grid gap-3" onSubmit={createRole}>
             <Input name="name" placeholder="Role name" required />
@@ -173,7 +173,7 @@ export function PermissionsManager() {
           </form>
         </Card>
         <Card className="p-5">
-          <h2 className="text-lg font-semibold">Create custom permission</h2>
+          <h2 className="text-lg font-semibold">New Permission</h2>
           <p className="mt-1 text-sm text-muted-foreground">Use a scoped slug such as <code>reports:export</code>.</p>
           <form className="mt-4 grid gap-3" onSubmit={createPermission}>
             <Input name="name" placeholder="Permission name" required />
@@ -185,7 +185,7 @@ export function PermissionsManager() {
       </div>
 
       <Card className="p-5">
-        <h2 className="text-lg font-semibold">Recent security audit</h2>
+        <h2 className="text-lg font-semibold">Audit Log</h2>
         <div className="mt-4 divide-y divide-border">
           {auditLogs.length === 0 ? <p className="py-4 text-sm text-muted-foreground">No audited administrative actions yet.</p> : auditLogs.slice(0, 20).map((log) => (
             <div key={log.id} className="grid gap-1 py-3 text-sm sm:grid-cols-[1fr_auto]">

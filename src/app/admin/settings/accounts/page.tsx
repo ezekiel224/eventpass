@@ -10,7 +10,7 @@ export default async function AccountsPage() {
 
   return (
     <AppShell active="Accounts">
-      <PageTitle eyebrow="Security administration" title="Accounts, roles, and direct access overrides." />
+      <PageTitle eyebrow="Access" title="Accounts" />
       <AccountsManager currentUserId={authorization.user.id} />
     </AppShell>
   );

@@ -164,6 +164,7 @@ model Event {
   rafflePrizes              RafflePrize[]
   raffleDisplays            RaffleDisplay[]
   raffleActivities          RaffleActivity[]
+  votingBallots             VotingBallot[]
   createdAt                 DateTime         @default(now())
   updatedAt                 DateTime         @updatedAt
 }
@@ -319,6 +320,100 @@ model RaffleDisplay {
   updatedAt        DateTime  @updatedAt
 
   @@index([eventId, mode, lastSeenAt])
+}
+
+model VotingBallot {
+  id                  String              @id @default(cuid())
+  eventId             String
+  event               Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  title               String
+  description         String?
+  slug                String              @unique
+  status              String              @default("DRAFT")
+  coverImageUrl       String?
+  confirmationMessage String?
+  questions           VotingQuestion[]
+  participants        VotingParticipant[]
+  submissions         VotingSubmission[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([eventId, status])
+}
+
+model VotingQuestion {
+  id          String         @id @default(cuid())
+  ballotId    String
+  ballot      VotingBallot   @relation(fields: [ballotId], references: [id], onDelete: Cascade)
+  prompt      String
+  description String?
+  imageUrl    String?
+  type        String         @default("SINGLE")
+  required    Boolean        @default(true)
+  sortOrder   Int            @default(0)
+  options     VotingOption[]
+  answers     VotingAnswer[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([ballotId, sortOrder])
+}
+
+model VotingOption {
+  id         String         @id @default(cuid())
+  questionId String
+  question   VotingQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  label      String
+  imageUrl   String?
+  sortOrder  Int            @default(0)
+  answers    VotingAnswer[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([questionId, sortOrder])
+}
+
+model VotingParticipant {
+  id                 String            @id @default(cuid())
+  ballotId           String
+  ballot             VotingBallot      @relation(fields: [ballotId], references: [id], onDelete: Cascade)
+  employeeNumberHash String
+  firstName          String
+  lastName           String
+  submission         VotingSubmission?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@unique([ballotId, employeeNumberHash])
+  @@index([ballotId, lastName, firstName])
+}
+
+model VotingSubmission {
+  id            String            @id @default(cuid())
+  ballotId      String
+  ballot        VotingBallot      @relation(fields: [ballotId], references: [id], onDelete: Cascade)
+  participantId String            @unique
+  participant   VotingParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  ipAddress     String?
+  userAgent     String?
+  answers       VotingAnswer[]
+  submittedAt   DateTime          @default(now())
+
+  @@index([ballotId, submittedAt])
+}
+
+model VotingAnswer {
+  id           String           @id @default(cuid())
+  submissionId String
+  submission   VotingSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  questionId   String
+  question     VotingQuestion   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  optionId     String
+  option       VotingOption     @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime         @default(now())
+
+  @@unique([submissionId, questionId, optionId])
+  @@index([questionId, optionId])
 }
 
 model Setting {

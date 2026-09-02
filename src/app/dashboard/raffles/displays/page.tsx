@@ -5,7 +5,7 @@ import { RaffleDisplayControl } from "@/components/dashboard/raffle-display-cont
 export default function RaffleDisplaysPage() {
   return (
     <AppShell active="Raffles">
-      <PageTitle eyebrow="Venue presentation" title="Coordinate every raffle screen from one display cluster." />
+      <PageTitle eyebrow="Raffles" title="Display Management" />
       <RaffleDisplayControl />
     </AppShell>
   );

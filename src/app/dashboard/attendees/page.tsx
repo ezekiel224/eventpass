@@ -6,7 +6,7 @@ export default async function AttendeesPage({ searchParams }: { searchParams: Pr
   const { q } = await searchParams;
   return (
     <AppShell active="Attendees">
-      <PageTitle eyebrow="Attendee management" title="Add, search, export, and manage registrations." />
+      <PageTitle eyebrow="Management" title="Attendees" />
       <AttendeesManager initialQuery={q ?? ""} />
     </AppShell>
   );

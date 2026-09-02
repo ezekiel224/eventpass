@@ -5,6 +5,7 @@ export const permissionCatalog = [
   { name: "Manage passes", slug: "passes:manage", description: "Open, send, and manage attendee passes." },
   { name: "Manage check-ins", slug: "checkins:manage", description: "Validate passes and manage check-in activity." },
   { name: "Manage raffles", slug: "raffles:manage", description: "Manage raffle prizes, tickets, entries, and drawings." },
+  { name: "Manage voting", slug: "voting:manage", description: "Create event ballots, import voter rosters, and manage voting access." },
   { name: "Manage settings", slug: "settings:manage", description: "Change organization branding and operational settings." },
   { name: "View accounts", slug: "users:view", description: "View administrative user accounts." },
   { name: "Create accounts", slug: "users:create", description: "Create administrative user accounts." },
@@ -24,6 +25,7 @@ export function permissionForRequest(pathname: string, method: string): Permissi
   if (pathname.startsWith("/api/admin/permissions")) return method === "GET" ? "permissions:view" : "permissions:manage";
   if (pathname.startsWith("/api/admin/audit")) return "audit:view";
   if (pathname.includes("/raffle")) return "raffles:manage";
+  if (pathname.startsWith("/api/voting")) return "voting:manage";
   if (pathname.startsWith("/api/events")) return "events:manage";
   if (/^\/api\/attendees\/[^/]+\/send-pass/.test(pathname)) return "passes:manage";
   if (pathname.startsWith("/api/attendees")) return "attendees:manage";
@@ -37,6 +39,7 @@ export function permissionForRequest(pathname: string, method: string): Permissi
   if (pathname.startsWith("/dashboard/pass-designs")) return "passes:manage";
   if (pathname.startsWith("/dashboard/check-in")) return "checkins:manage";
   if (pathname.startsWith("/dashboard/raffles")) return "raffles:manage";
+  if (pathname.startsWith("/dashboard/voting")) return "voting:manage";
   if (pathname.startsWith("/dashboard/settings")) return "settings:manage";
   if (pathname.startsWith("/dashboard")) return "dashboard:view";
   return null;

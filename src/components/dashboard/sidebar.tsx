@@ -40,7 +40,7 @@ export async function Sidebar({ active = "Dashboard", branding: providedBranding
       </nav>
       <div className="chrome-panel relative mt-4 shrink-0 overflow-hidden rounded-2xl p-4">
         <div aria-hidden="true" className="absolute right-0 top-0 h-20 w-20 rounded-full bg-primary/10 blur-2xl" />
-        <p className="relative text-sm font-semibold">System workspace</p>
+        <p className="relative text-sm font-semibold">Workspace</p>
         <p className="relative mt-1 text-xs leading-5 text-muted-foreground">Secure administrative environment</p>
         <div className="mt-4 flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Appearance</span>

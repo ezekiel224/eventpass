@@ -17,7 +17,7 @@ export default async function ChangePasswordPage() {
       <Card className="w-full max-w-md p-7 sm:p-8">
         <BrandMark branding={branding} size="lg" />
         <p className="mt-7 panel-label">Required security step</p>
-        <h1 className="mt-3 font-display text-3xl font-semibold tracking-[-0.045em]">Secure your account</h1>
+        <h1 className="mt-3 font-display text-3xl font-semibold tracking-[-0.045em]">Change Your Password</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">Replace your temporary password before accessing administrative tools.</p>
         <ChangePasswordForm />
       </Card>

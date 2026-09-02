@@ -26,7 +26,7 @@ export default async function PrizeAcceptancePage({ params }: { params: Promise<
         <div className="border-b border-border/60 bg-primary/[0.04] p-6 sm:p-7">
           <span className="inline-flex rounded-2xl border border-primary/20 bg-primary/[0.08] p-3 text-primary"><Gift className="h-5 w-5" /></span>
           <p className="mt-6 panel-label text-primary">Prize receipt</p>
-          <h1 className="mt-3 font-display text-3xl font-semibold leading-[1.08] tracking-[-0.045em]">Congratulations, {prize.winnerName}</h1>
+          <h1 className="mt-3 font-display text-3xl font-semibold leading-[1.08] tracking-[-0.045em]">Prize Receipt for {prize.winnerName}</h1>
         </div>
         <dl className="grid gap-px bg-border/60 text-sm">
           <div className="bg-card/85 p-5"><dt className="panel-label">Event / promotion</dt><dd className="mt-2 font-semibold">{prize.event.name}</dd></div>

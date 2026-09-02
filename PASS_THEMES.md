@@ -1,4 +1,4 @@
-# Collectible pass themes
+# Pass Themes
 
 EventPass now renders attendee credentials through one normalized data model and one shared interaction engine. Eight visual presets provide theme-specific composition, decoration, typography, surface treatment, and animation without changing pass validation or QR contents.
 

@@ -179,7 +179,7 @@ export function IceCreamPass(props: InteractivePassProps) {
               <div className={`${styles.label} flex min-h-0 flex-1 flex-col p-3 sm:p-4`}>
                 <header className="flex items-start justify-between gap-3">
                   <div>
-                    <h2 className="text-[clamp(2rem,9vw,3rem)] font-black leading-[.78] tracking-[-.07em]">Pass Facts</h2>
+                    <h2 className="text-[clamp(2rem,9vw,3rem)] font-black leading-[.78] tracking-[-.07em]">Pass Details</h2>
                     <p className="mt-2 text-[8px] font-bold uppercase tracking-[.16em]">Insight Pints · one admission per serving</p>
                   </div>
                   <IceCreamCone className="h-8 w-8 shrink-0" strokeWidth={2.7} aria-hidden="true" />

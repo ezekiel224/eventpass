@@ -122,7 +122,7 @@ function RaceScene({ prizes, maxTickets }: { prizes: Prize[]; maxTickets: number
   return (
     <div className="raffle-tv-panel flex h-full min-h-0 flex-col p-[clamp(1.25rem,3vmin,3.25rem)]">
       <div className="mb-[2vmin] flex items-end justify-between gap-5 border-b border-foreground/10 pb-[1.7vmin]">
-        <div><p className="raffle-tv-kicker">Live pool race</p><h2 className="mt-1 text-[clamp(1.7rem,3.5vmin,3.7rem)] font-semibold tracking-[-0.045em]">Where the tickets are going</h2></div>
+        <div><p className="raffle-tv-kicker">Ticket Distribution</p><h2 className="mt-1 text-[clamp(1.7rem,3.5vmin,3.7rem)] font-semibold tracking-[-0.045em]">Tickets by Prize</h2></div>
         <Ticket className="h-[clamp(2rem,5vmin,4.5rem)] w-[clamp(2rem,5vmin,4.5rem)] text-primary" />
       </div>
       <div className="grid min-h-0 flex-1 content-stretch gap-[clamp(.65rem,1.5vmin,1.5rem)]">
@@ -158,7 +158,7 @@ function StageScene({ latestDraw, nextPrize }: { latestDraw: DisplaySession["con
         <div className="max-w-[90vw]">
           <Award className="mx-auto h-[clamp(4rem,12vmin,11rem)] w-[clamp(4rem,12vmin,11rem)] text-primary" strokeWidth={1.15} />
           <p className="raffle-tv-kicker mt-[3vmin] justify-center">Draw stage</p>
-          <h2 className="mt-[1.5vmin] text-[clamp(3rem,10vmin,11rem)] font-semibold leading-[0.88] tracking-[-0.06em]">The next winner is coming</h2>
+          <h2 className="mt-[1.5vmin] text-[clamp(3rem,10vmin,11rem)] font-semibold leading-[0.88] tracking-[-0.06em]">Next Drawing</h2>
           {nextPrize ? <p className="mt-[3vmin] text-[clamp(1.2rem,3vmin,3rem)] text-muted-foreground">Upcoming prize: <span className="font-semibold text-foreground">{nextPrize.name}</span></p> : null}
         </div>
       )}
@@ -181,7 +181,7 @@ function WinnersScene({ prizes }: { prizes: Prize[] }) {
 }
 
 function EmptyScene() {
-  return <div className="raffle-tv-panel grid h-full place-items-center p-10 text-center"><div><Gift className="mx-auto h-[12vmin] w-[12vmin] max-h-40 max-w-40 text-primary" strokeWidth={1.2} /><h2 className="mt-[3vmin] text-[clamp(2rem,6vmin,6rem)] font-semibold">Prizes are coming soon</h2><p className="mt-3 text-[clamp(1rem,2vmin,2rem)] text-muted-foreground">This display will update automatically.</p></div></div>;
+  return <div className="raffle-tv-panel grid h-full place-items-center p-10 text-center"><div><Gift className="mx-auto h-[12vmin] w-[12vmin] max-h-40 max-w-40 text-primary" strokeWidth={1.2} /><h2 className="mt-[3vmin] text-[clamp(2rem,6vmin,6rem)] font-semibold">No Active Prizes</h2><p className="mt-3 text-[clamp(1rem,2vmin,2rem)] text-muted-foreground">This display will update automatically.</p></div></div>;
 }
 
 function PairingScreen({ onPaired }: { onPaired: (token: string) => void }) {

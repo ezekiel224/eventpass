@@ -3,6 +3,7 @@
 import { FileDown, FileUp } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { decodeCsvFile } from "@/lib/csv-file";
 import type { EventSummary } from "@/types/domain";
 
 const headers = ["First Name", "Last Name", "Email", "Phone", "Company", "Birth Date", "Under 21", "Allergens", "Menu Selection", "Plus One Enabled", "Plus One First Name", "Plus One Last Name", "Plus One Birth Date", "Plus One Under 21", "Plus One Allergens", "Plus One Menu Selection", "Ticket Tier", "Seat", "VIP", "Status", "Raffle Tickets", "Notes"];
@@ -16,7 +17,7 @@ export function AttendeeCsvImport({ event, onImported }: { event?: EventSummary;
   function downloadTemplate() {
     const sample = ["Ada", "Lovelace", "ada@example.com", "", "Analytical Engines", "", "No", event?.allergenOptions[0] ?? "", event?.menuOptions[0] ?? "", "No", "", "", "", "No", "", "", "General", "", "No", "REGISTERED", "0", ""];
     const csv = [headers, sample].map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(",")).join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
     link.download = "attendee-import-template.csv";
@@ -30,7 +31,7 @@ export function AttendeeCsvImport({ event, onImported }: { event?: EventSummary;
     setMessage("");
     setErrors([]);
     try {
-      const csv = await file.text();
+      const csv = await decodeCsvFile(file);
       const response = await fetch("/api/attendees/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,7 +53,7 @@ export function AttendeeCsvImport({ event, onImported }: { event?: EventSummary;
   return (
     <div className="control-panel p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div><p className="panel-label">Bulk operations</p><p className="mt-2 font-semibold">Mass registration</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Upload up to 5,000 rows. Email may be blank, N/A, NA, none, null, or “-”. Lists use semicolons.</p></div>
+        <div><p className="panel-label">CSV Import</p><p className="mt-2 font-semibold">Attendee Import</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Upload up to 5,000 rows. Email may be blank, N/A, NA, none, null, or “-”. Lists use semicolons.</p></div>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="secondary" onClick={downloadTemplate} disabled={!event}><FileDown className="h-4 w-4" /> Template</Button>
           <Button type="button" onClick={() => inputRef.current?.click()} disabled={!event || busy}><FileUp className="h-4 w-4" /> {busy ? "Importing…" : "Upload CSV"}</Button>

@@ -75,8 +75,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   return (
     <AppShell active="Dashboard">
       <div className="relative border-b border-border/60 pb-7">
-        <p className="editorial-kicker">Admin dashboard</p>
-        <h1 className="mt-3 max-w-4xl font-display text-3xl font-semibold leading-[1.05] tracking-[-0.045em] sm:text-4xl lg:text-[2.75rem]">Event operations at a glance.</h1>
+        <p className="editorial-kicker">Dashboard</p>
+        <h1 className="mt-3 max-w-4xl font-display text-3xl font-semibold leading-[1.05] tracking-[-0.045em] sm:text-4xl lg:text-[2.75rem]">Event Overview</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">Monitor registration flow, access activity, and communication health across every active event.</p>
         <span aria-hidden="true" className="absolute -bottom-px left-0 h-px w-24 bg-primary shadow-[0_0_18px_hsl(var(--primary)/0.65)]" />
       </div>
@@ -124,7 +124,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </Card>
           </div>
           <Card className="mt-5 overflow-hidden p-0">
-            <div className="flex flex-col justify-between gap-2 border-b border-border/60 px-5 py-5 sm:flex-row sm:items-end sm:px-6"><div><p className="panel-label">Portfolio health</p><h2 className="mt-2 text-lg font-semibold tracking-[-0.02em]">Active event performance</h2></div><p className="text-xs text-muted-foreground">Capacity utilization across live programs</p></div>
+            <div className="flex flex-col justify-between gap-2 border-b border-border/60 px-5 py-5 sm:flex-row sm:items-end sm:px-6"><div><p className="panel-label">Event Capacity</p><h2 className="mt-2 text-lg font-semibold tracking-[-0.02em]">Active Events</h2></div><p className="text-xs text-muted-foreground">Capacity utilization across live programs</p></div>
             <div className="grid gap-px bg-border/60 lg:grid-cols-2">
               {events.length === 0 ? <p className="text-sm text-muted-foreground">No active events to report.</p> : null}
               {events.map((event) => {
@@ -162,7 +162,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
       {tab === "email-logs" ? (
         <Card className="mt-7 overflow-hidden p-0">
-          <div className="flex flex-col justify-between gap-2 border-b border-border/60 px-5 py-5 sm:flex-row sm:items-center sm:px-6"><div><p className="panel-label">Delivery intelligence</p><h2 className="mt-2 text-lg font-semibold">Recent email logs</h2><p className="mt-1 text-xs text-muted-foreground">Historical delivery records remain available for archived events.</p></div><p className="rounded-full border border-border/70 bg-muted/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{process.env.EMAIL_PROVIDER ?? "console"} provider</p></div>
+          <div className="flex flex-col justify-between gap-2 border-b border-border/60 px-5 py-5 sm:flex-row sm:items-center sm:px-6"><div><p className="panel-label">Email Delivery</p><h2 className="mt-2 text-lg font-semibold">Recent email logs</h2><p className="mt-1 text-xs text-muted-foreground">Historical delivery records remain available for archived events.</p></div><p className="rounded-full border border-border/70 bg-muted/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{process.env.EMAIL_PROVIDER ?? "console"} provider</p></div>
           <div className="space-y-2 p-4 sm:p-5">
             {emailLogs.length === 0 ? <p className="text-sm text-muted-foreground">No email attempts yet.</p> : null}
             {emailLogs.map((log) => (

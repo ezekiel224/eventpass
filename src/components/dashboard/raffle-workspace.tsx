@@ -7,6 +7,8 @@ import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
 import { Button } from "@/components/ui/button";
 import { Card, GlassCard } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { compressImageToDataUrl, imageCompressionMessage, ImageCompressionError } from "@/lib/image-compression";
+import { IMAGE_UPLOAD_ACCEPT } from "@/lib/image-constraints";
 import { EventSummary } from "@/types/domain";
 
 type RafflePrize = {
@@ -202,30 +204,19 @@ export function RaffleWorkspace() {
     setMessage("Raffle prize created.");
   }
 
-  function importPrizePhoto(file: File | undefined) {
+  async function importPrizePhoto(file: File | undefined) {
     if (!file) {
       return;
     }
 
-    if (!file.type.startsWith("image/")) {
-      setMessage("Choose an image file for the prize photo.");
-      return;
+    setMessage("Compressing prize photo…");
+    try {
+      const image = await compressImageToDataUrl(file);
+      setPrizeForm((current) => ({ ...current, imageUrl: image.dataUrl }));
+      setMessage(imageCompressionMessage(image, "Prize photo"));
+    } catch (error) {
+      setMessage(error instanceof ImageCompressionError ? error.message : "The prize photo could not be compressed.");
     }
-
-    if (file.size > 240000) {
-      setMessage("Use an image under 240 KB for prize import.");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        const imageUrl = reader.result;
-        setPrizeForm((current) => ({ ...current, imageUrl }));
-        setMessage("Prize photo imported.");
-      }
-    };
-    reader.readAsDataURL(file);
   }
 
   async function archivePrize(prizeId: string) {
@@ -503,7 +494,7 @@ export function RaffleWorkspace() {
         <section id="raffle-panel-overview" role="tabpanel" className="grid gap-4" aria-label="Raffle overview">
           <Card className="overflow-hidden p-0">
             <div className="border-b border-border/70 p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Event snapshot</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Raffle Overview</p>
               <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2 className="text-2xl font-semibold">{currentEvent?.name ?? "Choose an event"}</h2>
@@ -541,7 +532,7 @@ export function RaffleWorkspace() {
             </Card>
 
             <Card className="p-6">
-              <h3 className="font-semibold">Continue working</h3>
+              <h3 className="font-semibold">Raffle Tasks</h3>
               <p className="mt-1 text-sm text-muted-foreground">Open the workspace for the task at hand.</p>
               <div className="mt-4 grid gap-2">
                 {workspaceTabs.slice(1).map(({ id, label, icon: Icon }) => (
@@ -607,7 +598,7 @@ export function RaffleWorkspace() {
         <section id="raffle-panel-prizes" role="tabpanel" className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]" aria-label="Prizes and drawing">
           <Card className="p-6 xl:col-span-2">
             <div className="grid gap-5 xl:grid-cols-[1fr_1.4fr] xl:items-end">
-              <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Payroll workflow</p><h2 className="mt-2 flex items-center gap-2 text-xl font-semibold"><FileSignature className="h-5 w-5 text-primary" /> Prize receipt settings</h2><p className="mt-1 text-sm text-muted-foreground">Saved per event and placed in the signed Excel workbook. Export is unlocked after every final winner signs.</p></div>
+              <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Prize Receipts</p><h2 className="mt-2 flex items-center gap-2 text-xl font-semibold"><FileSignature className="h-5 w-5 text-primary" /> Prize receipt settings</h2><p className="mt-1 text-sm text-muted-foreground">Saved per event and placed in the signed Excel workbook. Export is unlocked after every final winner signs.</p></div>
               <form className="grid gap-3 sm:grid-cols-[1fr_9rem_1fr_auto]" onSubmit={saveReceiptSettings}>
                 <Input value={receiptForm.submitter} onChange={(event) => setReceiptForm((current) => ({ ...current, submitter: event.target.value }))} placeholder="Submitted to Payroll by" required />
                 <Input value={receiptForm.extension} onChange={(event) => setReceiptForm((current) => ({ ...current, extension: event.target.value }))} placeholder="Extension" required />
@@ -628,14 +619,14 @@ export function RaffleWorkspace() {
               <Input value={prizeForm.imageUrl} onChange={(event) => setPrizeForm((current) => ({ ...current, imageUrl: event.target.value }))} placeholder="Prize photo URL" />
               <div className="form-section grid gap-3 p-3 sm:grid-cols-[8rem_1fr] sm:items-center">
                 <div className="flex aspect-[4/3] items-center justify-center rounded-xl border border-border bg-primary/10 bg-cover bg-center text-primary" style={prizeForm.imageUrl ? { backgroundImage: `url(${prizeForm.imageUrl})` } : undefined}>{prizeForm.imageUrl ? null : <ImagePlus className="h-7 w-7" />}</div>
-                <label className="grid gap-2 text-sm text-muted-foreground">Import prize photo<Input type="file" accept="image/*" onChange={(event) => importPrizePhoto(event.target.files?.[0])} /></label>
+                <label className="grid gap-2 text-sm text-muted-foreground">Import prize photo<Input type="file" accept={IMAGE_UPLOAD_ACCEPT} onChange={(event) => void importPrizePhoto(event.target.files?.[0])} /></label>
               </div>
               <Button type="submit" disabled={!eventId}><Plus className="h-4 w-4" /> Add prize</Button>
             </form>
           </Card>
 
           <Card className="p-6">
-            <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Draw control</p><h2 className="mt-2 text-xl font-semibold">Active prizes</h2></div><span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">{raffle.prizes.length} total</span></div>
+            <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Drawings</p><h2 className="mt-2 text-xl font-semibold">Active prizes</h2></div><span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold">{raffle.prizes.length} total</span></div>
             <div className="mt-5 grid gap-3">
               {raffle.prizes.length === 0 ? <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">No prizes yet. Add the first prize to start collecting entries.</div> : null}
               {raffle.prizes.map((prize) => (
@@ -662,7 +653,7 @@ export function RaffleWorkspace() {
         <section id="raffle-panel-tickets" role="tabpanel" className="grid gap-4" aria-label="Ticket allocation">
           <Card className="p-6">
             <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
-              <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Bulk allocation</p><h2 className="mt-2 text-xl font-semibold">Global guest tickets</h2><p className="mt-1 text-sm text-muted-foreground">Set a baseline or add tickets for every registered guest in this event.</p></div>
+              <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Bulk allocation</p><h2 className="mt-2 text-xl font-semibold">Bulk Ticket Allocation</h2><p className="mt-1 text-sm text-muted-foreground">Set a baseline or add tickets for every registered guest in this event.</p></div>
               <div className="grid gap-2 sm:grid-cols-[8rem_1fr_1fr]"><Input type="number" min="0" value={globalTickets} onChange={(event) => setGlobalTickets(event.target.value)} aria-label="Global raffle tickets" /><Button type="button" variant="secondary" onClick={() => void applyGlobalTickets("set")}>Set everyone</Button><Button type="button" variant="secondary" onClick={() => void applyGlobalTickets("add")}>Add to everyone</Button></div>
             </div>
           </Card>

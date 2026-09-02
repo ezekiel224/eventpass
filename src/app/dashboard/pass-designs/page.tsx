@@ -92,7 +92,7 @@ export default async function PassDesignsPage() {
   const data = await previewData();
   return (
     <AppShell active="Pass Designs">
-      <PageTitle eyebrow="Collectible credentials" title="Preview and test every digital pass theme." />
+      <PageTitle eyebrow="Passes" title="Pass Designs" />
       <PassThemePreview baseData={data} />
     </AppShell>
   );

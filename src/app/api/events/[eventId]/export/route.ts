@@ -107,7 +107,7 @@ export async function GET(_request: Request, { params }: Params) {
   const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
   const filename = `${event.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "event"}-registrations.csv`;
 
-  return new NextResponse(csv, {
+  return new NextResponse(`\uFEFF${csv}`, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="${filename}"`

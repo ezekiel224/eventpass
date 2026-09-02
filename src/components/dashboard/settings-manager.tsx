@@ -111,7 +111,7 @@ export function SettingsManager() {
           </div>
           <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-primary/[0.06] p-4">
             <div className="absolute inset-y-0 left-0 w-px bg-primary shadow-[0_0_22px_hsl(var(--primary))]" />
-            <p className="text-sm font-semibold">Global interface system</p>
+            <p className="text-sm font-semibold">Interface Theme</p>
             <p className="mt-1.5 max-w-xl text-sm leading-6 text-muted-foreground">Colors, contrast, and light and dark mode treatments are governed by the EventPass design system. This keeps every operator workspace and attendee touchpoint consistent, accessible, and production-ready.</p>
           </div>
           <label className="grid gap-2 text-sm font-semibold">Default timezone<select value={branding.timezone} onChange={(event) => setField("timezone", event.target.value)} disabled={loading} className="focus-ring h-11 rounded-xl border border-border/80 bg-background px-3 text-sm font-normal">{!commonTimezones.includes(branding.timezone) ? <option value={branding.timezone}>{branding.timezone}</option> : null}{commonTimezones.map((timezone) => <option key={timezone} value={timezone}>{timezone.replaceAll("_", " ")}</option>)}</select><span className="text-xs font-normal text-muted-foreground">Used for event dates, emails, and operational timestamps.</span></label>

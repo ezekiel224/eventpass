@@ -208,7 +208,7 @@ export function AccountsManager({ currentUserId }: { currentUserId: string }) {
 
       <Card className="p-5">
         <div className="flex items-center justify-between gap-3">
-          <div><h2 className="text-lg font-semibold">Administrative accounts</h2><p className="mt-1 text-sm text-muted-foreground">{users.length} account{users.length === 1 ? "" : "s"}</p></div>
+          <div><h2 className="text-lg font-semibold">Accounts</h2><p className="mt-1 text-sm text-muted-foreground">{users.length} account{users.length === 1 ? "" : "s"}</p></div>
           <Button variant="ghost" className="h-9 w-9 px-0" aria-label="Refresh accounts" onClick={() => void load()}><RefreshCw className="h-4 w-4" /></Button>
         </div>
         <div className="mt-4 overflow-x-auto">

@@ -5,7 +5,7 @@ import { PageTitle } from "@/components/dashboard/page-title";
 export default function EventsPage() {
   return (
     <AppShell active="Events">
-      <PageTitle eyebrow="Event management" title="Create, publish, duplicate, and archive events." />
+      <PageTitle eyebrow="Management" title="Events" />
       <EventsManager />
     </AppShell>
   );

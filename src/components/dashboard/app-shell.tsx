@@ -22,7 +22,7 @@ export async function AppShell({ children, active = "Dashboard" }: { children: R
             <div className="min-w-0 flex-1">
               <div className="hidden items-center gap-2 sm:flex">
                 <Command className="h-3.5 w-3.5 text-primary" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Operations command center</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Dashboard</span>
               </div>
               <p className="mt-0.5 truncate text-sm font-semibold tracking-[-0.01em] sm:text-base">{active}</p>
             </div>

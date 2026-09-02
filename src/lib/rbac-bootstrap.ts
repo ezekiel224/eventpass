@@ -20,7 +20,8 @@ const systemRoles = [
       "attendees:manage",
       "passes:manage",
       "checkins:manage",
-      "raffles:manage"
+      "raffles:manage",
+      "voting:manage"
     ]
   },
   {

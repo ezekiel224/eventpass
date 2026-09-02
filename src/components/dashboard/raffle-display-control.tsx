@@ -143,7 +143,7 @@ export function RaffleDisplayControl() {
       {message ? <p className="text-sm font-medium text-primary">{message}</p> : null}
 
       <form onSubmit={addDisplay} className="liquid-card p-5">
-        <div className="flex items-center gap-3"><span className="liquid-lens"><Plus className="h-4 w-4" /></span><div><p className="panel-label">Add streaming device</p><h2 className="mt-1 font-display text-2xl font-semibold tracking-[-0.04em]">Create a display profile</h2></div></div>
+        <div className="flex items-center gap-3"><span className="liquid-lens"><Plus className="h-4 w-4" /></span><div><p className="panel-label">Displays</p><h2 className="mt-1 font-display text-2xl font-semibold tracking-[-0.04em]">Add Display</h2></div></div>
         <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1fr_1fr_10rem_auto] md:items-end">
           <label className="text-sm font-medium">Name<Input className="mt-2" required placeholder="Ballroom North" value={create.name} onChange={(event) => setCreate({ ...create, name: event.target.value })} /></label>
           <label className="text-sm font-medium">Event<select className={`${selectClass} mt-2`} value={create.eventId} onChange={(event) => setCreate({ ...create, eventId: event.target.value })}>{data.events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}</select></label>
