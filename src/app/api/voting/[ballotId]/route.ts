@@ -32,9 +32,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
 export async function DELETE(_: NextRequest, { params }: Params) {
   const { ballotId } = await params;
-  const existing = await prisma.votingBallot.findUnique({ where: { id: ballotId }, select: { _count: { select: { submissions: true } } } });
+  const existing = await prisma.votingBallot.findUnique({ where: { id: ballotId }, select: { id: true } });
   if (!existing) return NextResponse.json({ error: "Ballot not found." }, { status: 404 });
-  if (existing._count.submissions) return NextResponse.json({ error: "Ballots with submitted votes cannot be deleted. Close voting instead." }, { status: 409 });
   await prisma.votingBallot.delete({ where: { id: ballotId } });
   return NextResponse.json({ deleted: true });
 }

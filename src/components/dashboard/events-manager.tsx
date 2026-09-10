@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Archive, CheckCircle2, Copy, Download, ExternalLink, LoaderCircle, Palette, Plus, RotateCcw } from "lucide-react";
+import { AlertCircle, Archive, CheckCircle2, Copy, Download, ExternalLink, LoaderCircle, Palette, Plus, RotateCcw, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -187,6 +187,21 @@ export function EventsManager() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadEvents();
   }, []);
+
+  async function deleteEvent(event: EventSummary) {
+    if (!window.confirm(`Permanently delete ${event.name}? This also deletes its attendees, passes, check-ins, email history, raffle data, and ballots. This cannot be undone.`)) return;
+
+    setNotice(null);
+    const response = await fetch(`/api/events/${event.id}`, { method: "DELETE" });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setNotice({ tone: "error", text: typeof payload.error === "string" ? payload.error : "The event could not be deleted." });
+      return;
+    }
+
+    setEvents((current) => current.filter((item) => item.id !== event.id));
+    setNotice({ tone: "success", text: `${event.name} and its related information were permanently deleted.` });
+  }
 
   async function createEvent(status: "PUBLISHED" | "DRAFT") {
     const clientErrors = validateEventForm(form);
@@ -540,7 +555,8 @@ export function EventsManager() {
               </Button>
               <Button variant="secondary" onClick={() => void exportEvent(event)}><Download className="h-4 w-4" /> Export CSV</Button>
               <Button variant="secondary" onClick={() => void duplicateEvent(event.id)}><Copy className="h-4 w-4" /> Duplicate</Button>
-              <Button variant="secondary" onClick={() => { if (window.confirm(`Archive ${event.name}? It will be removed from active workflows but can be restored later.`)) void updateEvent(event.id, { status: "ARCHIVED" }, "Event archived."); }}><Archive className="h-4 w-4" /> Archive</Button>
+              {event.status !== "ARCHIVED" ? <Button variant="secondary" onClick={() => { if (window.confirm(`Archive ${event.name}? It will be removed from active workflows but can be restored later.`)) void updateEvent(event.id, { status: "ARCHIVED" }, "Event archived."); }}><Archive className="h-4 w-4" /> Archive</Button> : null}
+              {event.status === "ARCHIVED" ? <Button variant="danger" onClick={() => void deleteEvent(event)}><Trash2 className="h-4 w-4" /> Delete permanently</Button> : null}
             </div>
           </Card>
         ))}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { createPairingCode, DISPLAY_PAIRING_WINDOW_MS, hashDisplaySecret, RAFFLE_DISPLAY_MODES, serializeRaffleDisplay } from "@/lib/raffle-display";
+import { RAFFLE_DISPLAY_MODES, serializeRaffleDisplay } from "@/lib/raffle-display";
 
 export const dynamic = "force-dynamic";
 
@@ -42,15 +42,12 @@ export async function POST(request: NextRequest) {
   const event = await prisma.event.findUnique({ where: { id: parsed.data.eventId }, select: { id: true } });
   if (!event) return NextResponse.json({ error: "Event not found." }, { status: 404 });
 
-  const pairingCode = createPairingCode();
   const display = await prisma.raffleDisplay.create({
     data: {
-      ...parsed.data,
-      pairingCodeHash: hashDisplaySecret(pairingCode),
-      pairingExpiresAt: new Date(Date.now() + DISPLAY_PAIRING_WINDOW_MS)
+      ...parsed.data
     },
     include: { event: { select: { name: true } } }
   });
 
-  return NextResponse.json({ display: serializeRaffleDisplay(display), pairingCode }, { status: 201 });
+  return NextResponse.json({ display: serializeRaffleDisplay(display) }, { status: 201 });
 }

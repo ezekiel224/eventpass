@@ -2,9 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Award, Expand, Gift, MonitorUp, Pause, Play, Radio, Ticket, Trophy, WifiOff } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { RaffleDisplayMode } from "@/lib/raffle-display";
 
 type Prize = {
@@ -40,6 +38,7 @@ type DisplaySession = {
 };
 
 const TOKEN_KEY = "eventpass_raffle_display_token";
+const PAIRING_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const sceneTransition = { duration: 0.75, ease: [0.16, 1, 0.3, 1] as const };
 
 function chunk<T>(items: T[], size: number) {
@@ -187,31 +186,55 @@ function EmptyScene() {
 function PairingScreen({ onPaired }: { onPaired: (token: string) => void }) {
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  async function pair(event: FormEvent) {
-    event.preventDefault();
-    setLoading(true);
-    setMessage("");
-    const response = await fetch("/api/raffle-display/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) });
-    const data = await response.json();
-    setLoading(false);
-    if (!response.ok) return setMessage(data.error ?? "This display could not be paired.");
-    localStorage.setItem(TOKEN_KEY, data.token);
-    onPaired(data.token);
-  }
+  useEffect(() => {
+    const initialize = window.setTimeout(() => {
+      const values = new Uint8Array(6);
+      window.crypto.getRandomValues(values);
+      setCode(Array.from(values, (value) => PAIRING_ALPHABET[value % PAIRING_ALPHABET.length]).join(""));
+    }, 0);
+    return () => window.clearTimeout(initialize);
+  }, []);
+
+  useEffect(() => {
+    if (!code) return;
+    let cancelled = false;
+
+    async function checkPairing() {
+      try {
+        const response = await fetch("/api/raffle-display/pair", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) });
+        if (response.status === 404) return;
+        const data = await response.json();
+        if (!response.ok) {
+          if (!cancelled) setMessage(data.error ?? "Pairing is temporarily unavailable.");
+          return;
+        }
+        localStorage.setItem(TOKEN_KEY, data.token);
+        if (!cancelled) onPaired(data.token);
+      } catch {
+        if (!cancelled) setMessage("Waiting for a network connection…");
+      }
+    }
+
+    void checkPairing();
+    const interval = window.setInterval(() => void checkPairing(), 4000);
+    return () => { cancelled = true; window.clearInterval(interval); };
+  }, [code, onPaired]);
 
   return (
     <main className="raffle-tv-shell grid min-h-dvh place-items-center p-[clamp(1.25rem,5vmin,5rem)]">
-      <form onSubmit={pair} className="raffle-tv-panel w-full max-w-2xl p-[clamp(1.5rem,5vmin,4rem)] text-center">
+      <section className="raffle-tv-panel w-full max-w-3xl p-[clamp(1.5rem,5vmin,4rem)] text-center">
         <MonitorUp className="mx-auto h-16 w-16 text-primary" strokeWidth={1.4} />
         <p className="raffle-tv-kicker mt-6 justify-center">Venue display setup</p>
         <h1 className="mt-3 text-[clamp(2rem,6vmin,4.5rem)] font-semibold tracking-[-0.055em]">Pair this screen</h1>
-        <p className="mx-auto mt-4 max-w-xl text-lg leading-8 text-muted-foreground">Create a display in Raffle Display Control, then enter its six-character code here.</p>
-        <Input value={code} onChange={(event) => setCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))} className="mx-auto mt-8 h-20 max-w-sm text-center font-mono text-4xl font-semibold uppercase tracking-[0.25em]" placeholder="ABC234" autoFocus autoComplete="off" />
-        {message ? <p className="mt-4 text-sm font-medium text-destructive">{message}</p> : null}
-        <Button className="mt-6 h-14 min-w-48 text-base" disabled={loading || code.length !== 6}>{loading ? "Pairing…" : "Pair display"}</Button>
-      </form>
+        <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-muted-foreground">In Raffle Display Control, choose the display device you created and enter this linking code.</p>
+        <div className="mx-auto mt-8 max-w-xl rounded-3xl border border-primary/30 bg-primary/[0.08] px-6 py-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary">Linking code</p>
+          <p className="mt-4 font-mono text-[clamp(3rem,10vmin,7rem)] font-semibold leading-none tracking-[0.18em]">{code || "••••••"}</p>
+        </div>
+        <p className="mt-6 flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground"><Radio className="h-4 w-4 animate-pulse text-primary" /> Waiting for the dashboard to link this screen…</p>
+        {message ? <p className="mt-3 text-sm font-medium text-destructive">{message}</p> : null}
+      </section>
     </main>
   );
 }

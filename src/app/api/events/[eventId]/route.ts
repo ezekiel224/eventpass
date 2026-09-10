@@ -52,6 +52,20 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
 export async function DELETE(_request: NextRequest, { params }: Params) {
   const { eventId } = await params;
-  await prisma.event.delete({ where: { id: eventId } });
-  return NextResponse.json({ ok: true });
+  const existing = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
+  if (!existing) return NextResponse.json({ error: "Event not found." }, { status: 404 });
+
+  await prisma.$transaction(async (transaction) => {
+    // These older relations do not use database-level cascades.
+    await transaction.emailLog.deleteMany({ where: { eventId } });
+    await transaction.checkIn.deleteMany({ where: { attendee: { eventId } } });
+    await transaction.pass.deleteMany({ where: { attendee: { eventId } } });
+    await transaction.raffleEntry.deleteMany({ where: { attendee: { eventId } } });
+    await transaction.attendee.deleteMany({ where: { eventId } });
+
+    // Raffle and voting records cascade from the event.
+    await transaction.event.delete({ where: { id: eventId } });
+  });
+
+  return NextResponse.json({ deleted: true });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, ExternalLink, Link2, Monitor, Pause, Play, Plus, RefreshCcw, Save, Trash2, Wifi, WifiOff } from "lucide-react";
+import { ExternalLink, Link2, Monitor, Pause, Play, Plus, Save, Trash2, Wifi, WifiOff } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,9 +42,11 @@ function displayStatus(display: Display) {
   return { label: "Offline", className: "text-muted-foreground", icon: WifiOff };
 }
 
-function DisplayEditor({ display, events, onChanged, onCode }: { display: Display; events: EventOption[]; onChanged: () => Promise<void>; onCode: (code: string, name: string) => void }) {
+function DisplayEditor({ display, events, onChanged }: { display: Display; events: EventOption[]; onChanged: () => Promise<void> }) {
   const [draft, setDraft] = useState(display);
   const [saving, setSaving] = useState(false);
+  const [pairingCode, setPairingCode] = useState("");
+  const [pairingMessage, setPairingMessage] = useState("");
   const status = displayStatus(display);
   const StatusIcon = status.icon;
   const prizes = events.find((event) => event.id === draft.eventId)?.rafflePrizes ?? [];
@@ -56,10 +58,18 @@ function DisplayEditor({ display, events, onChanged, onCode }: { display: Displa
     if (response.ok) await onChanged();
   }
 
-  async function reissueCode() {
-    const response = await fetch(`/api/raffle-displays/${display.id}/pairing`, { method: "POST" });
+  async function pairDisplay() {
+    setPairingMessage("");
+    const response = await fetch(`/api/raffle-displays/${display.id}/pairing`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: pairingCode })
+    });
     const data = await response.json();
-    if (response.ok) onCode(data.pairingCode, display.name);
+    if (!response.ok) return setPairingMessage(data.error ?? "The display could not be linked.");
+    setPairingMessage("Code accepted. The display will connect automatically.");
+    setPairingCode("");
+    window.setTimeout(() => void onChanged(), 3000);
   }
 
   async function removeDisplay() {
@@ -86,8 +96,16 @@ function DisplayEditor({ display, events, onChanged, onCode }: { display: Displa
       <div className="mt-5 flex flex-wrap gap-2">
         <Button disabled={saving} onClick={() => void patchDisplay({ name: draft.name, eventId: draft.eventId, mode: draft.mode, rotationSeconds: draft.rotationSeconds, forcedPrizeId: draft.forcedPrizeId })}><Save className="h-4 w-4" /> Save configuration</Button>
         <Button variant="secondary" onClick={() => void patchDisplay({ paused: !display.paused })}>{display.paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />} {display.paused ? "Resume" : "Pause"}</Button>
-        <Button variant="secondary" onClick={() => void reissueCode()}><RefreshCcw className="h-4 w-4" /> Pairing code</Button>
         <Button variant="danger" onClick={() => void removeDisplay()}><Trash2 className="h-4 w-4" /> Remove</Button>
+      </div>
+      <div className="mt-5 rounded-2xl border border-border/70 bg-background/45 p-4">
+        <p className="text-sm font-semibold">{display.paired ? "Pair a different screen" : "Link this display"}</p>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">Open the raffle display page on the signage device, then enter the code shown on that screen.</p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <Input value={pairingCode} onChange={(event) => setPairingCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))} className="font-mono text-lg font-semibold uppercase tracking-[0.2em]" placeholder="ABC234" autoComplete="off" aria-label={`Pairing code for ${display.name}`} />
+          <Button type="button" variant="secondary" disabled={pairingCode.length !== 6} onClick={() => void pairDisplay()}><Link2 className="h-4 w-4" /> Link screen</Button>
+        </div>
+        {pairingMessage ? <p className={`mt-2 text-xs font-medium ${pairingMessage.startsWith("Code accepted") ? "text-emerald-600" : "text-destructive"}`}>{pairingMessage}</p> : null}
       </div>
     </article>
   );
@@ -97,7 +115,6 @@ export function RaffleDisplayControl() {
   const [data, setData] = useState<ControlData>({ displays: [], events: [] });
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
-  const [pairing, setPairing] = useState<{ code: string; name: string } | null>(null);
   const [create, setCreate] = useState({ name: "", eventId: "", mode: "WALL" as RaffleDisplayMode, rotationSeconds: 12 });
 
   const load = useCallback(async () => {
@@ -121,15 +138,8 @@ export function RaffleDisplayControl() {
     const response = await fetch("/api/raffle-displays", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(create) });
     const result = await response.json();
     if (!response.ok) return setMessage(result.error ?? "Could not create the display.");
-    setPairing({ code: result.pairingCode, name: result.display.name });
     setCreate((current) => ({ ...current, name: "" }));
     await load();
-  }
-
-  async function copyCode() {
-    if (!pairing) return;
-    await navigator.clipboard.writeText(pairing.code);
-    setMessage("Pairing code copied.");
   }
 
   return (
@@ -139,7 +149,6 @@ export function RaffleDisplayControl() {
         <a href="/display/raffle" target="_blank" rel="noreferrer"><Button variant="secondary"><ExternalLink className="h-4 w-4" /> Open display pairing page</Button></a>
       </section>
 
-      {pairing ? <section className="liquid-card border-primary/30 p-6 text-center"><p className="panel-label text-primary">Pair {pairing.name}</p><p className="mt-4 font-mono text-5xl font-semibold tracking-[0.22em]">{pairing.code}</p><p className="mt-3 text-sm text-muted-foreground">Enter this code at /display/raffle within 30 minutes.</p><Button className="mt-5" variant="secondary" onClick={() => void copyCode()}><Copy className="h-4 w-4" /> Copy code</Button></section> : null}
       {message ? <p className="text-sm font-medium text-primary">{message}</p> : null}
 
       <form onSubmit={addDisplay} className="liquid-card p-5">
@@ -154,7 +163,7 @@ export function RaffleDisplayControl() {
       </form>
 
       <section className="grid gap-5 xl:grid-cols-2">
-        {data.displays.map((display) => <DisplayEditor key={`${display.id}:${display.updatedAt ?? display.lastSeenAt ?? "new"}`} display={display} events={data.events} onChanged={load} onCode={(code, name) => setPairing({ code, name })} />)}
+        {data.displays.map((display) => <DisplayEditor key={`${display.id}:${display.updatedAt ?? display.lastSeenAt ?? "new"}`} display={display} events={data.events} onChanged={load} />)}
         {!loading && !data.displays.length ? <div className="liquid-card p-8 text-center text-muted-foreground xl:col-span-2">No venue displays are configured yet.</div> : null}
       </section>
     </div>
