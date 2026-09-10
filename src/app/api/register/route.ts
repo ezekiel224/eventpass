@@ -3,7 +3,7 @@ import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
 import { attendeeInclude, createPassForAttendee, serializeAttendee, stringifyStringArray } from "@/lib/prisma-helpers";
 import { publicAttendeeRegistrationSchema } from "@/lib/validation";
-import { renderPassEmail, sendEmail } from "@/services/email";
+import { createGoogleCalendarUrl, renderPassEmail, sendEmail } from "@/services/email";
 import { rateLimit } from "@/services/rate-limit";
 import { formatDate, formatTime } from "@/lib/utils";
 
@@ -63,7 +63,8 @@ export async function POST(request: NextRequest) {
   }
 
   const pass = await createPassForAttendee(attendee.id, attendee.eventId);
-  const passUrl = `${process.env.APP_URL ?? "http://localhost:3000"}/pass/${attendee.id}`;
+  const appBaseUrl = (process.env.APP_URL?.trim() || request.nextUrl.origin).replace(/\/+$/, "");
+  const passUrl = `${appBaseUrl}/pass/${attendee.id}`;
 
   let emailStatus = "QUEUED";
   let providerId: string | undefined;
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const branding = await getBranding();
-    const qrImageUrl = `${process.env.APP_URL ?? "http://localhost:3000"}/api/pass/${attendee.id}/qr`;
+    const qrImageUrl = `${appBaseUrl}/api/pass/${attendee.id}/qr`;
     const delivery = await sendEmail({
       to: parsed.data.email,
       subject: `Your pass for ${event.name}`,
@@ -88,6 +89,16 @@ export async function POST(request: NextRequest) {
         organizer: event.organizer,
         contactEmail: event.contactEmail,
         passUrl,
+        passDownloadUrl: `${appBaseUrl}/api/attendees/${attendee.id}/pass-download`,
+        googleCalendarUrl: createGoogleCalendarUrl({
+          eventName: event.name,
+          startsAt: event.startsAt,
+          endsAt: event.endsAt,
+          venue: event.venue,
+          address: event.address,
+          passUrl
+        }),
+        iCalendarUrl: `${appBaseUrl}/api/attendees/${attendee.id}/calendar`,
         qrImageUrl,
         fallbackCode: pass.fallbackCode,
         organizationName: branding.name,

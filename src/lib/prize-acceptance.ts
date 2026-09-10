@@ -17,7 +17,11 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
-export async function issuePrizeAcceptance(prizeId: string, fallbackOrigin: string) {
+export async function issuePrizeAcceptance(
+  prizeId: string,
+  fallbackOrigin: string,
+  { emailWinner = false }: { emailWinner?: boolean } = {}
+) {
   const prize = await prisma.rafflePrize.findUnique({
     where: { id: prizeId },
     include: { event: true }
@@ -58,8 +62,8 @@ export async function issuePrizeAcceptance(prizeId: string, fallbackOrigin: stri
     }
   });
 
-  let delivery: "SENT" | "QUEUED" | "NO_EMAIL" | "FAILED" = "NO_EMAIL";
-  if (attendee.email) {
+  let delivery: "SENT" | "QUEUED" | "NOT_SENT" | "NO_EMAIL" | "FAILED" = attendee.email ? "NOT_SENT" : "NO_EMAIL";
+  if (emailWinner && attendee.email) {
     try {
       const result = await sendEmail({
         to: attendee.email,

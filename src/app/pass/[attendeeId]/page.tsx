@@ -1,14 +1,10 @@
-import { QrCode, ShieldCheck } from "lucide-react";
 import { notFound } from "next/navigation";
-import { PassDownloadButton } from "@/components/pass/pass-download-button";
-import { CalendarButtons } from "@/components/pass/calendar-buttons";
 import { LivePassExperience } from "@/components/pass/live-pass-experience";
 import { isPassTheme } from "@/components/pass/pass-system";
 import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
 import { normalizeExistingPass } from "@/lib/pass-data";
 import { parseStringArray } from "@/lib/prisma-helpers";
-import { formatDate, formatTime } from "@/lib/utils";
 import { createQrDataUrl } from "@/services/qr";
 import styles from "@/app/pass/[attendeeId]/pass-page.module.css";
 
@@ -84,52 +80,6 @@ export default async function PassPage({
     <main className={styles.passPage} data-pass-theme={eventTheme}>
       <div className={styles.content}>
         <LivePassExperience attendeeId={attendee.id} initialData={passData} theme={eventTheme} />
-
-        <section className={styles.actionDock} aria-label="Pass actions">
-          {under21Alert ? (
-            <div className={styles.ageAlert}>
-              Age verification required at check-in
-            </div>
-          ) : null}
-          <div className={styles.actionHeader}>
-            <p>Keep your credential close</p>
-            <span className={styles.secureLabel}><ShieldCheck className="h-3.5 w-3.5" /> Verified</span>
-          </div>
-          <div className={styles.actionGrid}>
-            <PassDownloadButton
-              className={styles.primaryAction}
-              attendeeName={attendeeName}
-              eventName={event.name}
-              organizer={event.organizer}
-              venue={event.venue}
-              eventDate={formatDate(event.startsAt, branding.timezone)}
-              eventTime={`${formatTime(event.startsAt, branding.timezone)} - ${formatTime(event.endsAt, branding.timezone)}`}
-              fallbackCode={attendee.pass.fallbackCode}
-              ticketTier={attendee.ticketTier}
-              company={attendee.company}
-              selectedAllergens={selectedAllergens}
-              selectedMenu={attendee.selectedMenu}
-              plusOneName={plusOneName}
-              under21Alert={under21Alert}
-              qrDataUrl={qrDataUrl}
-              primaryColor={branding.primaryColor}
-              accentColor={branding.accentColor}
-            />
-            <CalendarButtons
-              className={styles.calendarGroup}
-              attendeeId={attendee.id}
-              eventName={event.name}
-              startsAt={event.startsAt.toISOString()}
-              endsAt={event.endsAt.toISOString()}
-              venue={event.venue}
-              address={event.address}
-            />
-          </div>
-          <details className={styles.payload}>
-            <summary className="focus-ring"><QrCode className="h-3.5 w-3.5" /> Verification data</summary>
-            <pre>{attendee.pass.qrPayload}</pre>
-          </details>
-        </section>
       </div>
     </main>
   );

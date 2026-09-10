@@ -22,7 +22,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   try {
-    const acceptance = await issuePrizeAcceptance(prize.id, request.nextUrl.origin);
+    const acceptance = await issuePrizeAcceptance(prize.id, request.nextUrl.origin, { emailWinner: true });
     return NextResponse.json({ acceptance });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Could not create the signature request." }, { status: 500 });

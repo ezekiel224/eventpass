@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
-import { renderPassEmail, sendEmail } from "@/services/email";
+import { createGoogleCalendarUrl, renderPassEmail, sendEmail } from "@/services/email";
 import { formatDate, formatTime } from "@/lib/utils";
 
 type Params = { params: Promise<{ attendeeId: string }> };
 
 export const dynamic = "force-dynamic";
 
-export async function POST(_request: Request, { params }: Params) {
+export async function POST(request: Request, { params }: Params) {
   const { attendeeId } = await params;
   const attendee = await prisma.attendee.findUnique({
     where: { id: attendeeId },
@@ -25,7 +25,8 @@ export async function POST(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Add an email address before sending this pass" }, { status: 400 });
   }
 
-  const passUrl = `${process.env.APP_URL ?? "http://localhost:3000"}/pass/${attendee.id}`;
+  const appBaseUrl = (process.env.APP_URL?.trim() || new URL(request.url).origin).replace(/\/+$/, "");
+  const passUrl = `${appBaseUrl}/pass/${attendee.id}`;
   const subject = `Your pass for ${attendee.event.name}`;
   let status = "QUEUED";
   let providerId: string | undefined;
@@ -33,7 +34,7 @@ export async function POST(_request: Request, { params }: Params) {
 
   try {
     const branding = await getBranding();
-    const qrImageUrl = `${process.env.APP_URL ?? "http://localhost:3000"}/api/pass/${attendee.id}/qr`;
+    const qrImageUrl = `${appBaseUrl}/api/pass/${attendee.id}/qr`;
     const delivery = await sendEmail({
       to: attendee.email,
       subject,
@@ -50,6 +51,16 @@ export async function POST(_request: Request, { params }: Params) {
         organizer: attendee.event.organizer,
         contactEmail: attendee.event.contactEmail,
         passUrl,
+        passDownloadUrl: `${appBaseUrl}/api/attendees/${attendee.id}/pass-download`,
+        googleCalendarUrl: createGoogleCalendarUrl({
+          eventName: attendee.event.name,
+          startsAt: attendee.event.startsAt,
+          endsAt: attendee.event.endsAt,
+          venue: attendee.event.venue,
+          address: attendee.event.address,
+          passUrl
+        }),
+        iCalendarUrl: `${appBaseUrl}/api/attendees/${attendee.id}/calendar`,
         qrImageUrl,
         fallbackCode: attendee.pass.fallbackCode,
         organizationName: branding.name,

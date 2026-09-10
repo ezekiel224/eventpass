@@ -359,9 +359,12 @@ export function RaffleWorkspace() {
     setWinner(override
       ? `${data.overriddenWinner} was overridden. ${data.winner.name} is now the final winner of ${data.prize.name}.`
       : `${data.winner.name} is the final winner of ${data.prize.name}.`);
+    setAcceptanceLink("");
     if (data.acceptance?.acceptanceUrl) {
       setAcceptanceLink(data.acceptance.acceptanceUrl);
-      setMessage(data.acceptance.delivery === "NO_EMAIL" ? "The winner has no email address. Copy or open the signing link below." : "A secure prize-receipt signing link was created and sent to the winner.");
+      setMessage(data.acceptance.delivery === "NO_EMAIL"
+        ? "The winner has no email address. Copy or open the signing link below."
+        : "A secure signing link is ready. It has not been emailed; send it only after the winner is confirmed.");
     }
     await loadRaffle();
   }
@@ -387,6 +390,9 @@ export function RaffleWorkspace() {
   }
 
   async function requestAcceptance(prize: RafflePrize) {
+    if (!window.confirm(`Email ${prize.winnerName ?? "the winner"} a new signing link? Only send it after you are sure they will not be rerolled.`)) {
+      return;
+    }
     const response = await fetch(`/api/events/${eventId}/raffle/prizes/${prize.id}/acceptance`, { method: "POST" });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -394,7 +400,11 @@ export function RaffleWorkspace() {
       return;
     }
     setAcceptanceLink(data.acceptance.acceptanceUrl);
-    setMessage(data.acceptance.delivery === "NO_EMAIL" ? "No winner email is available. Copy or open the signing link below." : "A new signing link was created; any older link is now invalid.");
+    setMessage(data.acceptance.delivery === "NO_EMAIL"
+      ? "No winner email is available. Copy or open the signing link below."
+      : data.acceptance.delivery === "FAILED"
+        ? "The signing link was created, but the email could not be delivered. Copy the link below and share it manually."
+        : "The winner was emailed a new signing link; any older link is now invalid.");
     await loadRaffle();
   }
 
@@ -634,10 +644,10 @@ export function RaffleWorkspace() {
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="flex min-w-0 flex-1 gap-4">
                       <div className="flex h-24 w-28 shrink-0 items-center justify-center rounded-xl border border-border bg-primary/10 bg-cover bg-center text-primary" style={prize.imageUrl ? { backgroundImage: `url(${prize.imageUrl})` } : undefined}>{prize.imageUrl ? null : <Gift className="h-7 w-7" />}</div>
-                      <div className="min-w-0"><p className="font-semibold">{prize.name}</p><p className="mt-1 text-sm text-muted-foreground">{prize.totalTickets} tickets entered{prize.value ? ` · $${Number(prize.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</p>{prize.description ? <p className="mt-2 text-sm text-muted-foreground">{prize.description}</p> : null}{prize.winnerName ? <div className="mt-3 flex flex-wrap gap-2"><span className="inline-flex rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">Final winner: {prize.winnerName}{prize.rerollCount > 0 ? ` · ${prize.rerollCount} reroll${prize.rerollCount === 1 ? "" : "s"}` : ""}</span><span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${prize.acceptanceStatus === "SIGNED" ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-600"}`}>{prize.acceptanceStatus === "SIGNED" ? `Signed${prize.acceptanceSignerName ? ` by ${prize.acceptanceSignerName}` : ""}${prize.acceptedAt ? ` · ${new Date(prize.acceptedAt).toLocaleDateString()}` : ""}` : prize.acceptanceStatus === "PENDING" ? "Signature pending" : "Signature not requested"}</span></div> : null}</div>
+                      <div className="min-w-0"><p className="font-semibold">{prize.name}</p><p className="mt-1 text-sm text-muted-foreground">{prize.totalTickets} tickets entered{prize.value ? ` · $${Number(prize.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</p>{prize.description ? <p className="mt-2 text-sm text-muted-foreground">{prize.description}</p> : null}{prize.winnerName ? <div className="mt-3 flex flex-wrap gap-2"><span className="inline-flex rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">Final winner: {prize.winnerName}{prize.rerollCount > 0 ? ` · ${prize.rerollCount} reroll${prize.rerollCount === 1 ? "" : "s"}` : ""}</span><span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${prize.acceptanceStatus === "SIGNED" ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-600"}`}>{prize.acceptanceStatus === "SIGNED" ? `Signed${prize.acceptanceSignerName ? ` by ${prize.acceptanceSignerName}` : ""}${prize.acceptedAt ? ` · ${new Date(prize.acceptedAt).toLocaleDateString()}` : ""}` : prize.acceptanceStatus === "PENDING" ? "Signing link ready" : "Signature not requested"}</span></div> : null}</div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {prize.winnerName ? <>{prize.acceptanceStatus !== "SIGNED" ? <Button type="button" variant="secondary" onClick={() => void requestAcceptance(prize)}><Send className="h-4 w-4" /> {prize.acceptanceStatus === "PENDING" ? "Resend signing link" : "Send signing link"}</Button> : null}<Button type="button" variant="danger" onClick={() => void drawWinner(prize, true)} disabled={prize.totalTickets === 0}><RefreshCcw className="h-4 w-4" /> Override &amp; reroll</Button></> : <Button type="button" variant="secondary" onClick={() => void drawWinner(prize)} disabled={prize.totalTickets === 0}><Shuffle className="h-4 w-4" /> Draw &amp; reveal</Button>}
+                      {prize.winnerName ? <>{prize.acceptanceStatus !== "SIGNED" ? <Button type="button" variant="secondary" onClick={() => void requestAcceptance(prize)}><Send className="h-4 w-4" /> {prize.acceptanceStatus === "PENDING" ? "Email new signing link" : "Email signing link"}</Button> : null}<Button type="button" variant="danger" onClick={() => void drawWinner(prize, true)} disabled={prize.totalTickets === 0}><RefreshCcw className="h-4 w-4" /> Override &amp; reroll</Button></> : <Button type="button" variant="secondary" onClick={() => void drawWinner(prize)} disabled={prize.totalTickets === 0}><Shuffle className="h-4 w-4" /> Draw &amp; reveal</Button>}
                       <Button type="button" variant="ghost" className="h-10 w-10 px-0" onClick={() => void archivePrize(prize.id)} aria-label={`Remove ${prize.name}`} title="Remove prize"><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </div>

@@ -29,7 +29,7 @@ export function PassExperience({
   staticPreview?: boolean;
 }) {
   return (
-    <section className="grid w-full justify-items-center" aria-label="Interactive 3D digital event pass">
+    <section className="grid w-full justify-items-center [&>div>div]:max-w-none [&>div>div>div]:max-w-none" aria-label="Interactive 3D digital event pass">
       <PassViewer
         theme={theme}
         finish={genericVariant}

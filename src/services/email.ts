@@ -51,6 +51,35 @@ export async function sendEmail(message: EmailMessage) {
   };
 }
 
+function googleCalendarDate(value: Date) {
+  return value.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+
+export function createGoogleCalendarUrl({
+  eventName,
+  startsAt,
+  endsAt,
+  venue,
+  address,
+  passUrl
+}: {
+  eventName: string;
+  startsAt: Date;
+  endsAt: Date;
+  venue: string;
+  address: string;
+  passUrl: string;
+}) {
+  const parameters = new URLSearchParams({
+    action: "TEMPLATE",
+    text: eventName,
+    dates: `${googleCalendarDate(startsAt)}/${googleCalendarDate(endsAt)}`,
+    location: [venue, address].filter(Boolean).join(", "),
+    details: `Your individual event pass: ${passUrl}`
+  });
+  return `https://calendar.google.com/calendar/render?${parameters.toString()}`;
+}
+
 export function renderPassEmail({
   name,
   eventName,
@@ -64,6 +93,9 @@ export function renderPassEmail({
   organizer,
   contactEmail,
   passUrl,
+  passDownloadUrl,
+  googleCalendarUrl,
+  iCalendarUrl,
   qrImageUrl,
   fallbackCode,
   organizationName = "EventPass",
@@ -81,6 +113,9 @@ export function renderPassEmail({
   organizer: string;
   contactEmail: string;
   passUrl: string;
+  passDownloadUrl: string;
+  googleCalendarUrl: string;
+  iCalendarUrl: string;
   qrImageUrl: string;
   fallbackCode: string;
   organizationName?: string;
@@ -98,7 +133,9 @@ export function renderPassEmail({
     venue: escapeHtml(venue), address: escapeHtml(address), date: escapeHtml(eventDate),
     time: escapeHtml(eventTime), tier: escapeHtml(ticketTier), seat: seat ? escapeHtml(seat) : null,
     organizer: escapeHtml(organizer), contactEmail: escapeHtml(contactEmail),
-    passUrl: escapeHtml(passUrl), qrImageUrl: escapeHtml(qrImageUrl),
+    passUrl: escapeHtml(passUrl), passDownloadUrl: escapeHtml(passDownloadUrl),
+    googleCalendarUrl: escapeHtml(googleCalendarUrl), iCalendarUrl: escapeHtml(iCalendarUrl),
+    qrImageUrl: escapeHtml(qrImageUrl),
     fallbackCode: escapeHtml(fallbackCode), organizationName: escapeHtml(organizationName),
     primaryColor: /^#[0-9a-f]{6}$/i.test(primaryColor) ? primaryColor : SYSTEM_ACCENT_COLOR
   };
@@ -120,7 +157,16 @@ export function renderPassEmail({
           <a href="${safe.passUrl}"><img src="${safe.qrImageUrl}" width="240" height="240" alt="QR code for ${safe.eventName}" style="display:block;width:240px;height:240px;margin:0 auto;border:12px solid #fff"></a>
           <p style="margin:10px 0 0;color:#64748b;font-size:13px">Fallback code: <strong style="color:#111827">${safe.fallbackCode}</strong></p>
         </div>
-        <a href="${safe.passUrl}" style="display:inline-block;background:${safe.primaryColor};color:#fff;text-decoration:none;padding:12px 18px;border-radius:12px;font-weight:700">Open digital pass</a>
+        <table role="presentation" style="width:100%;border-collapse:separate;border-spacing:0 8px">
+          <tr><td><a href="${safe.passUrl}" style="display:block;text-align:center;background:${safe.primaryColor};color:#fff;text-decoration:none;padding:13px 18px;border-radius:12px;font-weight:700">Open digital pass</a></td></tr>
+          <tr><td><a href="${safe.passDownloadUrl}" style="display:block;text-align:center;background:#111827;color:#fff;text-decoration:none;padding:13px 18px;border-radius:12px;font-weight:700">Save pass</a></td></tr>
+          <tr><td>
+            <table role="presentation" style="width:100%;border-collapse:separate;border-spacing:6px 0"><tr>
+              <td style="width:50%"><a href="${safe.googleCalendarUrl}" style="display:block;text-align:center;border:1px solid #d1d5db;color:#111827;text-decoration:none;padding:12px 10px;border-radius:12px;font-weight:700">Google Calendar</a></td>
+              <td style="width:50%"><a href="${safe.iCalendarUrl}" style="display:block;text-align:center;border:1px solid #d1d5db;color:#111827;text-decoration:none;padding:12px 10px;border-radius:12px;font-weight:700">Apple / iCalendar</a></td>
+            </tr></table>
+          </td></tr>
+        </table>
         <p style="margin-top:24px;line-height:1.6;color:#64748b;font-size:13px">Hosted by ${safe.organizer}. Questions? <a href="mailto:${safe.contactEmail}" style="color:${safe.primaryColor}">${safe.contactEmail}</a></p>
       </div>
     </div>

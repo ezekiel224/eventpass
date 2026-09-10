@@ -111,11 +111,10 @@
   z-index: 1;
   display: grid;
   width: 100%;
-  max-width: 34rem;
+  max-width: min(46rem, calc((100svh - 1.5rem) * 4 / 5.65));
   margin-inline: auto;
-  gap: clamp(0.85rem, 3vw, 1.25rem);
   justify-items: center;
-  padding: clamp(0.75rem, 3vw, 1.5rem) clamp(0.7rem, 3vw, 1.25rem) clamp(1.5rem, 5vw, 3rem);
+  padding: clamp(0.4rem, 1.5vw, 0.75rem);
 }
 
 .actionDock {
