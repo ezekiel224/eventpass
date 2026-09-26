@@ -64,14 +64,14 @@ const fieldIds: Record<EventFormField, string> = {
 };
 
 const themeSwatches: Record<PassThemeId, string> = {
-  casino: "from-rose-950 via-red-900 to-amber-500",
-  gala: "from-zinc-950 via-zinc-800 to-amber-200",
-  "ice-cream": "from-rose-200 via-pink-300 to-teal-200",
-  "retro-arcade": "from-indigo-950 via-fuchsia-700 to-cyan-400",
-  science: "from-slate-950 via-cyan-950 to-cyan-400",
-  biology: "from-emerald-950 via-teal-700 to-lime-300",
-  space: "from-slate-950 via-indigo-900 to-violet-500",
-  minimal: "from-zinc-950 via-slate-700 to-primary"
+  casino: "bg-stone-950",
+  gala: "bg-stone-800",
+  "ice-cream": "bg-stone-300",
+  "retro-arcade": "bg-neutral-950",
+  science: "bg-neutral-800",
+  biology: "bg-stone-700",
+  space: "bg-neutral-900",
+  minimal: "bg-primary"
 };
 
 function validateEventForm(form: EventForm) {
@@ -421,8 +421,8 @@ export function EventsManager() {
                     onClick={() => setField("passTheme", themeId)}
                     className={`focus-ring rounded-xl border p-3 text-left transition duration-300 ease-luxury ${selected ? "border-primary/50 bg-primary/[0.08] shadow-[0_14px_36px_hsl(var(--primary)/0.12)]" : "border-border/70 bg-background/50 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/[0.04]"}`}
                   >
-                    <span className={`mb-3 flex h-12 items-end overflow-hidden rounded-lg bg-gradient-to-br p-2 ${themeSwatches[themeId]}`} aria-hidden="true">
-                      <span className="h-1 w-10 rounded-full bg-white/70 shadow-[0_0_14px_rgba(255,255,255,.55)]" />
+                    <span className={`mb-3 flex h-12 items-end overflow-hidden rounded-lg p-2 ${themeSwatches[themeId]}`} aria-hidden="true">
+                      <span className="h-1 w-10 rounded-full bg-white/70" />
                     </span>
                     <span className="flex items-center justify-between gap-2 text-sm font-semibold">{theme.label}{selected ? <CheckCircle2 className="h-4 w-4 text-primary" /> : null}</span>
                     <span className="mt-1 block text-xs leading-5 text-muted-foreground">{theme.description}</span>

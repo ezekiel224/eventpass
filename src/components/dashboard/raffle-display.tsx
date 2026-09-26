@@ -220,7 +220,7 @@ export function RaffleDisplay({ initialEventId = "" }: { initialEventId?: string
     <main className="surface-grid min-h-screen bg-background text-foreground">
       {reveal ? (
         <div className="winner-reveal fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-background/95 p-6 text-center" role="status" aria-live="assertive">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.25),transparent_58%)]" />
+          <div className="absolute inset-0 bg-primary/10" />
           <Sparkles className="absolute left-[12%] top-[18%] h-14 w-14 animate-pulse text-primary" />
           <Sparkles className="absolute bottom-[18%] right-[12%] h-20 w-20 animate-pulse text-accent" />
           <div className="winner-pop relative max-w-4xl">

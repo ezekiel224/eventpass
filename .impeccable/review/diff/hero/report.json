@@ -1,0 +1,1107 @@
+{
+  "tool": "comp-diff",
+  "version": 1,
+  "createdAt": "2026-09-26T01:40:13.546Z",
+  "label": "hero",
+  "comp": ".impeccable/mocks/dashboard-c.png",
+  "build": ".impeccable/review/hero-repro.png",
+  "spec": ".impeccable/build/spec.json",
+  "compSize": "1586x992",
+  "buildSize": "1586x992",
+  "align": "top",
+  "overall": 0.7205,
+  "verdict": "drift",
+  "scores": {
+    "overall": 0.7205,
+    "structure": 0.7271,
+    "color": 0.7259,
+    "colorIntersection": 0.4716,
+    "paletteMatch": 0.8629,
+    "detail": 0.5894,
+    "detailRaw": 0.6311,
+    "detailAdded": 0.0833,
+    "bands": 0.9143
+  },
+  "palette": {
+    "comp": [
+      {
+        "hex": "#f2efee",
+        "coverage": 0.8042
+      },
+      {
+        "hex": "#181818",
+        "coverage": 0.1634
+      },
+      {
+        "hex": "#eb5909",
+        "coverage": 0.0133
+      },
+      {
+        "hex": "#808080",
+        "coverage": 0.0093
+      },
+      {
+        "hex": "#bbbaba",
+        "coverage": 0.007
+      },
+      {
+        "hex": "#494949",
+        "coverage": 0.0029
+      }
+    ],
+    "build": [
+      {
+        "hex": "#f8f2ea",
+        "coverage": 0.7947
+      },
+      {
+        "hex": "#181818",
+        "coverage": 0.1598
+      },
+      {
+        "hex": "#cac9c7",
+        "coverage": 0.0176
+      },
+      {
+        "hex": "#f86808",
+        "coverage": 0.0127
+      },
+      {
+        "hex": "#382a1f",
+        "coverage": 0.0082
+      },
+      {
+        "hex": "#79746e",
+        "coverage": 0.0069
+      }
+    ]
+  },
+  "regions": [
+    {
+      "id": "primary-rail",
+      "x": 0,
+      "y": 0,
+      "w": 0.16,
+      "h": 1,
+      "kind": "chrome",
+      "score": {
+        "overall": 0.7199,
+        "structure": 0.8711,
+        "color": 0.9638,
+        "colorIntersection": 0.9208,
+        "paletteMatch": 0.987,
+        "detail": 0.3326,
+        "detailRaw": 0.3378,
+        "detailAdded": 0.0104,
+        "bands": 0.6061
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 11,
+          "y": 0,
+          "w": 243,
+          "h": 992
+        },
+        "build": {
+          "x": 21,
+          "y": 31,
+          "w": 96,
+          "h": 930
+        }
+      }
+    },
+    {
+      "id": "event-list-shell",
+      "x": 0.16,
+      "y": 0,
+      "w": 0.215,
+      "h": 1,
+      "kind": "chrome",
+      "score": {
+        "overall": 0.7295,
+        "structure": 0.8371,
+        "color": 0.759,
+        "colorIntersection": 0.5217,
+        "paletteMatch": 0.8869,
+        "detail": 0.4608,
+        "detailRaw": 0.5442,
+        "detailAdded": 0.1667,
+        "bands": 0.8769
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 3,
+          "y": 24,
+          "w": 314,
+          "h": 350
+        },
+        "build": {
+          "x": 0,
+          "y": 0,
+          "w": 321,
+          "h": 992
+        }
+      }
+    },
+    {
+      "id": "events-heading",
+      "x": 0.175,
+      "y": 0.02,
+      "w": 0.075,
+      "h": 0.03,
+      "kind": "text",
+      "score": {
+        "overall": 0.5384,
+        "structure": 0.741,
+        "color": 0.5117,
+        "colorIntersection": 0.1561,
+        "paletteMatch": 0.7031,
+        "detail": 0,
+        "detailRaw": 0,
+        "detailAdded": 0,
+        "bands": 0.4
+      },
+      "verdict": "missing",
+      "inkBox": {
+        "comp": {
+          "x": 2,
+          "y": 13,
+          "w": 75,
+          "h": 18
+        },
+        "build": null
+      }
+    },
+    {
+      "id": "event-tabs",
+      "x": 0.17,
+      "y": 0.085,
+      "w": 0.16,
+      "h": 0.045,
+      "kind": "control",
+      "score": {
+        "overall": 0.609,
+        "structure": 0.6847,
+        "color": 0.6646,
+        "colorIntersection": 0.3724,
+        "paletteMatch": 0.822,
+        "detail": 0.3412,
+        "detailRaw": 0.3829,
+        "detailAdded": 0.0833,
+        "bands": 0.31
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 9,
+          "y": 18,
+          "w": 213,
+          "h": 28
+        },
+        "build": {
+          "x": 7,
+          "y": 10,
+          "w": 117,
+          "h": 38
+        }
+      }
+    },
+    {
+      "id": "selected-event-row",
+      "x": 0.16,
+      "y": 0.145,
+      "w": 0.215,
+      "h": 0.085,
+      "kind": "control",
+      "score": {
+        "overall": 0.5217,
+        "structure": 0.7323,
+        "color": 0.5128,
+        "colorIntersection": 0.0579,
+        "paletteMatch": 0.7577,
+        "detail": 0.0635,
+        "detailRaw": 0.1832,
+        "detailAdded": 0.2396,
+        "bands": 0.219
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 3,
+          "y": 2,
+          "w": 303,
+          "h": 82
+        },
+        "build": {
+          "x": 0,
+          "y": 0,
+          "w": 211,
+          "h": 84
+        }
+      }
+    },
+    {
+      "id": "secondary-event-rows",
+      "x": 0.16,
+      "y": 0.23,
+      "w": 0.215,
+      "h": 0.17,
+      "kind": "control",
+      "score": {
+        "overall": 0.5587,
+        "structure": 0.6213,
+        "color": 0.6979,
+        "colorIntersection": 0.5477,
+        "paletteMatch": 0.7787,
+        "detail": 0.1741,
+        "detailRaw": 0.3252,
+        "detailAdded": 0.3021,
+        "bands": 0.4571
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 25,
+          "y": 21,
+          "w": 287,
+          "h": 125
+        },
+        "build": {
+          "x": 0,
+          "y": 0,
+          "w": 316,
+          "h": 169
+        }
+      }
+    },
+    {
+      "id": "top-command-bar",
+      "x": 0.16,
+      "y": 0,
+      "w": 0.84,
+      "h": 0.065,
+      "kind": "chrome",
+      "score": {
+        "overall": 0.6302,
+        "structure": 0.9731,
+        "color": 0.543,
+        "colorIntersection": 0.0973,
+        "paletteMatch": 0.783,
+        "detail": 0.0156,
+        "detailRaw": 0.0937,
+        "detailAdded": 0.1563,
+        "bands": 1
+      },
+      "verdict": "missing",
+      "inkBox": {
+        "comp": {
+          "x": 26,
+          "y": 13,
+          "w": 1279,
+          "h": 39
+        },
+        "build": {
+          "x": 0,
+          "y": 0,
+          "w": 1299,
+          "h": 64
+        }
+      }
+    },
+    {
+      "id": "search-field",
+      "x": 0.714,
+      "y": 0.012,
+      "w": 0.215,
+      "h": 0.042,
+      "kind": "control",
+      "score": {
+        "overall": 0.5554,
+        "structure": 0.8888,
+        "color": 0.4441,
+        "colorIntersection": 0.0387,
+        "paletteMatch": 0.6623,
+        "detail": 0,
+        "detailRaw": 0,
+        "detailAdded": 0,
+        "bands": 0.4
+      },
+      "verdict": "missing",
+      "inkBox": {
+        "comp": {
+          "x": 14,
+          "y": 16,
+          "w": 123,
+          "h": 15
+        },
+        "build": null
+      }
+    },
+    {
+      "id": "event-title",
+      "x": 0.393,
+      "y": 0.11,
+      "w": 0.31,
+      "h": 0.038,
+      "kind": "text",
+      "score": {
+        "overall": 0.6487,
+        "structure": 0.7101,
+        "color": 0.5128,
+        "colorIntersection": 0.0569,
+        "paletteMatch": 0.7583,
+        "detail": 0.6841,
+        "detailRaw": 0.7518,
+        "detailAdded": 0.1354,
+        "bands": 0.6286
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 3,
+          "y": 10,
+          "w": 330,
+          "h": 35
+        },
+        "build": {
+          "x": 3,
+          "y": 13,
+          "w": 385,
+          "h": 32
+        }
+      }
+    },
+    {
+      "id": "event-date",
+      "x": 0.393,
+      "y": 0.083,
+      "w": 0.18,
+      "h": 0.025,
+      "kind": "text",
+      "score": {
+        "overall": 0.6285,
+        "structure": 0.8243,
+        "color": 0.5136,
+        "colorIntersection": 0.0344,
+        "paletteMatch": 0.7717,
+        "detail": 0.3196,
+        "detailRaw": 0.3405,
+        "detailAdded": 0.0417,
+        "bands": 0.4
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 2,
+          "y": 17,
+          "w": 281,
+          "h": 31
+        },
+        "build": {
+          "x": 2,
+          "y": 21,
+          "w": 276,
+          "h": 27
+        }
+      }
+    },
+    {
+      "id": "event-location",
+      "x": 0.393,
+      "y": 0.153,
+      "w": 0.27,
+      "h": 0.028,
+      "kind": "text",
+      "score": {
+        "overall": 0.7069,
+        "structure": 0.7811,
+        "color": 0.534,
+        "colorIntersection": 0.0717,
+        "paletteMatch": 0.7829,
+        "detail": 0.6415,
+        "detailRaw": 0.7249,
+        "detailAdded": 0.1667,
+        "bands": 0.8667
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 5,
+          "y": 0,
+          "w": 351,
+          "h": 32
+        },
+        "build": {
+          "x": 3,
+          "y": 0,
+          "w": 330,
+          "h": 33
+        }
+      }
+    },
+    {
+      "id": "live-state",
+      "x": 0.832,
+      "y": 0.098,
+      "w": 0.055,
+      "h": 0.026,
+      "kind": "text",
+      "score": {
+        "overall": 0.6125,
+        "structure": 0.9038,
+        "color": 0.4822,
+        "colorIntersection": 0.0038,
+        "paletteMatch": 0.7398,
+        "detail": 0,
+        "detailRaw": 0,
+        "detailAdded": 0,
+        "bands": 0.4
+      },
+      "verdict": "missing",
+      "inkBox": {
+        "comp": {
+          "x": 8,
+          "y": 20,
+          "w": 45,
+          "h": 10
+        },
+        "build": null
+      }
+    },
+    {
+      "id": "edit-event",
+      "x": 0.889,
+      "y": 0.09,
+      "w": 0.095,
+      "h": 0.045,
+      "kind": "control",
+      "score": {
+        "overall": 0.4788,
+        "structure": 0.5643,
+        "color": 0.6105,
+        "colorIntersection": 0.187,
+        "paletteMatch": 0.8385,
+        "detail": 0.0561,
+        "detailRaw": 0.2176,
+        "detailAdded": 0.3229,
+        "bands": 0.5333
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 1,
+          "y": 4,
+          "w": 139,
+          "h": 38
+        },
+        "build": {
+          "x": 65,
+          "y": 17,
+          "w": 66,
+          "h": 11
+        }
+      }
+    },
+    {
+      "id": "workspace-tabs",
+      "x": 0.386,
+      "y": 0.197,
+      "w": 0.48,
+      "h": 0.044,
+      "kind": "control",
+      "score": {
+        "overall": 0.6202,
+        "structure": 0.9171,
+        "color": 0.5244,
+        "colorIntersection": 0.058,
+        "paletteMatch": 0.7756,
+        "detail": 0.1198,
+        "detailRaw": 0.2344,
+        "detailAdded": 0.2292,
+        "bands": 0.35
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 0,
+          "y": 15,
+          "w": 715,
+          "h": 30
+        },
+        "build": {
+          "x": 13,
+          "y": 24,
+          "w": 586,
+          "h": 14
+        }
+      }
+    },
+    {
+      "id": "readiness-panel",
+      "x": 0.385,
+      "y": 0.255,
+      "w": 0.602,
+      "h": 0.167,
+      "kind": "chrome",
+      "score": {
+        "overall": 0.4685,
+        "structure": 0.6924,
+        "color": 0.5046,
+        "colorIntersection": 0.1422,
+        "paletteMatch": 0.6997,
+        "detail": 0.1189,
+        "detailRaw": 0.2282,
+        "detailAdded": 0.2188,
+        "bands": 0.4686
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 26,
+          "y": 20,
+          "w": 905,
+          "h": 124
+        },
+        "build": {
+          "x": 34,
+          "y": 33,
+          "w": 892,
+          "h": 114
+        }
+      }
+    },
+    {
+      "id": "readiness-heading",
+      "x": 0.4,
+      "y": 0.272,
+      "w": 0.14,
+      "h": 0.025,
+      "kind": "text",
+      "score": {
+        "overall": 0.5073,
+        "structure": 0.6775,
+        "color": 0.5311,
+        "colorIntersection": 0.1723,
+        "paletteMatch": 0.7244,
+        "detail": 0,
+        "detailRaw": 0.0323,
+        "detailAdded": 0.4063,
+        "bands": 0.3571
+      },
+      "verdict": "missing",
+      "inkBox": {
+        "comp": {
+          "x": 4,
+          "y": 15,
+          "w": 138,
+          "h": 15
+        },
+        "build": {
+          "x": 12,
+          "y": 28,
+          "w": 119,
+          "h": 13
+        }
+      }
+    },
+    {
+      "id": "readiness-helper",
+      "x": 0.842,
+      "y": 0.274,
+      "w": 0.13,
+      "h": 0.024,
+      "kind": "text",
+      "score": {
+        "overall": 0.563,
+        "structure": 0.7805,
+        "color": 0.5175,
+        "colorIntersection": 0.1286,
+        "paletteMatch": 0.7269,
+        "detail": 0,
+        "detailRaw": 0.0539,
+        "detailAdded": 0.2188,
+        "bands": 0.4333
+      },
+      "verdict": "missing",
+      "inkBox": {
+        "comp": {
+          "x": 43,
+          "y": 17,
+          "w": 164,
+          "h": 14
+        },
+        "build": {
+          "x": 134,
+          "y": 28,
+          "w": 68,
+          "h": 11
+        }
+      }
+    },
+    {
+      "id": "attendee-metric",
+      "x": 0.4,
+      "y": 0.315,
+      "w": 0.16,
+      "h": 0.088,
+      "kind": "text",
+      "score": {
+        "overall": 0.4482,
+        "structure": 0.5925,
+        "color": 0.4316,
+        "colorIntersection": 0.0678,
+        "paletteMatch": 0.6275,
+        "detail": 0,
+        "detailRaw": 0.1445,
+        "detailAdded": 0.3125,
+        "bands": 0.44
+      },
+      "verdict": "missing",
+      "inkBox": {
+        "comp": {
+          "x": 3,
+          "y": 5,
+          "w": 251,
+          "h": 79
+        },
+        "build": {
+          "x": 11,
+          "y": 29,
+          "w": 149,
+          "h": 59
+        }
+      }
+    },
+    {
+      "id": "checkin-metric",
+      "x": 0.6,
+      "y": 0.315,
+      "w": 0.16,
+      "h": 0.088,
+      "kind": "text",
+      "score": {
+        "overall": 0.4574,
+        "structure": 0.6475,
+        "color": 0.4371,
+        "colorIntersection": 0.0623,
+        "paletteMatch": 0.6389,
+        "detail": 0.0236,
+        "detailRaw": 0.1329,
+        "detailAdded": 0.2188,
+        "bands": 0.2083
+      },
+      "verdict": "missing",
+      "inkBox": {
+        "comp": {
+          "x": 0,
+          "y": 2,
+          "w": 247,
+          "h": 82
+        },
+        "build": {
+          "x": 5,
+          "y": 30,
+          "w": 98,
+          "h": 57
+        }
+      }
+    },
+    {
+      "id": "delivery-metric",
+      "x": 0.797,
+      "y": 0.315,
+      "w": 0.176,
+      "h": 0.088,
+      "kind": "text",
+      "score": {
+        "overall": 0.4617,
+        "structure": 0.6332,
+        "color": 0.4202,
+        "colorIntersection": 0.0562,
+        "paletteMatch": 0.6163,
+        "detail": 0.0192,
+        "detailRaw": 0.139,
+        "detailAdded": 0.2396,
+        "bands": 0.3714
+      },
+      "verdict": "missing",
+      "inkBox": {
+        "comp": {
+          "x": 0,
+          "y": 6,
+          "w": 267,
+          "h": 79
+        },
+        "build": {
+          "x": 3,
+          "y": 30,
+          "w": 118,
+          "h": 58
+        }
+      }
+    },
+    {
+      "id": "setup-panel",
+      "x": 0.385,
+      "y": 0.437,
+      "w": 0.602,
+      "h": 0.272,
+      "kind": "chrome",
+      "score": {
+        "overall": 0.525,
+        "structure": 0.5731,
+        "color": 0.527,
+        "colorIntersection": 0.1495,
+        "paletteMatch": 0.7303,
+        "detail": 0.2722,
+        "detailRaw": 0.4076,
+        "detailAdded": 0.2708,
+        "bands": 0.8309
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 20,
+          "y": 17,
+          "w": 915,
+          "h": 229
+        },
+        "build": {
+          "x": 34,
+          "y": 61,
+          "w": 892,
+          "h": 208
+        }
+      }
+    },
+    {
+      "id": "setup-heading",
+      "x": 0.397,
+      "y": 0.449,
+      "w": 0.18,
+      "h": 0.025,
+      "kind": "text",
+      "score": {
+        "overall": 0.5466,
+        "structure": 0.7251,
+        "color": 0.636,
+        "colorIntersection": 0.4126,
+        "paletteMatch": 0.7564,
+        "detail": 0,
+        "detailRaw": 0.0644,
+        "detailAdded": 0.1667,
+        "bands": 0.25
+      },
+      "verdict": "missing",
+      "inkBox": {
+        "comp": {
+          "x": 1,
+          "y": 17,
+          "w": 181,
+          "h": 17
+        },
+        "build": null
+      }
+    },
+    {
+      "id": "setup-progress",
+      "x": 0.907,
+      "y": 0.449,
+      "w": 0.065,
+      "h": 0.025,
+      "kind": "text",
+      "score": {
+        "overall": 0.5983,
+        "structure": 0.7631,
+        "color": 0.6354,
+        "colorIntersection": 0.391,
+        "paletteMatch": 0.767,
+        "detail": 0.0525,
+        "detailRaw": 0.1255,
+        "detailAdded": 0.1458,
+        "bands": 0.5
+      },
+      "verdict": "missing",
+      "inkBox": {
+        "comp": {
+          "x": 16,
+          "y": 19,
+          "w": 85,
+          "h": 13
+        },
+        "build": null
+      }
+    },
+    {
+      "id": "readiness-tasks",
+      "x": 0.397,
+      "y": 0.482,
+      "w": 0.377,
+      "h": 0.205,
+      "kind": "control",
+      "score": {
+        "overall": 0.4688,
+        "structure": 0.6161,
+        "color": 0.4746,
+        "colorIntersection": 0.069,
+        "paletteMatch": 0.6929,
+        "detail": 0.127,
+        "detailRaw": 0.3093,
+        "detailAdded": 0.3646,
+        "bands": 0.5
+      },
+      "verdict": "contradicted",
+      "inkBox": {
+        "comp": {
+          "x": 12,
+          "y": 8,
+          "w": 581,
+          "h": 194
+        },
+        "build": {
+          "x": 15,
+          "y": 19,
+          "w": 583,
+          "h": 167
+        }
+      }
+    },
+    {
+      "id": "open-checkin",
+      "x": 0.805,
+      "y": 0.495,
+      "w": 0.17,
+      "h": 0.06,
+      "kind": "control",
+      "score": {
+        "overall": 0.4512,
+        "structure": 0.5459,
+        "color": 0.4871,
+        "colorIntersection": 0.0314,
+        "paletteMatch": 0.7325,
+        "detail": 0.1754,
+        "detailRaw": 0.2848,
+        "detailAdded": 0.2188,
+        "bands": 0.5
+      },
+      "verdict": "contradicted",
+      "inkBox": {
+        "comp": {
+          "x": 0,
+          "y": 0,
+          "w": 269,
+          "h": 60
+        },
+        "build": {
+          "x": 13,
+          "y": 4,
+          "w": 247,
+          "h": 56
+        }
+      }
+    },
+    {
+      "id": "open-checkin-copy",
+      "x": 0.805,
+      "y": 0.575,
+      "w": 0.17,
+      "h": 0.068,
+      "kind": "text",
+      "score": {
+        "overall": 0.5657,
+        "structure": 0.5978,
+        "color": 0.5256,
+        "colorIntersection": 0.1109,
+        "paletteMatch": 0.7489,
+        "detail": 0.414,
+        "detailRaw": 0.4921,
+        "detailAdded": 0.1563,
+        "bands": 0.7333
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 2,
+          "y": 4,
+          "w": 221,
+          "h": 58
+        },
+        "build": {
+          "x": 13,
+          "y": 0,
+          "w": 247,
+          "h": 62
+        }
+      }
+    },
+    {
+      "id": "activity-panel",
+      "x": 0.385,
+      "y": 0.727,
+      "w": 0.602,
+      "h": 0.25,
+      "kind": "chrome",
+      "score": {
+        "overall": 0.5287,
+        "structure": 0.696,
+        "color": 0.5107,
+        "colorIntersection": 0.128,
+        "paletteMatch": 0.7168,
+        "detail": 0.2954,
+        "detailRaw": 0.3788,
+        "detailAdded": 0.1667,
+        "bands": 0.5571
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 21,
+          "y": 19,
+          "w": 910,
+          "h": 212
+        },
+        "build": {
+          "x": 34,
+          "y": 23,
+          "w": 892,
+          "h": 195
+        }
+      }
+    },
+    {
+      "id": "activity-heading",
+      "x": 0.398,
+      "y": 0.739,
+      "w": 0.14,
+      "h": 0.025,
+      "kind": "text",
+      "score": {
+        "overall": 0.6365,
+        "structure": 0.7756,
+        "color": 0.4841,
+        "colorIntersection": 0.0916,
+        "paletteMatch": 0.6954,
+        "detail": 0.3532,
+        "detailRaw": 0.4262,
+        "detailAdded": 0.1458,
+        "bands": 0.7467
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 1,
+          "y": 19,
+          "w": 118,
+          "h": 17
+        },
+        "build": {
+          "x": 18,
+          "y": 23,
+          "w": 107,
+          "h": 14
+        }
+      }
+    },
+    {
+      "id": "activity-action",
+      "x": 0.93,
+      "y": 0.739,
+      "w": 0.042,
+      "h": 0.025,
+      "kind": "control",
+      "score": {
+        "overall": 0.5413,
+        "structure": 0.8689,
+        "color": 0.4295,
+        "colorIntersection": 0.0196,
+        "paletteMatch": 0.6502,
+        "detail": 0,
+        "detailRaw": 0,
+        "detailAdded": 0,
+        "bands": 0.4
+      },
+      "verdict": "missing",
+      "inkBox": {
+        "comp": {
+          "x": 22,
+          "y": 19,
+          "w": 45,
+          "h": 11
+        },
+        "build": null
+      }
+    },
+    {
+      "id": "activity-table",
+      "x": 0.395,
+      "y": 0.772,
+      "w": 0.582,
+      "h": 0.19,
+      "kind": "text",
+      "score": {
+        "overall": 0.6184,
+        "structure": 0.7803,
+        "color": 0.5067,
+        "colorIntersection": 0.1174,
+        "paletteMatch": 0.7163,
+        "detail": 0.3059,
+        "detailRaw": 0.3579,
+        "detailAdded": 0.1042,
+        "bands": 0.5571
+      },
+      "verdict": "drift",
+      "inkBox": {
+        "comp": {
+          "x": 20,
+          "y": 12,
+          "w": 875,
+          "h": 174
+        },
+        "build": {
+          "x": 19,
+          "y": 67,
+          "w": 892,
+          "h": 106
+        }
+      }
+    }
+  ],
+  "files": {
+    "sideBySide": "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/side-by-side.png",
+    "heatmap": "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/heatmap.png",
+    "regionFiles": [
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/primary-rail.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/event-list-shell.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/events-heading.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/event-tabs.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/selected-event-row.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/secondary-event-rows.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/top-command-bar.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/search-field.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/event-title.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/event-date.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/event-location.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/live-state.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/edit-event.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/workspace-tabs.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/readiness-panel.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/readiness-heading.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/readiness-helper.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/attendee-metric.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/checkin-metric.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/delivery-metric.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/setup-panel.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/setup-heading.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/setup-progress.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/readiness-tasks.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/open-checkin.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/open-checkin-copy.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/activity-panel.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/activity-heading.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/activity-action.png",
+      "/Users/evences/Documents/eventpass/.impeccable/review/diff/hero/regions/activity-table.png"
+    ]
+  }
+}

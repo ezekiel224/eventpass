@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Scaffold reference: dashboard-c.png</title>
+  <link rel="stylesheet" href="layout.css">
+  <style>html,body{margin:0}body{background:#f2efee}.region{box-sizing:border-box}.region.text p{white-space:pre-wrap}</style>
+</head>
+<body>
+<!-- Reference only. Every region sits at its measured box inside a comp-aspect frame. Take the boxes (layout.css), keep your own semantic structure. -->
+<main class="comp-frame" style="max-width:1586px">
+  <div class="r-primary-rail region chrome" data-region="primary-rail"><!-- warm-black persistent navigation rail with EventPass wordmark, icons, labels, and footer --></div>
+  <div class="r-event-list-shell region chrome" data-region="event-list-shell"><!-- alabaster event-list column with heading, tabs, add button, and ruled rows --></div>
+  <div class="r-events-heading region text" data-region="events-heading"><!-- Events heading at the top of the event-list column --><p style="line-height:1.05;margin:0">events-heading</p></div>
+  <div class="r-event-tabs region control" data-region="event-tabs"><!-- Active and Upcoming and Past Events tab controls with orange active underline: rebuild the control's chrome from the crop (comp-spec.mjs --crop event-tabs); its ink box, border, fill, radius, and label size are the comp's --></div>
+  <div class="r-selected-event-row region control" data-region="selected-event-row"><!-- selected Fall Community Gala event row with flat pale-orange fill, orange edge, date, and Live state: rebuild the control's chrome from the crop (comp-spec.mjs --crop selected-event-row); its ink box, border, fill, radius, and label size are the comp's --></div>
+  <div class="r-secondary-event-rows region control" data-region="secondary-event-rows"><!-- Autumn Benefit Dinner and Community Day rows with dates and Draft states: rebuild the control's chrome from the crop (comp-spec.mjs --crop secondary-event-rows); its ink box, border, fill, radius, and label size are the comp's --></div>
+  <div class="r-top-command-bar region chrome" data-region="top-command-bar"><!-- quiet top command row with search field and circular account control --></div>
+  <div class="r-search-field region control" data-region="search-field"><!-- outlined Search events field: rebuild the control's chrome from the crop (comp-spec.mjs --crop search-field); its ink box, border, fill, radius, and label size are the comp's --></div>
+  <div class="r-event-title region text" data-region="event-title"><!-- large bold Fall Community Gala title --><p style="line-height:1.05;margin:0">event-title</p></div>
+  <div class="r-event-date region text" data-region="event-date"><!-- small uppercase event date and time above title --><p style="line-height:1.05;margin:0">event-date</p></div>
+  <div class="r-event-location region text" data-region="event-location"><!-- venue and city metadata below title --><p style="line-height:1.05;margin:0">event-location</p></div>
+  <div class="r-live-state region text" data-region="live-state"><!-- small orange dot and Live state --><p style="line-height:1.05;margin:0">live-state</p></div>
+  <div class="r-edit-event region control" data-region="edit-event"><!-- outlined Edit event button and overflow action: rebuild the control's chrome from the crop (comp-spec.mjs --crop edit-event); its ink box, border, fill, radius, and label size are the comp's --></div>
+  <div class="r-workspace-tabs region control" data-region="workspace-tabs"><!-- overview, attendees, communications, check-in, raffles, voting, and settings tabs with orange active rule: rebuild the control's chrome from the crop (comp-spec.mjs --crop workspace-tabs); its ink box, border, fill, radius, and label size are the comp's --></div>
+  <div class="r-readiness-panel region chrome" data-region="readiness-panel"><!-- large ruled readiness panel with three flat metrics --></div>
+  <div class="r-readiness-heading region text" data-region="readiness-heading"><!-- Event readiness heading --><p style="line-height:1.05;margin:0">readiness-heading</p></div>
+  <div class="r-readiness-helper region text" data-region="readiness-helper"><!-- Everything looks good to go status copy --><p style="line-height:1.05;margin:0">readiness-helper</p></div>
+  <div class="r-attendee-metric region text" data-region="attendee-metric"><!-- Attendees label, 186 of 240 value, orange flat bar, and 78 percent --><p style="line-height:1.05;margin:0">attendee-metric</p></div>
+  <div class="r-checkin-metric region text" data-region="checkin-metric"><!-- Checked in label, 142 value, orange flat bar, and 74 percent --><p style="line-height:1.05;margin:0">checkin-metric</p></div>
+  <div class="r-delivery-metric region text" data-region="delivery-metric"><!-- Email delivery label, 98 percent value, orange flat bar, and 98 percent --><p style="line-height:1.05;margin:0">delivery-metric</p></div>
+  <div class="r-setup-panel region chrome" data-region="setup-panel"><!-- large Get ready for your event task panel with ruled checklist and action column --></div>
+  <div class="r-setup-heading region text" data-region="setup-heading"><!-- Get ready for your event heading --><p style="line-height:1.05;margin:0">setup-heading</p></div>
+  <div class="r-setup-progress region text" data-region="setup-progress"><!-- 4 of 5 complete progress text --><p style="line-height:1.05;margin:0">setup-progress</p></div>
+  <div class="r-readiness-tasks region control" data-region="readiness-tasks"><!-- five ruled readiness task rows with square completion controls, labels, descriptions, and arrows: rebuild the control's chrome from the crop (comp-spec.mjs --crop readiness-tasks); its ink box, border, fill, radius, and label size are the comp's --></div>
+  <div class="r-open-checkin region control" data-region="open-checkin"><!-- flat Spanish-orange Open check-in primary button with QR icon: rebuild the control's chrome from the crop (comp-spec.mjs --crop open-checkin); its ink box, border, fill, radius, and label size are the comp's --></div>
+  <div class="r-open-checkin-copy region text" data-region="open-checkin-copy"><!-- Ready to welcome attendees support text under the primary action --><p style="line-height:1.05;margin:0">open-checkin-copy</p></div>
+  <div class="r-activity-panel region chrome" data-region="activity-panel"><!-- ruled Recent activity ledger panel --></div>
+  <div class="r-activity-heading region text" data-region="activity-heading"><!-- Recent activity heading --><p style="line-height:1.05;margin:0">activity-heading</p></div>
+  <div class="r-activity-action region control" data-region="activity-action"><!-- View all activity text action: rebuild the control's chrome from the crop (comp-spec.mjs --crop activity-action); its ink box, border, fill, radius, and label size are the comp's --></div>
+  <div class="r-activity-table region text" data-region="activity-table"><!-- activity table headings and five event activity rows with time, type, details, and identifier --><p style="line-height:1.05;margin:0">activity-table</p></div>
+</main>
+</body>
+</html>

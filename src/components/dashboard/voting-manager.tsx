@@ -50,7 +50,7 @@ function BallotSettings({ ballot, events, onChanged }: { ballot: VotingBallotAdm
 
   return (
     <section className="liquid-card overflow-hidden p-0">
-      {form.coverImageUrl ? <div className="h-48 bg-cover bg-center" style={{ backgroundImage: `linear-gradient(to top, rgb(2 6 23 / .48), transparent), url(${form.coverImageUrl})` }} /> : null}
+      {form.coverImageUrl ? <div className="h-48 bg-cover bg-center" style={{ backgroundImage: `url(${form.coverImageUrl})` }} /> : null}
       <div className="p-5 sm:p-6">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start"><div><p className="panel-label">Ballot configuration</p><h2 className="mt-2 font-display text-3xl font-semibold tracking-[-0.045em]">{ballot.title}</h2><p className="mt-2 text-sm text-muted-foreground">{ballot.event.name} · {ballot._count.participants} rostered · {ballot._count.submissions} submitted</p></div><div className="flex flex-wrap gap-2"><Button type="button" variant="secondary" onClick={() => void copyPublicLink()}><Copy className="h-4 w-4" /> Copy public link</Button>{ballot.status === "OPEN" ? <a href={`/vote/${ballot.slug}`} target="_blank" rel="noreferrer"><Button type="button" variant="secondary"><ExternalLink className="h-4 w-4" /> Open public form</Button></a> : <Button type="button" variant="secondary" disabled><ExternalLink className="h-4 w-4" /> Open after publishing</Button>}</div></div>
         <div className="mt-6 grid gap-4 lg:grid-cols-2">

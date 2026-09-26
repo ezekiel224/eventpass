@@ -1,0 +1,9 @@
+Use case: ui-mockup
+Asset type: full-fidelity visual direction comp for a desktop web administration dashboard, 16:10 landscape
+Primary request: Create a polished EventPass administrator dashboard comp in the “Operations Annual” visual world. This is a real operational tool, not a marketing page.
+Subject: Event operations for “Fall Community Gala”; show an event status plate, live readiness, arrivals and check-ins, email delivery, next actions, and a precise activity ledger.
+Style/medium: design annual plate section translated into a production-grade web UI; near-white uncoated stock, almost-black ink, one pale periwinkle approval seal, soft mineral green status, 1px registration hairlines and crop crosses, a single grotesque type family with tiny mono uppercase labels. Large calm areas, exact alignment, rectangular controls, no decorative card pile.
+Composition/framing: 16:10 desktop viewport; slim navigation and command strip; large event status plate on the left, ruled operational ledger on the right, detailed status row below. Make the first viewport complete and instantly understandable.
+Text: EventPass; Fall Community Gala; Live readiness; Arrivals; 186 / 240; Email delivery; 98%; Next action; Open check-in; Recent activity; Events; Attendees; Check In; Raffles; Voting; Settings.
+Constraints: very clean and simple, exceptional typography, accessible contrast, polished interaction cues, accurate concise spelling, no commercial claims, no people or photography.
+Avoid: gradients, glassmorphism, generic floating KPI cards, excessive rounded rectangles, neon, lorem ipsum, watermarks.

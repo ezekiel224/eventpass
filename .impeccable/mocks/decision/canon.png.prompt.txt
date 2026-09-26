@@ -1,0 +1,9 @@
+Use case: ui-mockup
+Asset type: full-fidelity visual direction comp for a desktop web administration dashboard, 16:10 landscape
+Primary request: Create a polished EventPass administrator dashboard comp in the category-standard modern SaaS visual language, executed at exceptional craft.
+Subject: Event operations for “Fall Community Gala”; sidebar navigation, KPI summaries, registration/check-in chart, event readiness, recent activity, and quick actions.
+Style/medium: refined contemporary product UI, white and pale neutral background, near-black text, confident cobalt blue primary action, crisp dividers, subtle depth, restrained corner radius, lucid information hierarchy.
+Composition/framing: 16:10 desktop viewport; slim left sidebar; top command/search bar; four concise metrics; one trend chart; recent activity; upcoming events; obvious “Open check-in” action.
+Text: EventPass; Dashboard; Fall Community Gala; Attendees; 186; Checked in; 142; Email success; 98%; Capacity; 78%; Open check-in; Events; Attendees; Pass Designs; Check In; Raffles; Voting; Settings.
+Constraints: clean, simple, accessible, complete, production-grade, accurate concise spelling, no invented commercial claims.
+Avoid: gradients, glassmorphism, oversized hero text, excessive pill shapes, heavy shadows, neon, lorem ipsum, watermarks.

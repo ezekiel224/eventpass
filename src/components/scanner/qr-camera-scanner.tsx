@@ -3,12 +3,17 @@
 import { Camera, CheckCircle2, Loader2, Minus, Plus, ShieldAlert, StopCircle } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type QrCameraScannerProps = {
   onScan: (decodedText: string) => boolean | void | Promise<boolean | void>;
   disabled?: boolean;
   startLabel?: string;
   stopLabel?: string;
+  className?: string;
+  previewClassName?: string;
+  actionClassName?: string;
+  onActiveChange?: (active: boolean) => void;
 };
 
 type Html5Scanner = {
@@ -44,7 +49,11 @@ export function QrCameraScanner({
   onScan,
   disabled = false,
   startLabel = "Scan pass",
-  stopLabel = "Stop camera"
+  stopLabel = "Stop camera",
+  className,
+  previewClassName,
+  actionClassName,
+  onActiveChange
 }: QrCameraScannerProps) {
   const generatedId = useId().replace(/:/g, "");
   const readerId = `qr-reader-${generatedId}`;
@@ -113,6 +122,7 @@ export function QrCameraScanner({
     setZoomChecked(false);
     pinchRef.current = null;
     setIsActive(false);
+    onActiveChange?.(false);
     setIsStarting(false);
   }
 
@@ -205,6 +215,7 @@ export function QrCameraScanner({
         if (index === delays.length - 1 && scannerRef.current === scanner) setZoomChecked(true);
       }, delay));
       setIsActive(true);
+      onActiveChange?.(true);
     } catch (startError) {
       const detail = startError instanceof Error ? startError.message : "Unknown camera error";
       setError(`Camera could not start. Allow camera access, use HTTPS or localhost, then try again. ${detail}`);
@@ -255,9 +266,9 @@ export function QrCameraScanner({
   }
 
   return (
-    <div className="grid gap-3">
+    <div className={cn("grid gap-3", className)}>
       <div
-        className={isActive || isStarting ? "relative min-h-72 touch-none overflow-hidden rounded-xl border border-border bg-muted" : "hidden"}
+        className={isActive || isStarting ? cn("relative min-h-72 touch-none overflow-hidden rounded-xl border border-border bg-muted", previewClassName) : "hidden"}
         onTouchStart={(event) => {
           if (event.touches.length === 2 && zoomRange) {
             pinchRef.current = { distance: pinchDistance(event.touches), zoom };
@@ -325,7 +336,7 @@ export function QrCameraScanner({
         </p>
       ) : null}
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="secondary" onClick={() => void startCamera()} disabled={disabled || isStarting}>
+        <Button type="button" variant="secondary" className={actionClassName} onClick={() => void startCamera()} disabled={disabled || isStarting}>
           {isStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : isActive ? <StopCircle className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
           {isStarting ? "Starting camera" : isActive ? stopLabel : startLabel}
         </Button>

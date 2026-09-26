@@ -11,39 +11,33 @@ export async function Sidebar({ active = "Dashboard", branding: providedBranding
   const allowedNavigation = dashboardNav.filter((item) => permissions.includes(item.permission));
 
   return (
-    <aside className="liquid-rail fixed inset-y-0 left-0 z-50 hidden h-dvh w-72 flex-col overflow-hidden border-r border-border/70 px-4 py-5 lg:flex">
-      <div aria-hidden="true" className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
-      <div aria-hidden="true" className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-primary/[0.08] blur-3xl" />
-      <Link href="/dashboard" className="relative flex items-center gap-3 rounded-2xl px-2 py-1.5">
+    <aside className="liquid-rail fixed inset-y-0 left-0 z-50 hidden h-dvh w-64 flex-col overflow-hidden border-r border-white/10 px-3 py-5 lg:flex">
+      <Link href="/dashboard" className="relative flex items-center gap-3 rounded-xl px-3 py-2">
         <BrandMark branding={branding} />
         <span className="min-w-0">
           <span className="block truncate text-base font-bold tracking-[-0.02em]">{branding.name}</span>
-          <span className="mt-0.5 block text-[9px] font-bold uppercase tracking-[0.22em] text-muted-foreground">Event orchestration</span>
+          <span className="mt-0.5 block text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">Event operations</span>
         </span>
       </Link>
-      <p className="relative mt-10 px-3 text-[9px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Operations</p>
-      <nav className="relative mt-3 min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain pb-4">
+      <nav className="relative mt-8 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pb-4" aria-label="Dashboard navigation">
         {allowedNavigation.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              "nav-magnetic group relative flex min-h-12 items-center gap-3 overflow-hidden rounded-xl border border-transparent px-3 text-sm font-medium text-muted-foreground hover:border-border/80 hover:bg-muted/55 hover:text-foreground",
-              active === item.label && "border-primary/25 bg-primary/[0.09] text-foreground shadow-[inset_0_1px_0_hsl(var(--foreground)/0.05),0_10px_36px_hsl(var(--primary)/0.10)]"
+              "group relative flex min-h-11 items-center gap-3 overflow-hidden rounded-xl border border-transparent px-3 text-sm font-medium text-white/58 transition hover:bg-white/[0.06] hover:text-white",
+              active === item.label && "border-primary/25 bg-primary/[0.12] text-white"
             )}
           >
-            {active === item.label ? <span aria-hidden="true" className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-primary shadow-[0_0_16px_hsl(var(--primary))]" /> : null}
-            <span className={cn("grid h-8 w-8 place-items-center rounded-lg border border-transparent transition-colors", active === item.label ? "border-primary/20 bg-primary/[0.12] text-primary" : "bg-muted/45 group-hover:bg-muted") }><item.icon className="h-4 w-4" /></span>
+            {active === item.label ? <span aria-hidden="true" className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-primary" /> : null}
+            <span className={cn("grid h-8 w-8 place-items-center rounded-lg transition-colors", active === item.label ? "text-primary" : "text-white/55 group-hover:text-white") }><item.icon className="h-4 w-4" /></span>
             {item.label}
           </Link>
         ))}
       </nav>
-      <div className="chrome-panel relative mt-4 shrink-0 overflow-hidden rounded-2xl p-4">
-        <div aria-hidden="true" className="absolute right-0 top-0 h-20 w-20 rounded-full bg-primary/10 blur-2xl" />
-        <p className="relative text-sm font-semibold">Workspace</p>
-        <p className="relative mt-1 text-xs leading-5 text-muted-foreground">Secure administrative environment</p>
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Appearance</span>
+      <div className="relative mt-4 shrink-0 border-t border-white/10 px-3 pt-4">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-white/55">Appearance</span>
           <ThemeToggle />
         </div>
       </div>

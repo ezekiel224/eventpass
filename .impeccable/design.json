@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-26T01:52:17Z",
+  "title": "Design System: EventPass",
+  "extensions": {
+    "colorMeta": {
+      "alabaster": {
+        "role": "neutral",
+        "displayName": "Alabaster",
+        "canonical": "#F0EBE5",
+        "tonalRamp": ["#2D2823", "#4B433B", "#6B6055", "#8C7F71", "#ADA194", "#CCC3BA", "#E4DDD6", "#F0EBE5"]
+      },
+      "warm-ink": {
+        "role": "neutral",
+        "displayName": "Warm Ink",
+        "canonical": "#191614",
+        "tonalRamp": ["#191614", "#312B27", "#4D443E", "#6D625A", "#90847B", "#B5AAA2", "#D8D0CA", "#F2EEEB"]
+      },
+      "paper-card": {
+        "role": "neutral",
+        "displayName": "Paper Card",
+        "canonical": "#F7F5F2",
+        "tonalRamp": ["#302B26", "#504840", "#70665C", "#92867A", "#B4AA9F", "#D3CCC4", "#E9E4DF", "#F7F5F2"]
+      },
+      "quiet-fill": {
+        "role": "neutral",
+        "displayName": "Quiet Fill",
+        "canonical": "#E3DDD9",
+        "tonalRamp": ["#2D2825", "#4B433E", "#695F59", "#897D76", "#AA9F98", "#C9C0BB", "#DED7D3", "#F1EDEA"]
+      },
+      "quiet-ink": {
+        "role": "neutral",
+        "displayName": "Quiet Ink",
+        "canonical": "#68605A",
+        "tonalRamp": ["#28231F", "#413A35", "#5A514B", "#766C65", "#958A82", "#B6ACA5", "#D5CDC7", "#F0ECE9"]
+      },
+      "spanish-orange": {
+        "role": "primary",
+        "displayName": "Spanish Orange",
+        "canonical": "#F4680A",
+        "tonalRamp": ["#3B1600", "#6A2800", "#993C00", "#C95100", "#F4680A", "#FF914F", "#FFB98A", "#FFE1CB"]
+      },
+      "royal-orange": {
+        "role": "secondary",
+        "displayName": "Royal Orange",
+        "canonical": "#F99D45",
+        "tonalRamp": ["#3B2008", "#67370E", "#945116", "#C46F22", "#F99D45", "#FFB875", "#FFD2A7", "#FFEAD6"]
+      },
+      "warm-rule": {
+        "role": "neutral",
+        "displayName": "Warm Rule",
+        "canonical": "#CEC6C0",
+        "tonalRamp": ["#2B2724", "#47413C", "#635C57", "#817872", "#A09790", "#BEB6B0", "#D8D1CC", "#F0ECE9"]
+      },
+      "dark-canvas": {
+        "role": "neutral",
+        "displayName": "Dark Canvas",
+        "canonical": "#15110F",
+        "tonalRamp": ["#15110F", "#2D2723", "#49403A", "#675C54", "#897C73", "#AC9F96", "#D0C6BF", "#F0EBE7"]
+      },
+      "dark-card": {
+        "role": "neutral",
+        "displayName": "Dark Card",
+        "canonical": "#1D1916",
+        "tonalRamp": ["#1D1916", "#352F2A", "#504840", "#6E645C", "#8F847B", "#B0A69E", "#D2CAC4", "#F2EEEB"]
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "Dark Muted",
+        "canonical": "#2A2623",
+        "tonalRamp": ["#1A1715", "#2A2623", "#47413C", "#665E58", "#877E77", "#A9A19A", "#CCC6C1", "#EEEAE7"]
+      },
+      "dark-quiet-ink": {
+        "role": "neutral",
+        "displayName": "Dark Quiet Ink",
+        "canonical": "#B1A8A0",
+        "tonalRamp": ["#272320", "#433D38", "#605852", "#7E756E", "#9D948C", "#BDB5AE", "#D9D3CE", "#F1EDE9"]
+      },
+      "dark-rule": {
+        "role": "neutral",
+        "displayName": "Dark Rule",
+        "canonical": "#423C38",
+        "tonalRamp": ["#201C1A", "#37312E", "#514A45", "#6D655F", "#8C837C", "#ACA49D", "#CEC8C3", "#EFECE9"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Large page titles on broad dashboard surfaces." },
+      "headline": { "displayName": "Headline", "purpose": "Selected event identity and primary workspace headings." },
+      "title": { "displayName": "Title", "purpose": "Event-list and section headings." },
+      "body": { "displayName": "Body", "purpose": "Controls, tables, supporting copy, and metadata." },
+      "label": { "displayName": "Label", "purpose": "Sparse uppercase kickers and technical labels." }
+    },
+    "shadows": [
+      { "name": "panel-ambient", "value": "0 8px 22px rgb(36 28 22 / 0.06)", "purpose": "Resting cards and chrome panels." },
+      { "name": "secondary-control", "value": "0 6px 18px rgb(36 28 22 / 0.06)", "purpose": "Bordered secondary controls." },
+      { "name": "primary-action", "value": "0 10px 24px hsl(var(--primary) / 0.16)", "purpose": "Orange primary actions only." },
+      { "name": "modal", "value": "0 24px 64px rgb(20 16 13 / 0.24)", "purpose": "Blocking dialogs and overlays." },
+      { "name": "focus-halo", "value": "0 0 0 4px hsl(var(--primary) / 0.12)", "purpose": "Visible input focus halo." }
+    ],
+    "motion": [
+      { "name": "ease-continuity", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Default easing for controls, event selection, and the mobile drawer." },
+      { "name": "control-transition", "value": "240ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Default color, border, shadow, opacity, and transform transition." },
+      { "name": "workspace-transition", "value": "420ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Shared event marker, master-detail plane, and mobile drawer movement." },
+      { "name": "progress-transition", "value": "800ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Readiness metric progress fills." },
+      { "name": "reduced-motion", "value": "0.01ms; 1 iteration; smooth scrolling off", "purpose": "Global prefers-reduced-motion override; state and controls remain fully available." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single high-emphasis action on an operational surface.",
+      "html": "<button class=\"ds-btn-primary\">Open check-in</button>",
+      "css": ".ds-btn-primary { height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font: 600 14px/1 Inter, ui-sans-serif, system-ui, sans-serif; box-shadow: 0 10px 24px hsl(var(--primary) / .16); transition: color 240ms cubic-bezier(.16,1,.3,1), background-color 240ms cubic-bezier(.16,1,.3,1), box-shadow 240ms cubic-bezier(.16,1,.3,1), transform 240ms cubic-bezier(.16,1,.3,1); } .ds-btn-primary:hover { background: hsl(var(--primary) / .9); transform: translateY(-2px); } .ds-btn-primary:active { transform: scale(.98); } .ds-btn-primary:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; } @media (prefers-reduced-motion: reduce) { .ds-btn-primary { transition-duration: .01ms; } }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A bordered action for editing and lower-priority commands.",
+      "html": "<button class=\"ds-btn-secondary\">Edit event</button>",
+      "css": ".ds-btn-secondary { height: 44px; padding: 0 16px; border: 1px solid hsl(var(--border)); border-radius: 12px; background: hsl(var(--card)); color: hsl(var(--foreground)); font: 600 14px/1 Inter, ui-sans-serif, system-ui, sans-serif; box-shadow: 0 6px 18px rgb(36 28 22 / .06); transition: border-color 240ms cubic-bezier(.16,1,.3,1), background-color 240ms cubic-bezier(.16,1,.3,1), transform 240ms cubic-bezier(.16,1,.3,1); } .ds-btn-secondary:hover { border-color: hsl(var(--primary) / .5); background: hsl(var(--muted) / .7); transform: translateY(-2px); } .ds-btn-secondary:active { transform: scale(.98); } .ds-btn-secondary:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; } @media (prefers-reduced-motion: reduce) { .ds-btn-secondary { transition-duration: .01ms; } }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "The canonical dashboard field with a clear orange focus treatment.",
+      "html": "<input class=\"ds-input\" placeholder=\"Search attendees\" aria-label=\"Search attendees\">",
+      "css": ".ds-input { width: 100%; height: 44px; padding: 0 14px; border: 1px solid hsl(var(--border) / .9); border-radius: 12px; background: hsl(var(--card)); color: hsl(var(--foreground)); font: 400 14px/1.5 Inter, ui-sans-serif, system-ui, sans-serif; transition: border-color 240ms cubic-bezier(.16,1,.3,1), box-shadow 240ms cubic-bezier(.16,1,.3,1); } .ds-input::placeholder { color: hsl(var(--muted-foreground)); } .ds-input:hover { border-color: hsl(var(--primary) / .45); } .ds-input:focus-visible { outline: none; border-color: hsl(var(--primary)); box-shadow: 0 0 0 4px hsl(var(--primary) / .12); } @media (prefers-reduced-motion: reduce) { .ds-input { transition-duration: .01ms; } }"
+    },
+    {
+      "name": "Workspace Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "A connected operational panel structured by warm rules rather than heavy elevation.",
+      "html": "<section class=\"ds-card\"><header>Event readiness</header><div class=\"ds-card-body\"><strong>186 of 240</strong><span>Attendees</span></div></section>",
+      "css": ".ds-card { overflow: hidden; border: 1px solid hsl(var(--border)); border-radius: 14px; background: hsl(var(--background) / .45); color: hsl(var(--foreground)); font-family: Inter, ui-sans-serif, system-ui, sans-serif; box-shadow: 0 8px 22px rgb(36 28 22 / .06); } .ds-card header { padding: 16px 20px; border-bottom: 1px solid hsl(var(--border)); font-size: 16px; font-weight: 600; } .ds-card-body { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 20px; } .ds-card-body strong { font-size: 30px; letter-spacing: -.035em; font-variant-numeric: tabular-nums; } .ds-card-body span { color: hsl(var(--muted-foreground)); font-size: 12px; } .ds-card:focus-within { border-color: hsl(var(--primary) / .5); }"
+    },
+    {
+      "name": "Active Rail Item",
+      "kind": "nav",
+      "description": "The selected destination in the persistent warm-black navigation rail.",
+      "html": "<a class=\"ds-rail-item\" href=\"#\"><span class=\"ds-rail-marker\"></span><span class=\"ds-rail-icon\">●</span>Dashboard</a>",
+      "css": ".ds-rail-item { position: relative; display: flex; min-height: 44px; align-items: center; gap: 12px; overflow: hidden; padding: 0 12px; border: 1px solid hsl(var(--primary) / .25); border-radius: 12px; background: hsl(var(--primary) / .12); color: white; font: 500 14px/1 Inter, ui-sans-serif, system-ui, sans-serif; text-decoration: none; transition: background-color 240ms cubic-bezier(.16,1,.3,1), border-color 240ms cubic-bezier(.16,1,.3,1); } .ds-rail-marker { position: absolute; inset-block: 8px; left: 0; width: 2px; border-radius: 999px; background: hsl(var(--primary)); } .ds-rail-icon { display: grid; width: 32px; height: 32px; place-items: center; color: hsl(var(--primary)); } .ds-rail-item:hover { background: hsl(var(--primary) / .16); } .ds-rail-item:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; } @media (prefers-reduced-motion: reduce) { .ds-rail-item { transition-duration: .01ms; } }"
+    },
+    {
+      "name": "Selected Event Row",
+      "kind": "custom",
+      "description": "The anchored master-list selection that keeps the current event visible.",
+      "html": "<button class=\"ds-event-row\"><span class=\"ds-event-date\"><small>OCT</small><strong>18</strong></span><span class=\"ds-event-copy\"><strong>Fall Community Gala</strong><small>Riverside Convention Center</small><em>● Live</em></span><span aria-hidden=\"true\">›</span></button>",
+      "css": ".ds-event-row { position: relative; display: grid; width: 100%; grid-template-columns: 44px 1fr auto; align-items: start; gap: 16px; padding: 16px 20px; border: 0; border-bottom: 1px solid hsl(var(--border)); background: hsl(var(--primary) / .1); color: hsl(var(--foreground)); text-align: left; font-family: Inter, ui-sans-serif, system-ui, sans-serif; } .ds-event-row::before { position: absolute; inset-block: 0; left: 0; width: 4px; background: hsl(var(--primary)); content: ''; } .ds-event-date, .ds-event-copy { display: grid; gap: 4px; } .ds-event-date { text-align: center; } .ds-event-date small, .ds-event-copy small { color: hsl(var(--muted-foreground)); font-size: 10px; } .ds-event-date strong { font-size: 24px; font-variant-numeric: tabular-nums; } .ds-event-copy strong { font-size: 14px; } .ds-event-copy em { color: hsl(var(--primary)); font-size: 12px; font-style: normal; } .ds-event-row:hover { background: hsl(var(--primary) / .14); } .ds-event-row:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: -2px; }"
+    },
+    {
+      "name": "Workspace Tab",
+      "kind": "nav",
+      "description": "The active section inside the selected event workspace.",
+      "html": "<a class=\"ds-workspace-tab\" href=\"#\">Overview</a>",
+      "css": ".ds-workspace-tab { display: inline-flex; padding: 12px 0; border-bottom: 2px solid hsl(var(--primary)); color: hsl(var(--foreground)); font: 500 14px/1 Inter, ui-sans-serif, system-ui, sans-serif; text-decoration: none; transition: color 240ms cubic-bezier(.16,1,.3,1), border-color 240ms cubic-bezier(.16,1,.3,1); } .ds-workspace-tab:hover { color: hsl(var(--primary)); } .ds-workspace-tab:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 2px; } @media (prefers-reduced-motion: reduce) { .ds-workspace-tab { transition-duration: .01ms; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Continuous Operations Desk",
+    "overview": "EventPass feels like a calm, purpose-built control surface for event operators. Its visual world is warm rather than clinical: Alabaster planes, warm ink, restrained rules, and a single orange voice make dense operational information feel approachable without becoming decorative.\n\nThe signature composition is the master-detail Event Workspace. A persistent dark navigation rail establishes product context, an anchored event stack preserves orientation, and the selected event opens into a broad operational plane. Light and dark modes keep the same hierarchy and interaction model; they change tonal values, not structure.",
+    "keyCharacteristics": [
+      "Warm, near-monochrome surfaces with Spanish Orange and Royal Orange as the only chromatic accents.",
+      "A persistent master-detail workspace that keeps event choice and event operations visible together.",
+      "Flat modular panels, crisp dividers, restrained shadows, and consistent 14px panel corners.",
+      "Compact, highly legible Inter typography with tight display tracking and tabular operational numbers.",
+      "Short spatial transitions that preserve continuity, with a complete reduced-motion path."
+    ],
+    "rules": [
+      { "name": "The One Chromatic Voice Rule", "body": "Orange owns routine action, selection, progress, and important state; do not introduce blue, green, purple, or multicolor status families.", "section": "colors" },
+      { "name": "The Warm Neutral Rule", "body": "Every neutral should retain a brown-orange undertone in both modes. Dark mode is warm near-black, never slate or navy.", "section": "colors" },
+      { "name": "The No-Gradient Rule", "body": "Use flat color only. Gradients are not part of the EventPass dashboard language.", "section": "colors" },
+      { "name": "The Operational Numeral Rule", "body": "Counts, dates, percentages, capacities, and timestamps use tabular numerals wherever alignment or comparison matters.", "section": "typography" },
+      { "name": "The Anchored Context Rule", "body": "Event selection and event operations belong to one continuous plane. Do not replace the master-detail relationship with a disconnected KPI-card landing page.", "section": "layout" },
+      { "name": "The Structure-Before-Shadow Rule", "body": "Establish hierarchy with fill, border, and layout first. Shadows support interaction or overlays; they do not turn every module into a floating card.", "section": "elevation" },
+      { "name": "The Continuity-Only Motion Rule", "body": "Animate shared position, selection, progress, and overlays to explain a state change; do not add ambient or ornamental dashboard motion.", "section": "components" }
+    ],
+    "dos": [
+      "Do reserve Spanish Orange for primary actions, selection, progress, focus, and important live state.",
+      "Do use warm near-monochrome planes, 14px workspace panels, and one-pixel structural borders.",
+      "Do keep the event stack anchored beside event operations when desktop space allows.",
+      "Do preserve visible keyboard focus, 44px controls, responsive overflow, and the complete reduced-motion override.",
+      "Do use tabular numerals for operational metrics and timestamps."
+    ],
+    "donts": [
+      "Don't use gradients, cool slate neutrals, or blue-black dark surfaces.",
+      "Don't introduce a multicolor semantic status palette; routine states remain neutral or orange.",
+      "Don't dissolve the Event Workspace into an interchangeable sidebar-plus-KPI-card dashboard.",
+      "Don't overuse shadows, glass blur, pill shapes, or floating containers where borders and tonal layers suffice.",
+      "Don't hide core event operations on mobile or make comprehension depend on animation."
+    ]
+  }
+}

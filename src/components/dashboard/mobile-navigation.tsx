@@ -56,7 +56,7 @@ export function MobileNavigation({ branding, active, permissions = [] }: { brand
           {open ? (
             <>
               <motion.button
-                className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-md lg:hidden"
+                className="fixed inset-0 z-[100] bg-black/72 lg:hidden"
                 aria-label="Close navigation"
                 onClick={() => setOpen(false)}
                 initial={{ opacity: 0 }}
@@ -65,17 +65,16 @@ export function MobileNavigation({ branding, active, permissions = [] }: { brand
               />
               <motion.aside
                 id="mobile-dashboard-navigation"
-                className="liquid-rail fixed inset-y-0 left-0 z-[110] flex h-dvh w-[min(88vw,22rem)] flex-col overflow-hidden border-r border-border/70 p-5 shadow-2xl lg:hidden"
+                className="liquid-rail fixed inset-y-0 left-0 z-[110] flex h-dvh w-[min(88vw,20rem)] flex-col overflow-hidden border-r border-white/10 p-5 shadow-2xl lg:hidden"
                 initial={{ x: "-104%" }}
                 animate={{ x: 0 }}
                 exit={{ x: "-104%" }}
                 transition={{ duration: 0.42, ease: [0.16, 1, 0.3, 1] }}
               >
-                <div aria-hidden="true" className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
                 <div className="relative flex items-center justify-between gap-3">
                   <Link href="/dashboard" onClick={() => setOpen(false)} className="flex min-w-0 items-center gap-3">
                     <BrandMark branding={branding} />
-                    <span className="min-w-0"><span className="block truncate font-bold">{branding.name}</span><span className="mt-0.5 block text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Event orchestration</span></span>
+                    <span className="min-w-0"><span className="block truncate font-bold">{branding.name}</span><span className="mt-0.5 block text-[9px] font-bold uppercase tracking-[0.18em] text-white/45">Event operations</span></span>
                   </Link>
                   <button className="focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/70 hover:bg-muted" onClick={() => setOpen(false)} aria-label="Close navigation"><X className="h-5 w-5" /></button>
                 </div>
@@ -85,16 +84,15 @@ export function MobileNavigation({ branding, active, permissions = [] }: { brand
                     <Input value={query} onChange={(event) => setQuery(event.target.value)} className="pl-9" placeholder="Search attendees" aria-label="Search attendees and passes" />
                   </form>
                 ) : null}
-                <p className="mt-8 px-3 text-[9px] font-bold uppercase tracking-[0.24em] text-muted-foreground">Operations</p>
                 <nav className="mt-3 flex-1 space-y-1.5 overflow-y-auto" aria-label="Dashboard navigation">
                   {dashboardNav.filter((item) => permissions.includes(item.permission)).map((item) => (
-                    <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={cn("nav-magnetic flex min-h-12 items-center gap-3 rounded-xl border border-transparent px-3 text-sm font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground", active === item.label && "border-primary/25 bg-primary/[0.09] text-foreground")}>
-                      <span className={cn("grid h-8 w-8 place-items-center rounded-lg", active === item.label ? "bg-primary/[0.12] text-primary" : "bg-muted/50")}><item.icon className="h-4 w-4" /></span>{item.label}
+                    <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={cn("flex min-h-11 items-center gap-3 rounded-xl border border-transparent px-3 text-sm font-medium text-white/60 hover:bg-white/[0.06] hover:text-white", active === item.label && "border-primary/25 bg-primary/[0.12] text-white")}>
+                      <span className={cn("grid h-8 w-8 place-items-center rounded-lg", active === item.label ? "text-primary" : "text-white/55")}><item.icon className="h-4 w-4" /></span>{item.label}
                     </Link>
                   ))}
                 </nav>
-                <div className="chrome-panel mt-4 flex items-center justify-between rounded-xl p-3">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Appearance</span><ThemeToggle />
+                <div className="mt-4 flex items-center justify-between border-t border-white/10 px-3 pt-4">
+                  <span className="text-xs font-medium text-white/55">Appearance</span><ThemeToggle />
                 </div>
               </motion.aside>
             </>

@@ -1,0 +1,44 @@
+{
+  "title": "Choose the dashboard composition",
+  "question": "The monochrome orange system is locked. Choose the structure to carry through the dashboard and administration experience; the selected structure will ship in both light and dark modes.",
+  "options": [
+    {
+      "id": "dashboard-a",
+      "label": "Readiness First",
+      "kicker": "OPTION A",
+      "lineage": "single-event command dashboard",
+      "thesis": "One dominant readiness surface makes the next operational action unmistakable.",
+      "palette": ["#F0EBE5", "#1C1917", "#F4680A", "#F99D45"],
+      "materials": ["alabaster canvas", "warm ink rules", "flat orange fields"],
+      "viewport": "The active event, readiness checklist, arrivals trend, and recent activity resolve in one glance.",
+      "risk": "Best for one active event; switching context is intentionally secondary.",
+      "comp": ".impeccable/mocks/dashboard-a.png"
+    },
+    {
+      "id": "dashboard-b",
+      "label": "Live Operations",
+      "kicker": "OPTION B",
+      "lineage": "time-led event operations console",
+      "thesis": "A live timeline leads, with status and follow-ups held in a compact side column.",
+      "palette": ["#171411", "#F0EBE5", "#F4680A", "#F99D45"],
+      "materials": ["warm graphite panels", "alabaster type", "flat orange signals"],
+      "viewport": "The arrivals timeline, recent check-ins, communications, and staffing share a dark operational field.",
+      "risk": "Optimized for live-event use; planning screens need a quieter light-mode counterpart.",
+      "comp": ".impeccable/mocks/dashboard-b.png"
+    },
+    {
+      "id": "dashboard-c",
+      "label": "Event Workspace",
+      "kicker": "OPTION C",
+      "lineage": "master-detail administration workspace",
+      "thesis": "Events stay in view while the selected event opens into a complete operational workspace.",
+      "palette": ["#F0EBE5", "#1C1917", "#F4680A", "#F99D45"],
+      "materials": ["alabaster canvas", "warm ink navigation", "flat orange selection"],
+      "viewport": "An event stack anchors a detailed readiness, check-in, communication, and activity surface.",
+      "risk": "The denser master-detail frame gives individual charts less visual scale.",
+      "comp": ".impeccable/mocks/dashboard-c.png"
+    }
+  ],
+  "buildPath": {"value": "comp", "toggle": false},
+  "steer": false
+}

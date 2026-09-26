@@ -15,19 +15,18 @@ export async function AppShell({ children, active = "Dashboard" }: { children: R
   return (
     <div className="relative min-h-dvh overflow-x-clip">
       <Sidebar active={active} branding={branding} permissions={permissions} />
-      <div className="lg:pl-72">
-        <header className="sticky top-0 z-40 px-2 pt-2 sm:px-3">
-          <div className="liquid-command-dock mx-auto flex h-[4.5rem] max-w-[112rem] items-center gap-3 px-3 sm:px-5 lg:px-6 xl:px-8">
+      <div className="lg:pl-64">
+        <header className="sticky top-0 z-40 border-b border-border bg-background/95">
+          <div className="mx-auto flex h-16 max-w-[112rem] items-center gap-3 px-4 sm:px-6 lg:px-7">
             <MobileNavigation branding={branding} active={active} permissions={permissions} />
             <div className="min-w-0 flex-1">
-              <div className="hidden items-center gap-2 sm:flex">
+              <div className="flex items-center gap-2">
                 <Command className="h-3.5 w-3.5 text-primary" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Dashboard</span>
+                <p className="truncate text-sm font-semibold tracking-[-0.01em]">{active}</p>
               </div>
-              <p className="mt-0.5 truncate text-sm font-semibold tracking-[-0.01em] sm:text-base">{active}</p>
             </div>
             <DashboardSearch />
-            <div className="liquid-account flex h-11 items-center overflow-hidden rounded-2xl">
+            <div className="liquid-account flex h-10 items-center overflow-hidden rounded-xl">
               <div className="hidden min-w-0 items-center gap-2.5 border-r border-border/70 px-3.5 sm:flex">
                 <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"><UserRound className="h-3.5 w-3.5" /></span>
                 <span className="max-w-40 truncate text-sm font-medium">{currentUser?.name || currentUser?.username || currentUser?.email || "Account"}</span>
@@ -40,7 +39,7 @@ export async function AppShell({ children, active = "Dashboard" }: { children: R
             </div>
           </div>
         </header>
-        <PageTransition className="px-4 py-8 sm:px-6 sm:py-10 lg:px-8 xl:px-10">{children}</PageTransition>
+        <PageTransition className="px-3 py-3 sm:px-4 sm:py-4 lg:px-5">{children}</PageTransition>
       </div>
     </div>
   );
