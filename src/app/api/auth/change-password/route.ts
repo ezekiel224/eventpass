@@ -6,6 +6,7 @@ import { getCurrentUser, setSessionCookie } from "@/lib/auth";
 import { validateCsrf } from "@/lib/csrf";
 import { prisma } from "@/lib/db";
 import { rateLimit } from "@/services/rate-limit";
+import { revokeAllUserSessions } from "@/lib/session";
 
 export async function POST(request: NextRequest) {
   const csrfFailure = validateCsrf(request);
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
       data: auditLogData({
         request,
         actorUserId: user.id,
+        organizationId: currentUser.organizationId,
         action: "auth.password_changed",
         targetType: "User",
         targetId: user.id
@@ -51,6 +53,7 @@ export async function POST(request: NextRequest) {
     return nextUser;
   });
 
-  await setSessionCookie(updated);
+  await revokeAllUserSessions(updated.id);
+  await setSessionCookie(updated, currentUser.organizationId);
   return NextResponse.json({ ok: true });
 }

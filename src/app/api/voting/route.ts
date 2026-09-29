@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createVotingSlug, votingBallotCreateSchema } from "@/lib/voting";
+import { authorizeApi } from "@/lib/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -13,18 +14,21 @@ const ballotInclude = {
   _count: { select: { participants: true, submissions: true } }
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const access = await authorizeApi(request, "voting:manage"); if (!access.ok) return access.response;
+  const organizationId = access.authorization.organization.id;
   const [ballots, events] = await Promise.all([
-    prisma.votingBallot.findMany({ include: ballotInclude, orderBy: { updatedAt: "desc" } }),
-    prisma.event.findMany({ where: { status: { not: "ARCHIVED" } }, select: { id: true, name: true }, orderBy: { startsAt: "asc" } })
+    prisma.votingBallot.findMany({ where: { event: { organizationId } }, include: ballotInclude, orderBy: { updatedAt: "desc" } }),
+    prisma.event.findMany({ where: { organizationId, status: { not: "ARCHIVED" } }, select: { id: true, name: true }, orderBy: { startsAt: "asc" } })
   ]);
   return NextResponse.json({ ballots, events });
 }
 
 export async function POST(request: NextRequest) {
+  const access = await authorizeApi(request, "voting:manage"); if (!access.ok) return access.response;
   const parsed = votingBallotCreateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Review the event, title, description, and image." }, { status: 400 });
-  const event = await prisma.event.findFirst({ where: { id: parsed.data.eventId, status: { not: "ARCHIVED" } }, select: { id: true } });
+  const event = await prisma.event.findFirst({ where: { id: parsed.data.eventId, organizationId: access.authorization.organization.id, status: { not: "ARCHIVED" } }, select: { id: true } });
   if (!event) return NextResponse.json({ error: "Event not found." }, { status: 404 });
 
   const ballot = await prisma.votingBallot.create({

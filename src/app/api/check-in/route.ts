@@ -4,12 +4,14 @@ import { attendeeInclude, serializeAttendee } from "@/lib/prisma-helpers";
 import { checkInSchema, qrValidationSchema } from "@/lib/validation";
 import { verifyQrPayload } from "@/services/qr";
 import { rateLimit } from "@/services/rate-limit";
+import { authorizeApi } from "@/lib/authorization";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const access = await authorizeApi(request, "checkins:manage"); if (!access.ok) return access.response;
   const checkIns = await prisma.checkIn.findMany({
-    where: { attendee: { event: { status: { not: "ARCHIVED" } } } },
+    where: { attendee: { event: { organizationId: access.authorization.organization.id, status: { not: "ARCHIVED" } } } },
     orderBy: { scannedAt: "desc" },
     take: 20,
     include: {
@@ -30,6 +32,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const access = await authorizeApi(request, "checkins:manage"); if (!access.ok) return access.response;
   const limited = rateLimit(`checkin:${request.headers.get("x-forwarded-for") ?? "local"}`, 120);
   if (!limited.ok) {
     return NextResponse.json({ error: "Scanner rate limit exceeded" }, { status: 429 });
@@ -58,7 +61,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (parsed.data.fallbackCode) {
-    const pass = await prisma.pass.findUnique({ where: { fallbackCode: parsed.data.fallbackCode } });
+    const pass = await prisma.pass.findFirst({ where: { fallbackCode: parsed.data.fallbackCode, attendee: { event: { organizationId: access.authorization.organization.id } } } });
     attendeeId = pass?.attendeeId;
   }
 
@@ -66,8 +69,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ valid: false, error: "No matching attendee found" }, { status: 404 });
   }
 
-  const attendee = await prisma.attendee.findUnique({
-    where: { id: attendeeId },
+  const attendee = await prisma.attendee.findFirst({
+    where: { id: attendeeId, event: { organizationId: access.authorization.organization.id } },
     include: attendeeInclude
   });
 

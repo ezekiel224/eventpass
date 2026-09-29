@@ -7,6 +7,8 @@ import { normalizeExistingPass } from "@/lib/pass-data";
 import { parseStringArray } from "@/lib/prisma-helpers";
 import { createQrDataUrl } from "@/services/qr";
 import styles from "@/app/pass/[attendeeId]/pass-page.module.css";
+import { publicPassWhere } from "@/lib/public-pass";
+import { getTenantContext } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
@@ -16,8 +18,12 @@ export default async function PassPage({
   params: Promise<{ attendeeId: string }>;
 }) {
   const { attendeeId } = await params;
-  const attendee = await prisma.attendee.findUnique({
-    where: { id: attendeeId },
+  const pass = await prisma.pass.findFirst({ where: publicPassWhere(attendeeId) });
+  const tenant = pass ? null : await getTenantContext();
+  const managedAttendeeId = tenant?.permissions.has("passes:manage") ? attendeeId : null;
+  const resolvedAttendeeId = pass?.attendeeId ?? managedAttendeeId;
+  const attendee = resolvedAttendeeId ? await prisma.attendee.findFirst({
+    where: { id: resolvedAttendeeId, ...(tenant ? { event: { organizationId: tenant.organization.id } } : {}) },
     include: {
       event: true,
       pass: true,
@@ -26,12 +32,12 @@ export default async function PassPage({
         select: { ticketCount: true }
       }
     }
-  });
+  }) : null;
 
   if (!attendee || !attendee.pass) notFound();
 
   const event = attendee.event;
-  const branding = await getBranding();
+  const branding = await getBranding(event.organizationId);
   const qrDataUrl = await createQrDataUrl(JSON.parse(attendee.pass.qrPayload));
   const attendeeName = `${attendee.firstName} ${attendee.lastName}`;
   const selectedAllergens = parseStringArray(attendee.selectedAllergens);
@@ -79,7 +85,7 @@ export default async function PassPage({
   return (
     <main className={styles.passPage} data-pass-theme={eventTheme}>
       <div className={styles.content}>
-        <LivePassExperience attendeeId={attendee.id} initialData={passData} theme={eventTheme} />
+        <LivePassExperience attendeeId={attendeeId} initialData={passData} theme={eventTheme} />
       </div>
     </main>
   );

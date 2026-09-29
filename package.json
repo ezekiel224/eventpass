@@ -10,10 +10,11 @@
     "start": "next start",
     "lint": "eslint src --max-warnings=0",
     "verify": "npm run lint && npm run build",
-    "prisma:setup": "prisma db push && npm run prisma:rbac && npm run prisma:seed",
+    "prisma:setup": "prisma migrate deploy && npm run prisma:seed",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
+    "test": "node --import tsx --test tests/**/*.test.ts",
     "prisma:rbac": "tsx prisma/bootstrap-rbac.ts",
     "prisma:seed": "tsx prisma/seed.ts"
   },

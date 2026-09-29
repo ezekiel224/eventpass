@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { publicPassWhere } from "@/lib/public-pass";
 
 type Params = { params: Promise<{ attendeeId: string }> };
 
@@ -15,15 +16,16 @@ function escapeIcs(value: string) {
 
 export async function GET(request: NextRequest, { params }: Params) {
   const { attendeeId } = await params;
-  const attendee = await prisma.attendee.findUnique({
-    where: { id: attendeeId },
+  const pass = await prisma.pass.findFirst({ where: publicPassWhere(attendeeId) });
+  const attendee = pass ? await prisma.attendee.findUnique({
+    where: { id: pass.attendeeId },
     include: { event: true, pass: true }
-  });
+  }) : null;
   if (!attendee?.pass) {
     return NextResponse.json({ error: "Pass not found" }, { status: 404 });
   }
 
-  const passUrl = new URL(`/pass/${attendee.id}`, request.nextUrl.origin).toString();
+  const passUrl = new URL(`/pass/${attendeeId}`, request.nextUrl.origin).toString();
   const location = [attendee.event.venue, attendee.event.address].filter(Boolean).join(", ");
   const description = `Your individual registration pass: ${passUrl}`;
   const calendar = [

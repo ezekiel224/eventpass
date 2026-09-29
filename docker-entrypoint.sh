@@ -1,12 +1,8 @@
 #!/bin/sh
 set -e
 
-export DATABASE_URL="${DATABASE_URL:-file:/app/data/eventpass.db}"
-
-mkdir -p /app/data
-
-echo "Preparing database at ${DATABASE_URL}"
-npx prisma db push --skip-generate
+echo "Applying PostgreSQL migrations"
+npx prisma migrate deploy
 
 echo "Preparing system roles and permissions"
 npm run prisma:rbac

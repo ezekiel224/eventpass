@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const access = await authorizeApi(request, "audit:view");
   if (!access.ok) return access.response;
   const logs = await prisma.auditLog.findMany({
+    where: { organizationId: access.authorization.organization.id },
     take: 100,
     orderBy: { createdAt: "desc" },
     include: { actor: { select: { email: true, name: true } } }

@@ -3,11 +3,14 @@ import { AppShell } from "@/components/dashboard/app-shell";
 import { PageTitle } from "@/components/dashboard/page-title";
 import { Card } from "@/components/ui/card";
 import { prisma } from "@/lib/db";
+import { requirePermission } from "@/lib/authorization";
 
 export const dynamic = "force-dynamic";
 
 export default async function EmailLogsPage() {
+  const authorization = await requirePermission("settings:manage");
   const emailLogs = await prisma.emailLog.findMany({
+    where: { event: { organizationId: authorization.organization.id } },
     orderBy: { createdAt: "desc" },
     take: 50,
     include: { event: true }

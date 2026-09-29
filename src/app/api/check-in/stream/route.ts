@@ -1,16 +1,17 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { attendeeInclude, serializeAttendee } from "@/lib/prisma-helpers";
+import { authorizeApi } from "@/lib/authorization";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-async function recentCheckIns(eventId?: string) {
+async function recentCheckIns(organizationId: string, eventId?: string) {
   const checkIns = await prisma.checkIn.findMany({
     where: {
       attendee: {
         ...(eventId ? { eventId } : {}),
-        event: { status: { not: "ARCHIVED" } }
+        event: { organizationId, status: { not: "ARCHIVED" } }
       }
     },
     orderBy: { scannedAt: "desc" },
@@ -27,6 +28,9 @@ async function recentCheckIns(eventId?: string) {
 }
 
 export async function GET(request: NextRequest) {
+  const access = await authorizeApi(request, "checkins:manage");
+  if (!access.ok) return access.response;
+  const organizationId = access.authorization.organization.id;
   const eventId = request.nextUrl.searchParams.get("eventId") || undefined;
   const encoder = new TextEncoder();
   let interval: ReturnType<typeof setInterval> | undefined;
@@ -36,7 +40,7 @@ export async function GET(request: NextRequest) {
     async start(controller) {
       const sendSnapshot = async () => {
         try {
-          const checkIns = await recentCheckIns(eventId);
+          const checkIns = await recentCheckIns(organizationId, eventId);
           const signature = checkIns.map((checkIn) => checkIn.id).join(":");
           if (signature !== lastSignature) {
             lastSignature = signature;

@@ -9,13 +9,13 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const currentUser = await getCurrentUser();
   const [events, authorization] = await Promise.all([prisma.event.findMany({
-    where: { status: { not: "ARCHIVED" } },
+    where: { organizationId: currentUser?.organizationId ?? "", status: { not: "ARCHIVED" } },
     include: {
       attendees: { include: { checkIns: true } },
       emailLogs: { orderBy: { createdAt: "desc" }, take: 24 }
     },
     orderBy: { startsAt: "desc" }
-  }), currentUser ? getAuthorizationForUser(currentUser.id) : null]);
+  }), currentUser ? getAuthorizationForUser(currentUser.id, currentUser.organizationId) : null]);
 
   const workspaceEvents: WorkspaceEvent[] = events.map((event) => {
     const successfulCheckIns = event.attendees.reduce((total, attendee) => total + (attendee.checkIns.some((checkIn) => !checkIn.duplicate) ? 1 : 0), 0);

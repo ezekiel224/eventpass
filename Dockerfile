@@ -5,7 +5,7 @@ RUN npm ci
 
 FROM node:22-alpine AS builder
 WORKDIR /app
-ENV DATABASE_URL=file:./dev.db
+ENV DATABASE_URL=postgresql://eventpass:eventpass@localhost:5432/eventpass?schema=public
 RUN apk add --no-cache openssl
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -17,7 +17,6 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
-ENV DATABASE_URL=file:/app/data/eventpass.db
 RUN apk add --no-cache openssl wget
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static

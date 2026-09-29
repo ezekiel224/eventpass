@@ -1,11 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 import { ensureSystemRbac } from "../src/lib/rbac-bootstrap";
 
-process.env.DATABASE_URL ??= "file:./dev.db";
-
 const prisma = new PrismaClient();
 
-ensureSystemRbac(prisma)
+prisma.organization.findMany({ select: { id: true } })
+  .then((organizations) => Promise.all(organizations.map(({ id }) => ensureSystemRbac(prisma, id))))
   .finally(async () => {
     await prisma.$disconnect();
   });

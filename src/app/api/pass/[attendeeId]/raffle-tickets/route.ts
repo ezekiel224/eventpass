@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { publicPassWhere } from "@/lib/public-pass";
 
 type Params = { params: Promise<{ attendeeId: string }> };
 
@@ -7,8 +8,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET(_request: Request, { params }: Params) {
   const { attendeeId } = await params;
-  const attendee = await prisma.attendee.findUnique({
-    where: { id: attendeeId },
+  const pass = await prisma.pass.findFirst({ where: publicPassWhere(attendeeId) });
+  const attendee = pass ? await prisma.attendee.findUnique({
+    where: { id: pass.attendeeId },
     select: {
       raffleTickets: true,
       pass: { select: { id: true } },
@@ -17,7 +19,7 @@ export async function GET(_request: Request, { params }: Params) {
         select: { ticketCount: true }
       }
     }
-  });
+  }) : null;
 
   if (!attendee?.pass) {
     return NextResponse.json({ error: "Pass not found" }, { status: 404 });

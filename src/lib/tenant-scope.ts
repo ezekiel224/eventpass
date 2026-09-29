@@ -1,0 +1,25 @@
+/** Central ownership predicates used by repositories and isolation tests. */
+export const tenantScope = {
+  event: (organizationId: string) => ({ organizationId }),
+  attendee: (organizationId: string) => ({ event: { organizationId } }),
+  pass: (organizationId: string) => ({ attendee: { event: { organizationId } } }),
+  checkIn: (organizationId: string) => ({ attendee: { event: { organizationId } } }),
+  emailLog: (organizationId: string) => ({ event: { organizationId } }),
+  rafflePrize: (organizationId: string) => ({ event: { organizationId } }),
+  raffleEntry: (organizationId: string) => ({ prize: { event: { organizationId } } }),
+  raffleActivity: (organizationId: string) => ({ event: { organizationId } }),
+  raffleDisplay: (organizationId: string) => ({ event: { organizationId } }),
+  votingBallot: (organizationId: string) => ({ event: { organizationId } }),
+  votingQuestion: (organizationId: string) => ({ ballot: { event: { organizationId } } }),
+  votingOption: (organizationId: string) => ({ question: { ballot: { event: { organizationId } } } }),
+  votingParticipant: (organizationId: string) => ({ ballot: { event: { organizationId } } }),
+  votingSubmission: (organizationId: string) => ({ ballot: { event: { organizationId } } }),
+  votingAnswer: (organizationId: string) => ({ submission: { ballot: { event: { organizationId } } } }),
+  role: (organizationId: string) => ({ organizationId }),
+  membership: (organizationId: string) => ({ organizationId }),
+  auditLog: (organizationId: string) => ({ organizationId }),
+  setting: (organizationId: string) => ({ organizationId }),
+  apiCredential: (organizationId: string) => ({ organizationId }),
+  integration: (organizationId: string) => ({ organizationId }),
+  session: (organizationId: string) => ({ organizationId })
+} as const;

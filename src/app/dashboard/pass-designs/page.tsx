@@ -7,11 +7,13 @@ import { prisma } from "@/lib/db";
 import { normalizeExistingPass } from "@/lib/pass-data";
 import { parseStringArray } from "@/lib/prisma-helpers";
 import { createQrDataUrl } from "@/services/qr";
+import { getTenantContext } from "@/lib/tenant";
 
 async function previewData(): Promise<NormalizedPassData> {
+  const tenant = await getTenantContext();
   const [branding, attendee] = await Promise.all([
     getBranding(),
-    prisma.attendee.findFirst({ include: { event: true, pass: true }, orderBy: { createdAt: "desc" } })
+    prisma.attendee.findFirst({ where: { event: { organizationId: tenant?.organization.id ?? "" } }, include: { event: true, pass: true }, orderBy: { createdAt: "desc" } })
   ]);
 
   if (!attendee?.pass) {

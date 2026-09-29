@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   const tokenHash = hashPrizeAcceptanceToken(token);
-  const prize = await prisma.rafflePrize.findUnique({ where: { acceptanceTokenHash: tokenHash } });
+  const prize = await prisma.rafflePrize.findUnique({ where: { acceptanceTokenHash: tokenHash }, include: { event: { select: { organizationId: true } } } });
   if (!prize || prize.acceptanceStatus !== "PENDING") {
     return NextResponse.json({ error: "This signature link is invalid or has already been used." }, { status: 404 });
   }
@@ -60,6 +60,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   await prisma.auditLog.create({
     data: {
+      organizationId: prize.event.organizationId,
       action: "PRIZE_ACCEPTANCE_SIGNED",
       targetType: "RafflePrize",
       targetId: prize.id,

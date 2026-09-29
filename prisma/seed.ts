@@ -1,22 +1,21 @@
 import { PrismaClient } from "@prisma/client";
 import { ensureSystemRbac } from "../src/lib/rbac-bootstrap";
 import { createQrPayload, tokenHash } from "../src/services/qr";
-
-process.env.DATABASE_URL ??= "file:./dev.db";
+import { generateOpaqueToken, hashOpaqueToken } from "../src/lib/session";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  await ensureSystemRbac(prisma);
-
   const organization = await prisma.organization.upsert({
     where: { id: "org_default" },
     update: {},
     create: {
       id: "org_default",
-      name: "Northstar Labs"
+      name: "Northstar Labs",
+      slug: "northstar-labs"
     }
   });
+  await ensureSystemRbac(prisma, organization.id);
 
   const event = await prisma.event.upsert({
     where: { id: "evt_aurora" },
@@ -25,6 +24,7 @@ async function main() {
       id: "evt_aurora",
       organizationId: organization.id,
       name: "Aurora Product Summit",
+      slug: "aurora-product-summit",
       description: "A premium launch conference for product, design, and operations teams.",
       venue: "Pier 27",
       address: "San Francisco, CA",
@@ -62,6 +62,7 @@ async function main() {
     });
 
     const payload = createQrPayload(attendee.id, event.id);
+    const accessToken = generateOpaqueToken();
     await prisma.pass.upsert({
       where: { attendeeId: attendee.id },
       update: {},
@@ -69,7 +70,9 @@ async function main() {
         attendeeId: attendee.id,
         fallbackCode: `EP-${attendee.id.slice(-6).toUpperCase()}`,
         qrPayload: JSON.stringify(payload),
-        tokenHash: tokenHash(payload.token)
+        tokenHash: tokenHash(payload.token),
+        accessTokenHash: hashOpaqueToken(accessToken),
+        accessTokenExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
       }
     });
   }

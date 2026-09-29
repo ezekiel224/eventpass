@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getDefaultOrganization } from "@/lib/prisma-helpers";
 import { prisma } from "@/lib/db";
+import { authorizeApi } from "@/lib/authorization";
 
 const brandingSchema = z.object({
   name: z.string().min(2).max(120),
@@ -12,8 +12,10 @@ const brandingSchema = z.object({
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const organization = await getDefaultOrganization();
+export async function GET(request: NextRequest) {
+  const access = await authorizeApi(request, "settings:manage");
+  if (!access.ok) return access.response;
+  const organization = access.authorization.organization;
 
   return NextResponse.json({
     organization: {
@@ -32,15 +34,16 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
+  const access = await authorizeApi(request, "settings:manage");
+  if (!access.ok) return access.response;
   const parsed = brandingSchema.safeParse(await request.json());
 
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const organization = await getDefaultOrganization();
   const updated = await prisma.organization.update({
-    where: { id: organization.id },
+    where: { id: access.authorization.organization.id },
     data: {
       name: parsed.data.name,
       logoUrl: parsed.data.logoUrl || null,

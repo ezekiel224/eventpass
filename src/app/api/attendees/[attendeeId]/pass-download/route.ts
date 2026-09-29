@@ -3,6 +3,7 @@ import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
 import { formatDate, formatTime } from "@/lib/utils";
 import { createQrDataUrl } from "@/services/qr";
+import { publicPassWhere } from "@/lib/public-pass";
 
 type Params = { params: Promise<{ attendeeId: string }> };
 
@@ -23,15 +24,16 @@ function slugify(value: string) {
 
 export async function GET(_request: Request, { params }: Params) {
   const { attendeeId } = await params;
-  const attendee = await prisma.attendee.findUnique({
-    where: { id: attendeeId },
+  const publicPass = await prisma.pass.findFirst({ where: publicPassWhere(attendeeId) });
+  const attendee = publicPass ? await prisma.attendee.findUnique({
+    where: { id: publicPass.attendeeId },
     include: { event: true, pass: true }
-  });
+  }) : null;
   if (!attendee?.pass) {
     return NextResponse.json({ error: "Pass not found" }, { status: 404 });
   }
 
-  const branding = await getBranding();
+  const branding = await getBranding(attendee.event.organizationId);
   const name = `${attendee.firstName} ${attendee.lastName}`;
   const qrDataUrl = await createQrDataUrl(JSON.parse(attendee.pass.qrPayload));
   const eventTime = `${formatTime(attendee.event.startsAt, branding.timezone)} - ${formatTime(attendee.event.endsAt, branding.timezone)}`;

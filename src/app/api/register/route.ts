@@ -64,15 +64,15 @@ export async function POST(request: NextRequest) {
 
   const pass = await createPassForAttendee(attendee.id, attendee.eventId);
   const appBaseUrl = (process.env.APP_URL?.trim() || request.nextUrl.origin).replace(/\/+$/, "");
-  const passUrl = `${appBaseUrl}/pass/${attendee.id}`;
+  const passUrl = `${appBaseUrl}/pass/${pass.accessToken}`;
 
   let emailStatus = "QUEUED";
   let providerId: string | undefined;
   let emailError: string | undefined;
 
   try {
-    const branding = await getBranding();
-    const qrImageUrl = `${appBaseUrl}/api/pass/${attendee.id}/qr`;
+    const branding = await getBranding(event.organizationId);
+    const qrImageUrl = `${appBaseUrl}/api/pass/${pass.accessToken}/qr`;
     const delivery = await sendEmail({
       to: parsed.data.email,
       subject: `Your pass for ${event.name}`,
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
         organizer: event.organizer,
         contactEmail: event.contactEmail,
         passUrl,
-        passDownloadUrl: `${appBaseUrl}/api/attendees/${attendee.id}/pass-download`,
+        passDownloadUrl: `${appBaseUrl}/api/attendees/${pass.accessToken}/pass-download`,
         googleCalendarUrl: createGoogleCalendarUrl({
           eventName: event.name,
           startsAt: event.startsAt,
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
           address: event.address,
           passUrl
         }),
-        iCalendarUrl: `${appBaseUrl}/api/attendees/${attendee.id}/calendar`,
+        iCalendarUrl: `${appBaseUrl}/api/attendees/${pass.accessToken}/calendar`,
         qrImageUrl,
         fallbackCode: pass.fallbackCode,
         organizationName: branding.name,

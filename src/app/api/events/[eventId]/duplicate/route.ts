@@ -1,15 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { eventQueryInclude, serializeEvent } from "@/lib/prisma-helpers";
+import { authorizeApi } from "@/lib/authorization";
+import { slugify } from "@/lib/tenant";
 
 type Params = { params: Promise<{ eventId: string }> };
 
 export const dynamic = "force-dynamic";
 
-export async function POST(_request: Request, { params }: Params) {
+export async function POST(request: NextRequest, { params }: Params) {
+  const access = await authorizeApi(request, "events:manage");
+  if (!access.ok) return access.response;
   const { eventId } = await params;
-  const original = await prisma.event.findUnique({
-    where: { id: eventId },
+  const original = await prisma.event.findFirst({
+    where: { id: eventId, organizationId: access.authorization.organization.id },
     include: {
       rafflePrizes: {
         where: {
@@ -27,6 +31,7 @@ export async function POST(_request: Request, { params }: Params) {
     data: {
       organizationId: original.organizationId,
       name: `${original.name} Copy`,
+      slug: `${slugify(original.name)}-copy-${crypto.randomUUID().slice(0, 8)}`,
       description: original.description,
       venue: original.venue,
       address: original.address,

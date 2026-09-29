@@ -28,13 +28,19 @@ export async function POST(request: NextRequest) {
         { email: identifier },
         { username: identifier }
       ]
-    }
+    },
+    include: { memberships: { where: { active: true }, orderBy: { joinedAt: "asc" }, take: 1 } }
   });
 
   if (!user?.passwordHash || !user.active || !(await compare(parsed.data.password, user.passwordHash))) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
+  if (!user.emailVerified) {
+    return NextResponse.json({ error: "Verify your email address before signing in" }, { status: 403 });
+  }
 
-  await setSessionCookie(user);
+  const membership = user.memberships[0];
+  if (!membership) return NextResponse.json({ error: "No active organization membership" }, { status: 403 });
+  await setSessionCookie(user, membership.organizationId);
   return NextResponse.json({ ok: true, mustChangePassword: user.mustChangePassword });
 }

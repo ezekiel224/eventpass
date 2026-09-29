@@ -1,39 +1,20 @@
-import { getDefaultOrganization } from "@/lib/prisma-helpers";
 import { cache } from "react";
+import { prisma } from "@/lib/db";
+import { getTenantContext } from "@/lib/tenant";
 
 export const SYSTEM_ACCENT_COLOR = "#315CF5";
+export type Branding = { name: string; logoUrl: string | null; primaryColor: string; accentColor: string; timezone: string };
+const fallbackBranding: Branding = { name: "EventPass", logoUrl: null, primaryColor: SYSTEM_ACCENT_COLOR, accentColor: SYSTEM_ACCENT_COLOR, timezone: "America/Chicago" };
 
-export type Branding = {
-  name: string;
-  logoUrl: string | null;
-  primaryColor: string;
-  accentColor: string;
-  timezone: string;
-};
-
-const fallbackBranding: Branding = {
-  name: "EventPass",
-  logoUrl: null,
-  primaryColor: SYSTEM_ACCENT_COLOR,
-  accentColor: SYSTEM_ACCENT_COLOR,
-  timezone: "America/Chicago"
-};
-
-export const getBranding = cache(async (): Promise<Branding> => {
+export const getBranding = cache(async (organizationId?: string): Promise<Branding> => {
   try {
-    const organization = await getDefaultOrganization();
-
-    return {
-      name: organization.name,
-      logoUrl: organization.logoUrl,
-      primaryColor: SYSTEM_ACCENT_COLOR,
-      accentColor: SYSTEM_ACCENT_COLOR,
-      timezone: organization.timezone
-    };
-  } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.warn("Using fallback branding because organization settings are unavailable.", error);
-    }
+    const tenant = organizationId ? null : await getTenantContext();
+    const id = organizationId ?? tenant?.organization.id;
+    if (!id) return fallbackBranding;
+    const organization = await prisma.organization.findUnique({ where: { id } });
+    if (!organization) return fallbackBranding;
+    return { name: organization.name, logoUrl: organization.logoUrl, primaryColor: SYSTEM_ACCENT_COLOR, accentColor: SYSTEM_ACCENT_COLOR, timezone: organization.timezone };
+  } catch {
     return fallbackBranding;
   }
 });

@@ -1,6 +1,6 @@
 # Docker Deployment
 
-This project ships with a production Dockerfile and Docker Compose setup. The container runs the Next.js standalone server, stores SQLite data in a Docker volume, applies the Prisma schema at startup, and exposes a health endpoint at `/api/health`.
+This project ships with a production Dockerfile and Docker Compose setup. The application runs as a Next.js standalone server, uses PostgreSQL, applies committed Prisma migrations at startup, and exposes a health endpoint at `/api/health`.
 
 ## 1. Prepare the Server
 
@@ -30,7 +30,7 @@ nano .env
 Set these values before the first boot:
 
 ```bash
-DOCKER_DATABASE_URL="file:/app/data/eventpass.db"
+POSTGRES_PASSWORD="replace-with-a-long-random-database-password"
 APP_URL="https://your-domain.com"
 AUTH_SECRET="replace-with-a-long-random-secret"
 QR_SIGNING_SECRET="replace-with-a-long-random-secret"
@@ -156,19 +156,16 @@ docker compose logs -f app
 
 ## 7. Backups
 
-The SQLite database lives in the `eventpass-data` Docker volume. Back it up before updates:
+The PostgreSQL database lives in the `eventpass-postgres` Docker volume. Back it up before updates with `pg_dump`:
 
 ```bash
-docker run --rm \
-  -v eventpass_eventpass-data:/data \
-  -v "$PWD":/backup \
-  alpine tar czf /backup/eventpass-data-backup.tgz -C /data .
+docker compose exec -T db pg_dump -U eventpass -d eventpass > eventpass-backup.sql
 ```
 
-If your Compose project folder is not named `eventpass`, check the actual volume name:
+Restore into an empty database with:
 
 ```bash
-docker volume ls
+docker compose exec -T db psql -U eventpass -d eventpass < eventpass-backup.sql
 ```
 
 ## Useful Commands

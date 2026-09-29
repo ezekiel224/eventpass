@@ -4,6 +4,8 @@ import { normalizeCsvHeader, parseCsv } from "@/lib/csv";
 import { stringifyStringArray } from "@/lib/prisma-helpers";
 import { normalizePersonName } from "@/lib/text";
 import { createQrPayload, tokenHash } from "@/services/qr";
+import { authorizeApi } from "@/lib/authorization";
+import { generateOpaqueToken, hashOpaqueToken } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -25,12 +27,13 @@ function dateValue(value: string | undefined) {
 }
 
 export async function POST(request: NextRequest) {
+  const access = await authorizeApi(request, "attendees:manage"); if (!access.ok) return access.response;
   const body = await request.json().catch(() => null) as { eventId?: string; csv?: string } | null;
   if (!body?.eventId || !body.csv || body.csv.length > 2_000_000) {
     return NextResponse.json({ error: "Choose a CSV file under 2 MB and an event." }, { status: 400 });
   }
 
-  const event = await prisma.event.findUnique({ where: { id: body.eventId } });
+  const event = await prisma.event.findFirst({ where: { id: body.eventId, organizationId: access.authorization.organization.id } });
   if (!event || event.status === "ARCHIVED") {
     return NextResponse.json({ error: "Attendees cannot be imported into this event." }, { status: 400 });
   }
@@ -69,6 +72,7 @@ export async function POST(request: NextRequest) {
     try {
       const attendeeId = crypto.randomUUID().replaceAll("-", "");
       const payload = createQrPayload(attendeeId, body.eventId);
+      const accessToken = generateOpaqueToken();
       await prisma.attendee.create({
         data: {
           id: attendeeId,
@@ -99,7 +103,9 @@ export async function POST(request: NextRequest) {
             create: {
               fallbackCode: `EP-${attendeeId.slice(-6).toUpperCase()}`,
               qrPayload: JSON.stringify(payload),
-              tokenHash: tokenHash(payload.token)
+              tokenHash: tokenHash(payload.token),
+              accessTokenHash: hashOpaqueToken(accessToken),
+              accessTokenExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
             }
           }
         }

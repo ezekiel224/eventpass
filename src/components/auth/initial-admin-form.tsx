@@ -15,7 +15,7 @@ export function InitialAdminForm() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!csrf.token || saving) return;
+    if (saving) return;
     setError("");
 
     const form = new FormData(event.currentTarget);
@@ -25,36 +25,47 @@ export function InitialAdminForm() {
     }
 
     setSaving(true);
-    const response = await fetch("/api/auth/setup", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: {
-        "Content-Type": "application/json",
-        "x-csrf-token": csrf.token
-      },
-      body: JSON.stringify({
-        name: form.get("name"),
-        email: form.get("email"),
-        username: form.get("username"),
-        password: form.get("password")
-      })
-    });
-    const result = await response.json();
-    setSaving(false);
-
-    if (!response.ok) {
-      if (response.status === 409) {
-        router.replace("/login");
-        router.refresh();
+    try {
+      const csrfToken = csrf.token || await csrf.refresh();
+      if (!csrfToken) {
+        setError("Could not initialize secure form protection. Refresh the page and try again.");
         return;
       }
-      setError(result.error ?? "Could not create the administrator account.");
-      if (response.status === 403) await csrf.refresh();
-      return;
-    }
 
-    router.replace("/dashboard");
-    router.refresh();
+      const response = await fetch("/api/auth/setup", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "x-csrf-token": csrfToken
+        },
+        body: JSON.stringify({
+          name: form.get("name"),
+          email: form.get("email"),
+          username: form.get("username"),
+          password: form.get("password")
+        })
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          router.replace("/login");
+          router.refresh();
+          return;
+        }
+        setError(result.error ?? "Could not create the administrator account.");
+        if (response.status === 403) await csrf.refresh();
+        return;
+      }
+
+      router.replace("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Could not reach the setup service. Check the development server and try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -82,7 +93,7 @@ export function InitialAdminForm() {
           {csrf.error || error}
         </p>
       ) : null}
-      <Button className="mt-2 h-12" type="submit" disabled={saving || !csrf.token}>
+      <Button className="mt-2 h-12" type="submit" disabled={saving}>
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
         Create administrator
       </Button>

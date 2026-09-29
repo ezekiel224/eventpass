@@ -3,16 +3,19 @@ import { prisma } from "@/lib/db";
 import { attendeeInclude, createPassForAttendee, serializeAttendee, stringifyStringArray } from "@/lib/prisma-helpers";
 import { attendeeRegistrationSchema } from "@/lib/validation";
 import { rateLimit } from "@/services/rate-limit";
+import { authorizeApi } from "@/lib/authorization";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const access = await authorizeApi(request, "attendees:manage");
+  if (!access.ok) return access.response;
   const eventId = request.nextUrl.searchParams.get("eventId") ?? undefined;
   const includeArchived = request.nextUrl.searchParams.get("includeArchived") === "true";
   const attendees = await prisma.attendee.findMany({
     where: {
       ...(eventId ? { eventId } : {}),
-      ...(includeArchived ? {} : { event: { status: { not: "ARCHIVED" } } })
+      event: { organizationId: access.authorization.organization.id, ...(includeArchived ? {} : { status: { not: "ARCHIVED" } }) },
     },
     include: attendeeInclude,
     orderBy: {
@@ -24,6 +27,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const access = await authorizeApi(request, "attendees:manage");
+  if (!access.ok) return access.response;
   const limited = rateLimit(`attendees:${request.headers.get("x-forwarded-for") ?? "local"}`, 60);
   if (!limited.ok) {
     return NextResponse.json({ error: "Too many attendee changes" }, { status: 429 });
@@ -34,7 +39,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const event = await prisma.event.findUnique({ where: { id: parsed.data.eventId } });
+  const event = await prisma.event.findFirst({ where: { id: parsed.data.eventId, organizationId: access.authorization.organization.id } });
   if (!event || event.status === "ARCHIVED") {
     return NextResponse.json({ error: "Attendees cannot be added to an archived event" }, { status: 400 });
   }

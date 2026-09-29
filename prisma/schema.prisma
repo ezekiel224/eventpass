@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -14,21 +14,22 @@ model AppInstallation {
 }
 
 model User {
-  id                  String                   @id @default(cuid())
-  email               String                   @unique
-  username            String?                  @unique
-  name                String?
-  passwordHash        String?
-  role                String                   @default("USER")
-  active              Boolean                  @default(true)
-  mustChangePassword  Boolean                  @default(false)
-  passwordChangedAt   DateTime?
-  emailVerified       DateTime?
-  roles               UserRole[]
-  permissionOverrides UserPermissionOverride[]
-  auditActions        AuditLog[]               @relation("AuditActor")
-  createdAt           DateTime                 @default(now())
-  updatedAt           DateTime                 @updatedAt
+  id                      String                   @id @default(cuid())
+  email                   String                   @unique
+  username                String?                  @unique
+  name                    String?
+  passwordHash            String?
+  active                  Boolean                  @default(true)
+  mustChangePassword      Boolean                  @default(false)
+  passwordChangedAt       DateTime?
+  emailVerified           DateTime?
+  memberships             OrganizationMembership[]
+  auditActions            AuditLog[]               @relation("AuditActor")
+  sessions                Session[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
 }
 
 model Permission {
@@ -44,26 +45,38 @@ model Permission {
 }
 
 model Role {
-  id          String           @id @default(cuid())
-  name        String
-  slug        String           @unique
-  description String
-  system      Boolean          @default(false)
-  assignable  Boolean          @default(true)
-  users       UserRole[]
-  permissions RolePermission[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id             String                   @id @default(cuid())
+  organizationId String
+  organization   Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  slug           String
+  description    String
+  system         Boolean                  @default(false)
+  assignable     Boolean                  @default(true)
+  memberships    OrganizationMembership[]
+  permissions    RolePermission[]
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
 }
 
-model UserRole {
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  roleId     String
-  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  assignedAt DateTime @default(now())
+model OrganizationMembership {
+  id             String                   @id @default(cuid())
+  organizationId String
+  organization   Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId         String
+  role           Role                     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  active         Boolean                  @default(true)
+  overrides      UserPermissionOverride[]
+  joinedAt       DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
 
-  @@id([userId, roleId])
+  @@unique([organizationId, userId])
+  @@index([userId])
   @@index([roleId])
 }
 
@@ -79,47 +92,57 @@ model RolePermission {
 }
 
 model UserPermissionOverride {
-  userId       String
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membershipId String
+  membership   OrganizationMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
   permissionId String
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  permission   Permission             @relation(fields: [permissionId], references: [id], onDelete: Cascade)
   allowed      Boolean
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
 
-  @@id([userId, permissionId])
+  @@id([membershipId, permissionId])
   @@index([permissionId])
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  actorUserId String?
-  actor       User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
-  action      String
-  targetType  String
-  targetId    String?
-  metadata    String?
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
+  id             String       @id @default(cuid())
+  actorUserId    String?
+  actor          User?        @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  action         String
+  targetType     String
+  targetId       String?
+  metadata       String?
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime     @default(now())
 
   @@index([actorUserId, createdAt])
+  @@index([organizationId, createdAt])
   @@index([targetType, targetId])
 }
 
 model Organization {
-  id           String   @id @default(cuid())
-  name         String
-  logoUrl      String?
+  id             String                   @id @default(cuid())
+  name           String
+  slug           String                   @unique
+  logoUrl        String?
   // Retained for database compatibility. Application presentation uses immutable system tokens.
-  primaryColor String   @default("#315CF5")
-  accentColor  String   @default("#315CF5")
-  timezone     String   @default("America/Chicago")
-  domain       String?
-  events       Event[]
-  settings     Setting?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  primaryColor   String                   @default("#315CF5")
+  accentColor    String                   @default("#315CF5")
+  timezone       String                   @default("America/Chicago")
+  domain         String?                  @unique
+  events         Event[]
+  settings       Setting?
+  memberships    OrganizationMembership[]
+  roles          Role[]
+  auditLogs      AuditLog[]
+  sessions       Session[]
+  apiCredentials ApiCredential[]
+  integrations   Integration[]
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
 }
 
 model Event {
@@ -127,6 +150,7 @@ model Event {
   organizationId            String
   organization              Organization     @relation(fields: [organizationId], references: [id])
   name                      String
+  slug                      String
   description               String
   venue                     String
   address                   String
@@ -167,6 +191,9 @@ model Event {
   votingBallots             VotingBallot[]
   createdAt                 DateTime         @default(now())
   updatedAt                 DateTime         @updatedAt
+
+  @@unique([organizationId, slug])
+  @@index([organizationId, status])
 }
 
 model Attendee {
@@ -207,14 +234,17 @@ model Attendee {
 }
 
 model Pass {
-  id           String   @id @default(cuid())
-  attendeeId   String   @unique
-  attendee     Attendee @relation(fields: [attendeeId], references: [id])
-  fallbackCode String   @unique
-  qrPayload    String
-  tokenHash    String
-  pdfUrl       String?
-  createdAt    DateTime @default(now())
+  id                   String    @id @default(cuid())
+  attendeeId           String    @unique
+  attendee             Attendee  @relation(fields: [attendeeId], references: [id])
+  fallbackCode         String    @unique
+  qrPayload            String
+  tokenHash            String
+  accessTokenHash      String?   @unique
+  accessTokenExpiresAt DateTime?
+  accessTokenRevokedAt DateTime?
+  pdfUrl               String?
+  createdAt            DateTime  @default(now())
 }
 
 model CheckIn {
@@ -425,7 +455,80 @@ model Setting {
   smtpUser        String?
   smtpFrom        String?
   defaultTimezone String       @default("America/Chicago")
-  apiKeyHash      String?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
+}
+
+model Session {
+  id             String       @id @default(cuid())
+  tokenHash      String       @unique
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  lastSeenAt     DateTime     @default(now())
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime     @default(now())
+
+  @@index([userId, revokedAt])
+  @@index([organizationId, expiresAt])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, expiresAt])
+}
+
+model ApiCredential {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  prefix         String
+  secretHash     String       @unique
+  scopes         String
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, name])
+  @@index([organizationId, revokedAt])
+}
+
+model Integration {
+  id              String       @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  provider        String
+  name            String
+  encryptedConfig String
+  active          Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([organizationId, provider, name])
+  @@index([organizationId, active])
 }

@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { generateOpaqueToken, hashOpaqueToken } from "@/lib/session";
 import { AttendeeSummary, EventSummary } from "@/types/domain";
 
 const eventInclude = {
@@ -9,17 +10,6 @@ const eventInclude = {
     }
   }
 } satisfies Prisma.EventInclude;
-
-export async function getDefaultOrganization() {
-  return prisma.organization.upsert({
-    where: { id: "org_default" },
-    update: {},
-    create: {
-      id: "org_default",
-      name: "Northstar Labs"
-    }
-  });
-}
 
 export function parseStringArray(value: string | null | undefined) {
   if (!value) {
@@ -133,13 +123,17 @@ export async function createPassForAttendee(attendeeId: string, eventId: string)
   const { createQrPayload, tokenHash } = await import("@/services/qr");
   const payload = createQrPayload(attendeeId, eventId);
   const fallbackCode = `EP-${attendeeId.slice(-6).toUpperCase()}`;
+  const accessToken = generateOpaqueToken();
 
-  return prisma.pass.create({
+  const pass = await prisma.pass.create({
     data: {
       attendeeId,
       fallbackCode,
       qrPayload: JSON.stringify(payload),
-      tokenHash: tokenHash(payload.token)
+      tokenHash: tokenHash(payload.token),
+      accessTokenHash: hashOpaqueToken(accessToken),
+      accessTokenExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
     }
   });
+  return { ...pass, accessToken };
 }

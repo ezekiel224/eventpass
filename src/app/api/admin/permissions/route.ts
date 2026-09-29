@@ -62,6 +62,7 @@ export async function PUT(request: NextRequest) {
         data: auditLogData({
           request,
           actorUserId: access.authorization.user.id,
+          organizationId: access.authorization.organization.id,
           action: parsed.data.id ? "admin.permission_updated" : "admin.permission_created",
           targetType: "Permission",
           targetId: saved.id,

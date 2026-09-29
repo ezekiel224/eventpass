@@ -1,17 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
 import { createGoogleCalendarUrl, renderPassEmail, sendEmail } from "@/services/email";
 import { formatDate, formatTime } from "@/lib/utils";
+import { authorizeApi } from "@/lib/authorization";
+import { rotatePublicPassToken } from "@/lib/public-pass";
 
 type Params = { params: Promise<{ attendeeId: string }> };
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request, { params }: Params) {
+export async function POST(request: NextRequest, { params }: Params) {
+  const access = await authorizeApi(request, "passes:manage");
+  if (!access.ok) return access.response;
   const { attendeeId } = await params;
-  const attendee = await prisma.attendee.findUnique({
-    where: { id: attendeeId },
+  const attendee = await prisma.attendee.findFirst({
+    where: { id: attendeeId, event: { organizationId: access.authorization.organization.id } },
     include: {
       event: true,
       pass: true
@@ -26,15 +30,16 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const appBaseUrl = (process.env.APP_URL?.trim() || new URL(request.url).origin).replace(/\/+$/, "");
-  const passUrl = `${appBaseUrl}/pass/${attendee.id}`;
+  const accessToken = await rotatePublicPassToken(attendee.pass.id);
+  const passUrl = `${appBaseUrl}/pass/${accessToken}`;
   const subject = `Your pass for ${attendee.event.name}`;
   let status = "QUEUED";
   let providerId: string | undefined;
   let errorMessage: string | undefined;
 
   try {
-    const branding = await getBranding();
-    const qrImageUrl = `${appBaseUrl}/api/pass/${attendee.id}/qr`;
+    const branding = await getBranding(attendee.event.organizationId);
+    const qrImageUrl = `${appBaseUrl}/api/pass/${accessToken}/qr`;
     const delivery = await sendEmail({
       to: attendee.email,
       subject,
@@ -51,7 +56,7 @@ export async function POST(request: Request, { params }: Params) {
         organizer: attendee.event.organizer,
         contactEmail: attendee.event.contactEmail,
         passUrl,
-        passDownloadUrl: `${appBaseUrl}/api/attendees/${attendee.id}/pass-download`,
+        passDownloadUrl: `${appBaseUrl}/api/attendees/${accessToken}/pass-download`,
         googleCalendarUrl: createGoogleCalendarUrl({
           eventName: attendee.event.name,
           startsAt: attendee.event.startsAt,
@@ -60,7 +65,7 @@ export async function POST(request: Request, { params }: Params) {
           address: attendee.event.address,
           passUrl
         }),
-        iCalendarUrl: `${appBaseUrl}/api/attendees/${attendee.id}/calendar`,
+        iCalendarUrl: `${appBaseUrl}/api/attendees/${accessToken}/calendar`,
         qrImageUrl,
         fallbackCode: attendee.pass.fallbackCode,
         organizationName: branding.name,

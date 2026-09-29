@@ -48,21 +48,21 @@ export async function POST(request: NextRequest) {
       await transaction.appInstallation.create({
         data: { id: INSTALLATION_ID }
       });
-      const { adminRole } = await ensureSystemRbac(transaction, { migrateLegacyAdmins: false });
+      const organization = await transaction.organization.create({
+        data: { name: "EventPass Workspace", slug: "eventpass-workspace" }
+      });
+      const { adminRole } = await ensureSystemRbac(transaction, organization.id);
       const created = await transaction.user.create({
         data: {
           email: parsed.data.email,
           username: parsed.data.username,
           name: parsed.data.name,
           passwordHash,
-          role: "ADMIN",
           active: true,
           mustChangePassword: false,
           passwordChangedAt: new Date(),
           emailVerified: new Date(),
-          roles: {
-            create: { roleId: adminRole.id }
-          }
+          memberships: { create: { organizationId: organization.id, roleId: adminRole.id } }
         }
       });
       await transaction.appInstallation.update({
@@ -73,20 +73,21 @@ export async function POST(request: NextRequest) {
         data: auditLogData({
           request,
           actorUserId: created.id,
+          organizationId: organization.id,
           action: "installation.admin_created",
           targetType: "User",
           targetId: created.id,
           metadata: { email: created.email, username: created.username }
         })
       });
-      return created;
+      return { user: created, organizationId: organization.id };
     }, {
       isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       maxWait: 5_000,
       timeout: 20_000
     });
 
-    await setSessionCookie(user);
+    await setSessionCookie(user.user, user.organizationId);
     return NextResponse.json({ ok: true }, {
       status: 201,
       headers: { "Cache-Control": "no-store" }

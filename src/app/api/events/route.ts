@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eventSchema } from "@/lib/validation";
 import { prisma } from "@/lib/db";
-import { eventQueryInclude, getDefaultOrganization, serializeEvent, stringifyStringArray } from "@/lib/prisma-helpers";
+import { eventQueryInclude, serializeEvent, stringifyStringArray } from "@/lib/prisma-helpers";
+import { authorizeApi } from "@/lib/authorization";
+import { slugify } from "@/lib/tenant";
 import { rateLimit } from "@/services/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  await getDefaultOrganization();
+  const access = await authorizeApi(request, "events:manage");
+  if (!access.ok) return access.response;
   const includeArchived = request.nextUrl.searchParams.get("includeArchived") === "true";
   const events = await prisma.event.findMany({
-    where: includeArchived ? undefined : { status: { not: "ARCHIVED" } },
+    where: { organizationId: access.authorization.organization.id, ...(includeArchived ? {} : { status: { not: "ARCHIVED" } }) },
     include: eventQueryInclude(),
     orderBy: {
       startsAt: "asc"
@@ -21,6 +24,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const access = await authorizeApi(request, "events:manage");
+  if (!access.ok) return access.response;
   const limited = rateLimit(`events:${request.headers.get("x-forwarded-for") ?? "local"}`, 20);
   if (!limited.ok) {
     return NextResponse.json({ error: "Too many event requests. Wait a moment and try again." }, { status: 429, headers: { "Retry-After": "60" } });
@@ -42,14 +47,14 @@ export async function POST(request: NextRequest) {
   const requestedStatus = typeof body === "object" && body && "status" in body && body.status === "DRAFT" ? "DRAFT" : "PUBLISHED";
 
   try {
-    const organization = await getDefaultOrganization();
     const event = await prisma.event.create({
       data: {
         ...parsed.data,
         photoUrl: parsed.data.photoUrl || undefined,
         allergenOptions: stringifyStringArray(parsed.data.allergenOptions),
         menuOptions: stringifyStringArray(parsed.data.menuOptions),
-        organizationId: organization.id,
+        organizationId: access.authorization.organization.id,
+        slug: `${slugify(parsed.data.name)}-${crypto.randomUUID().slice(0, 8)}`,
         status: requestedStatus
       },
       include: eventQueryInclude()

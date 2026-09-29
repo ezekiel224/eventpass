@@ -32,7 +32,7 @@ const systemRoles = [
   }
 ] as const;
 
-export async function ensureSystemRbac(client: RbacClient, { migrateLegacyAdmins = true } = {}) {
+export async function ensureSystemRbac(client: RbacClient, organizationId: string) {
   const permissions = new Map<string, { id: string; slug: string }>();
   for (const definition of permissionCatalog) {
     const permission = await client.permission.upsert({
@@ -56,7 +56,7 @@ export async function ensureSystemRbac(client: RbacClient, { migrateLegacyAdmins
   const roles = new Map<string, { id: string; slug: string }>();
   for (const definition of systemRoles) {
     const role = await client.role.upsert({
-      where: { slug: definition.slug },
+      where: { organizationId_slug: { organizationId, slug: definition.slug } },
       update: {
         name: definition.name,
         description: definition.description,
@@ -64,6 +64,7 @@ export async function ensureSystemRbac(client: RbacClient, { migrateLegacyAdmins
         assignable: true
       },
       create: {
+        organizationId,
         name: definition.name,
         slug: definition.slug,
         description: definition.description,
@@ -83,28 +84,8 @@ export async function ensureSystemRbac(client: RbacClient, { migrateLegacyAdmins
     });
   }
 
-  const adminRole = roles.get("admin")!;
-  if (migrateLegacyAdmins) {
-    const legacyAdmins = await client.user.findMany({
-      where: {
-        role: "ADMIN",
-        roles: { none: {} }
-      },
-      select: { id: true }
-    });
-    if (legacyAdmins.length) {
-      for (const { id } of legacyAdmins) {
-        await client.userRole.upsert({
-          where: { userId_roleId: { userId: id, roleId: adminRole.id } },
-          update: {},
-          create: { userId: id, roleId: adminRole.id }
-        });
-      }
-    }
-  }
-
   return {
-    adminRole,
+    adminRole: roles.get("admin")!,
     moderatorRole: roles.get("moderator")!,
     userRole: roles.get("user")!
   };

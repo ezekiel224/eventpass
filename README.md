@@ -15,7 +15,7 @@ Open `http://localhost:3000`.
 
 Before merging or deploying structural changes, run `npm run verify` and complete the focused workflow checklist in `SMOKE_TESTS.md`.
 
-`prisma:setup` applies the local SQLite schema, prepares system roles and permissions, and loads the idempotent demo event data. Run it again whenever you create a fresh local database.
+`prisma:setup` applies the committed PostgreSQL migrations and loads the idempotent demo event data, including organization-scoped roles and permissions.
 
 Open `/login` after the first start. When the database has no accounts, EventPass redirects to the one-time `/signup` page so you can choose the initial administrator email, username, and password. No administrator credentials are stored in environment variables or source code.
 
@@ -28,7 +28,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-The Docker deployment uses a persistent SQLite database volume at `/app/data/eventpass.db`. On every container start it applies the schema and idempotently prepares the system roles and permissions. It does not create an account or load demo event data.
+The Docker deployment includes PostgreSQL with a persistent `eventpass-postgres` volume. On every application start it applies committed Prisma migrations and idempotently prepares organization-scoped system roles. It does not create an account or load demo event data.
 
 Open the deployed `/login` URL after the first start. You will be redirected to the one-time `/signup` page to create the initial administrator. The setup endpoint uses an atomic installation record, so only one initial administrator can be created; after that, `/signup` redirects to `/login`.
 
@@ -40,7 +40,7 @@ ssh -L 3000:127.0.0.1:3000 your-user@your-server
 
 Then open `http://127.0.0.1:3000/login` locally and create the administrator.
 
-Existing Docker volumes keep their current accounts. The RBAC bootstrap automatically attaches a pre-RBAC `ADMIN` account to the full-access Admin role.
+SQLite volumes from versions before the multi-tenant migration are not mounted automatically. Export and transform legacy data before production cutover; do not point the PostgreSQL Prisma schema at a SQLite URL.
 
 Check the container health endpoint:
 
@@ -58,7 +58,7 @@ Set `APP_URL` to your Cloudflare hostname before testing pass email links, for e
 
 Before exposing a production container, replace the placeholder `AUTH_SECRET` and `QR_SIGNING_SECRET` values in `.env` with independent long random values. Production still requires HTTPS at the reverse proxy or Cloudflare Tunnel.
 
-PostgreSQL is a later migration step. The current Prisma schema is SQLite, so do not switch `DATABASE_URL` to a PostgreSQL URL until the schema provider and migrations are updated together.
+For managed production hosting, set `DATABASE_URL` to the provider's TLS-enabled PostgreSQL connection string. Use a separate database per environment and run `prisma migrate deploy` during deployment.
 
 ## Email Setup
 

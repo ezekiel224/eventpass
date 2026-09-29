@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import QRCode from "qrcode";
 import { prisma } from "@/lib/db";
+import { publicPassWhere } from "@/lib/public-pass";
 
 type Params = { params: Promise<{ attendeeId: string }> };
 
@@ -8,16 +9,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET(_request: Request, { params }: Params) {
   const { attendeeId } = await params;
-  const attendee = await prisma.attendee.findUnique({
-    where: { id: attendeeId },
-    select: { pass: { select: { qrPayload: true } } }
-  });
+  const pass = await prisma.pass.findFirst({ where: publicPassWhere(attendeeId), select: { qrPayload: true } });
 
-  if (!attendee?.pass) {
+  if (!pass) {
     return NextResponse.json({ error: "Pass not found" }, { status: 404 });
   }
 
-  const png = await QRCode.toBuffer(attendee.pass.qrPayload, {
+  const png = await QRCode.toBuffer(pass.qrPayload, {
     type: "png",
     margin: 2,
     width: 512,

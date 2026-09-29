@@ -8,7 +8,7 @@ import { prisma } from "@/lib/db";
 
 const roleInclude = {
   permissions: { include: { permission: true } },
-  _count: { select: { users: true } }
+  _count: { select: { memberships: true } }
 } as const;
 
 type RoleWithPermissions = Prisma.RoleGetPayload<{ include: typeof roleInclude }>;
@@ -21,7 +21,7 @@ function serializeRole(role: RoleWithPermissions) {
     description: role.description,
     system: role.system,
     assignable: role.assignable,
-    userCount: role._count.users,
+    userCount: role._count.memberships,
     permissionIds: role.permissions.map(({ permissionId }) => permissionId)
   };
 }
@@ -29,7 +29,7 @@ function serializeRole(role: RoleWithPermissions) {
 export async function GET(request: NextRequest) {
   const access = await authorizeApi(request, "roles:view");
   if (!access.ok) return access.response;
-  const roles = await prisma.role.findMany({ include: roleInclude, orderBy: [{ system: "desc" }, { name: "asc" }] });
+  const roles = await prisma.role.findMany({ where: { organizationId: access.authorization.organization.id }, include: roleInclude, orderBy: [{ system: "desc" }, { name: "asc" }] });
   return NextResponse.json({ roles: roles.map(serializeRole) });
 }
 
@@ -52,13 +52,13 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "One or more permissions are invalid" }, { status: 400 });
   }
 
-  const existing = parsed.data.id ? await prisma.role.findUnique({
-    where: { id: parsed.data.id },
-    include: { users: { where: { userId: access.authorization.user.id }, select: { userId: true } } }
+  const existing = parsed.data.id ? await prisma.role.findFirst({
+    where: { id: parsed.data.id, organizationId: access.authorization.organization.id },
+    include: { memberships: { where: { userId: access.authorization.user.id }, select: { userId: true } } }
   }) : null;
   if (parsed.data.id && !existing) return NextResponse.json({ error: "Role not found" }, { status: 404 });
   if (existing?.system) return NextResponse.json({ error: "System roles cannot be edited" }, { status: 403 });
-  if (existing?.users.length) return NextResponse.json({ error: "You cannot edit a role assigned to your own account" }, { status: 400 });
+  if (existing?.memberships.length) return NextResponse.json({ error: "You cannot edit a role assigned to your own account" }, { status: 400 });
 
   try {
     const role = await prisma.$transaction(async (transaction) => {
@@ -78,6 +78,7 @@ export async function PUT(request: NextRequest) {
           })
         : await transaction.role.create({
             data: {
+              organizationId: access.authorization.organization.id,
               name: parsed.data.name,
               slug: parsed.data.slug,
               description: parsed.data.description,
@@ -91,6 +92,7 @@ export async function PUT(request: NextRequest) {
         data: auditLogData({
           request,
           actorUserId: access.authorization.user.id,
+          organizationId: access.authorization.organization.id,
           action: parsed.data.id ? "admin.role_updated" : "admin.role_created",
           targetType: "Role",
           targetId: saved.id,
