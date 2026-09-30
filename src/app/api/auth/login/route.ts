@@ -2,6 +2,7 @@ import { compare } from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { setSessionCookie } from "@/lib/auth";
+import { getAuthorizationForUser } from "@/lib/authorization";
 import { prisma } from "@/lib/db";
 import { rateLimit } from "@/services/rate-limit";
 
@@ -36,5 +37,7 @@ export async function POST(request: NextRequest) {
   }
 
   await setSessionCookie(user);
-  return NextResponse.json({ ok: true, mustChangePassword: user.mustChangePassword });
+  const authorization = await getAuthorizationForUser(user.id);
+  const home = authorization?.permissions.has("dashboard:view") ? "/dashboard" : authorization?.permissions.has("checkins:manage") ? "/scan" : "/forbidden";
+  return NextResponse.json({ ok: true, mustChangePassword: user.mustChangePassword, home });
 }

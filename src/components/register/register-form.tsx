@@ -2,7 +2,6 @@
 
 import { CheckCircle2, Mail } from "lucide-react";
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
 import { AgeChoice } from "@/components/ui/age-choice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +11,7 @@ const initialForm = {
   lastName: "",
   email: "",
   phone: "",
-  company: "",
+  company: "Hanover Park",
   under21: "",
   selectedAllergens: [] as string[],
   selectedMenu: "",
@@ -25,11 +24,18 @@ const initialForm = {
 };
 
 export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventId: string; allergenOptions: string[]; menuOptions: string[] }) {
-  const router = useRouter();
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [waitlisted, setWaitlisted] = useState(false);
+  const [registered, setRegistered] = useState(false);
+
+  function registerAnotherGuest() {
+    setForm(initialForm);
+    setMessage("");
+    setWaitlisted(false);
+    setRegistered(false);
+  }
 
   function setField(name: keyof typeof form, value: string | boolean | string[]) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -78,7 +84,7 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
 
     if (response.ok) {
       if (data.waitlisted) setWaitlisted(true);
-      else router.push(data.passUrl.replace(/^https?:\/\/[^/]+/, ""));
+      else setRegistered(true);
     } else {
       setMessage(data.error ?? "Could not register. Try a different email or check event availability.");
     }
@@ -86,7 +92,11 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
   }
 
   if (waitlisted) {
-    return <div className="mt-6 rounded-2xl border border-primary/30 bg-primary/10 p-6 text-center"><CheckCircle2 className="mx-auto h-10 w-10 text-primary" /><h3 className="mt-3 text-xl font-semibold">You’re on the waitlist</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">Your information was saved. The event organizer will contact you if space becomes available.</p></div>;
+    return <div className="mt-6 py-8 text-center"><CheckCircle2 className="mx-auto h-10 w-10 text-primary" /><h3 className="mt-3 text-xl font-semibold">You’re on the waitlist</h3><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">Your information was saved. The event organizer will contact you if space becomes available.</p><Button className="mt-6" variant="secondary" type="button" onClick={registerAnotherGuest}>Register another guest</Button></div>;
+  }
+
+  if (registered) {
+    return <div className="mt-6 py-10 text-center" role="status"><CheckCircle2 className="mx-auto h-11 w-11 text-primary" /><h3 className="mt-4 text-2xl font-semibold tracking-[-0.03em]">Thank you for registering</h3><p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">Your registration is complete. Check your email for event details and your digital pass.</p><Button className="mt-7" type="button" onClick={registerAnotherGuest}>Register another guest</Button></div>;
   }
 
   return (
@@ -100,7 +110,14 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
         <label className="grid gap-2 text-sm font-semibold">Email address<Input value={form.email} onChange={(event) => setField("email", event.target.value)} placeholder="name@company.com" type="email" required /></label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-2 text-sm font-semibold">Phone <span className="sr-only">optional</span><Input value={form.phone} onChange={(event) => setField("phone", event.target.value)} placeholder="Optional" /></label>
-          <label className="grid gap-2 text-sm font-semibold">Company <span className="sr-only">optional</span><Input value={form.company} onChange={(event) => setField("company", event.target.value)} placeholder="Optional" /></label>
+          <label className="grid gap-2 text-sm font-semibold">
+            Location
+            <select value={form.company} onChange={(event) => setField("company", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal" required>
+              <option value="Hanover Park">Hanover Park</option>
+              <option value="Remote">Remote</option>
+              <option value="External">External</option>
+            </select>
+          </label>
         </div>
         <AgeChoice value={form.under21 as "" | "yes" | "no"} onChange={(value) => setField("under21", value)} />
       </div>

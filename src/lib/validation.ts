@@ -34,7 +34,7 @@ export const eventFieldsSchema = z.object({
 type EventTiming = {
   startsAt?: Date;
   endsAt?: Date;
-  registrationDeadline?: Date;
+  registrationDeadline?: Date | null;
 };
 
 function validateEventTiming(data: EventTiming, context: z.RefinementCtx) {
@@ -49,6 +49,7 @@ function validateEventTiming(data: EventTiming, context: z.RefinementCtx) {
 export const eventSchema = eventFieldsSchema.superRefine(validateEventTiming);
 
 export const eventUpdateSchema = eventFieldsSchema.partial().extend({
+  registrationDeadline: z.coerce.date({ invalid_type_error: "Choose a valid registration deadline." }).nullable().optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
   prizeReceiptSubmitter: z.string().trim().max(120).nullable().optional(),
   prizeReceiptExtension: z.string().trim().max(40).nullable().optional(),
@@ -97,7 +98,9 @@ export const qrValidationSchema = z.object({
 });
 
 export const checkInSchema = z.object({
+  eventId: z.string().min(3).optional(),
   attendeeId: z.string().optional(),
   fallbackCode: z.string().optional(),
-  qrPayload: z.string().optional()
+  qrPayload: z.string().optional(),
+  testMode: z.boolean().optional()
 });

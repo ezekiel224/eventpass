@@ -4,13 +4,16 @@ import { LoginForm } from "@/components/auth/login-form";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
+import { getAuthorizationForUser } from "@/lib/authorization";
 import { getBranding } from "@/lib/branding";
 import { isInitialSetupAvailable } from "@/lib/setup";
 
 export default async function LoginPage() {
   const user = await getCurrentUser();
   if (user) {
-    redirect(user.mustChangePassword ? "/change-password" : "/dashboard");
+    if (user.mustChangePassword) redirect("/change-password");
+    const authorization = await getAuthorizationForUser(user.id);
+    redirect(authorization?.permissions.has("dashboard:view") ? "/dashboard" : authorization?.permissions.has("checkins:manage") ? "/scan" : "/forbidden");
   }
   if (await isInitialSetupAvailable()) {
     redirect("/signup");

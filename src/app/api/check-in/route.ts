@@ -75,11 +75,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ valid: false, error: "Attendee not found" }, { status: 404 });
   }
 
+  if (parsed.data.eventId && attendee.eventId !== parsed.data.eventId) {
+    return NextResponse.json({ valid: false, error: "This pass belongs to a different event" }, { status: 409 });
+  }
+
   if (attendee.event.status === "ARCHIVED") {
     return NextResponse.json({ valid: false, error: "This event is archived and no longer accepts check-ins" }, { status: 400 });
   }
 
   const duplicate = attendee.checkIns.some((checkIn) => !checkIn.duplicate);
+  if (parsed.data.testMode) {
+    return NextResponse.json({
+      valid: true,
+      duplicate,
+      testMode: true,
+      under21Alert: attendee.under21 || attendee.plusOneUnder21,
+      under21Message: attendee.under21 || attendee.plusOneUnder21 ? "Age verification would be required during live check-in." : null,
+      checkedInAt: new Date().toISOString(),
+      attendee: serializeAttendee(attendee)
+    });
+  }
   const checkIn = await prisma.checkIn.create({
     data: {
       attendeeId,

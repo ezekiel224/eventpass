@@ -40,7 +40,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     where: { id: eventId },
     data: {
       ...parsed.data,
-      photoUrl: parsed.data.photoUrl || undefined,
+      photoUrl: parsed.data.photoUrl === undefined ? undefined : parsed.data.photoUrl || null,
+      contactPhone: parsed.data.contactPhone === undefined ? undefined : parsed.data.contactPhone || null,
       allergenOptions: stringifyStringArray(parsed.data.allergenOptions),
       menuOptions: stringifyStringArray(parsed.data.menuOptions)
     },

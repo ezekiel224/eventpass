@@ -25,6 +25,12 @@ const systemRoles = [
     ]
   },
   {
+    name: "Scanner",
+    slug: "scanner",
+    description: "Full-screen check-in and raffle ticket station access only.",
+    permissionSlugs: ["checkins:manage"]
+  },
+  {
     name: "User",
     slug: "user",
     description: "Basic authenticated dashboard access.",
@@ -106,6 +112,7 @@ export async function ensureSystemRbac(client: RbacClient, { migrateLegacyAdmins
   return {
     adminRole,
     moderatorRole: roles.get("moderator")!,
+    scannerRole: roles.get("scanner")!,
     userRole: roles.get("user")!
   };
 }

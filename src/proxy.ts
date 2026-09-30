@@ -21,6 +21,7 @@ export async function proxy(request: NextRequest) {
   const isPublicApi = isPublicPassCalendar || isPublicPassQr || isPublicPrizeAcceptance || isPublicRaffleDisplay || isPublicVoting || PUBLIC_API_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
   const requiresAuth = pathname.startsWith("/dashboard")
     || pathname.startsWith("/admin")
+    || pathname === "/scan"
     || pathname === "/change-password"
     || (pathname.startsWith("/api") && !isPublicApi);
 
@@ -78,5 +79,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/change-password", "/api/:path*"]
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/scan", "/change-password", "/api/:path*"]
 };

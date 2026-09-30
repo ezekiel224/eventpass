@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
 import { createGoogleCalendarUrl, renderPassEmail, sendEmail } from "@/services/email";
+import { getCommunicationTemplate, renderCommunicationTemplate } from "@/lib/communication-templates";
 import { formatDate, formatTime } from "@/lib/utils";
 
 type Params = { params: Promise<{ attendeeId: string }> };
@@ -27,13 +28,29 @@ export async function POST(request: Request, { params }: Params) {
 
   const appBaseUrl = (process.env.APP_URL?.trim() || new URL(request.url).origin).replace(/\/+$/, "");
   const passUrl = `${appBaseUrl}/pass/${attendee.id}`;
-  const subject = `Your pass for ${attendee.event.name}`;
+  let subject = `Your pass for ${attendee.event.name}`;
   let status = "QUEUED";
   let providerId: string | undefined;
   let errorMessage: string | undefined;
 
   try {
     const branding = await getBranding();
+    const template = await getCommunicationTemplate(attendee.event.organizationId, "PASS_CONFIRMATION");
+    const rendered = renderCommunicationTemplate(template, {
+      name: `${attendee.firstName} ${attendee.lastName}`,
+      eventName: attendee.event.name,
+      eventDescription: attendee.event.description ?? "",
+      eventDate: formatDate(attendee.event.startsAt, branding.timezone),
+      eventTime: `${formatTime(attendee.event.startsAt, branding.timezone)} - ${formatTime(attendee.event.endsAt, branding.timezone)}`,
+      venue: attendee.event.venue,
+      address: attendee.event.address,
+      ticketTier: attendee.ticketTier,
+      seat: attendee.seat ?? "",
+      organizer: attendee.event.organizer,
+      contactEmail: attendee.event.contactEmail,
+      organizationName: branding.name
+    });
+    subject = rendered.subject;
     const qrImageUrl = `${appBaseUrl}/api/pass/${attendee.id}/qr`;
     const delivery = await sendEmail({
       to: attendee.email,
@@ -63,6 +80,8 @@ export async function POST(request: Request, { params }: Params) {
         iCalendarUrl: `${appBaseUrl}/api/attendees/${attendee.id}/calendar`,
         qrImageUrl,
         fallbackCode: attendee.pass.fallbackCode,
+        messageHtml: rendered.bodyHtml,
+        actionLabel: rendered.actionLabel,
         organizationName: branding.name,
         primaryColor: branding.primaryColor
       })

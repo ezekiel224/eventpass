@@ -20,6 +20,7 @@ export const permissionCatalog = [
 export type PermissionSlug = (typeof permissionCatalog)[number]["slug"] | (string & {});
 
 export function permissionForRequest(pathname: string, method: string): PermissionSlug | null {
+  if (pathname === "/scan" || pathname.startsWith("/api/scan")) return "checkins:manage";
   if (pathname.startsWith("/api/admin/users")) return method === "POST" ? "users:create" : method === "GET" ? "users:view" : "users:manage";
   if (pathname.startsWith("/api/admin/roles")) return method === "GET" ? "roles:view" : "roles:manage";
   if (pathname.startsWith("/api/admin/permissions")) return method === "GET" ? "permissions:view" : "permissions:manage";

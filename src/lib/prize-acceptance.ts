@@ -1,20 +1,13 @@
 import { createHash, randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
-import { sendEmail } from "@/services/email";
+import { getBranding } from "@/lib/branding";
+import { getCommunicationTemplate, renderCommunicationTemplate } from "@/lib/communication-templates";
+import { renderActionEmail, sendEmail } from "@/services/email";
 
 export const PRIZE_ACCEPTANCE_DAYS = 30;
 
 export function hashPrizeAcceptanceToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
 
 export async function issuePrizeAcceptance(
@@ -64,19 +57,31 @@ export async function issuePrizeAcceptance(
 
   let delivery: "SENT" | "QUEUED" | "NOT_SENT" | "NO_EMAIL" | "FAILED" = attendee.email ? "NOT_SENT" : "NO_EMAIL";
   if (emailWinner && attendee.email) {
+    let subject = `Signature required for your ${prize.name} prize`;
     try {
+      const branding = await getBranding();
+      const template = await getCommunicationTemplate(prize.event.organizationId, "PRIZE_ACCEPTANCE");
+      const rendered = renderCommunicationTemplate(template, {
+        name: `${attendee.firstName} ${attendee.lastName}`,
+        eventName: prize.event.name,
+        prizeName: prize.name,
+        prizeValue: prize.value ? ` with a fair-market value of ${prize.value}` : "",
+        expirationDays: String(PRIZE_ACCEPTANCE_DAYS),
+        contactEmail: prize.event.contactEmail,
+        organizationName: branding.name
+      });
+      subject = rendered.subject;
       const result = await sendEmail({
         to: attendee.email,
-        subject: `Signature required for your ${prize.name} prize`,
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;padding:28px;color:#111827">
-            <h1 style="font-size:24px">Prize receipt signature required</h1>
-            <p>Hi ${escapeHtml(attendee.firstName)},</p>
-            <p>You won <strong>${escapeHtml(prize.name)}</strong>${prize.value ? ` with a fair-market value of <strong>${escapeHtml(prize.value)}</strong>` : ""} at ${escapeHtml(prize.event.name)}.</p>
-            <p>Please review the tax acknowledgment and sign the prize receipt. The link expires in ${PRIZE_ACCEPTANCE_DAYS} days.</p>
-            <p><a href="${escapeHtml(acceptanceUrl)}" style="display:inline-block;padding:12px 18px;border-radius:10px;background:#315CF5;color:#fff;text-decoration:none;font-weight:bold">Review and sign</a></p>
-            <p style="color:#64748b;font-size:13px">If you did not win this prize, contact ${escapeHtml(prize.event.contactEmail)}.</p>
-          </div>`
+        subject,
+        html: renderActionEmail({
+          organizationName: branding.name,
+          heading: "Prize receipt signature required",
+          messageHtml: rendered.bodyHtml,
+          actionUrl: acceptanceUrl,
+          actionLabel: rendered.actionLabel,
+          primaryColor: branding.primaryColor
+        })
       });
       delivery = result.status;
       await prisma.emailLog.create({
@@ -85,7 +90,7 @@ export async function issuePrizeAcceptance(
           attendeeId: attendee.id,
           recipient: attendee.email,
           type: "PRIZE_ACCEPTANCE",
-          subject: `Signature required for your ${prize.name} prize`,
+          subject,
           providerId: result.id,
           status: result.status
         }
@@ -98,7 +103,7 @@ export async function issuePrizeAcceptance(
           attendeeId: attendee.id,
           recipient: attendee.email,
           type: "PRIZE_ACCEPTANCE",
-          subject: `Signature required for your ${prize.name} prize`,
+          subject,
           status: "FAILED",
           error: error instanceof Error ? error.message : "Email delivery failed"
         }

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Archive, CheckCircle2, Copy, Download, ExternalLink, LoaderCircle, Palette, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { AlertCircle, Archive, CheckCircle2, Copy, Download, ExternalLink, LoaderCircle, Palette, Pencil, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -150,6 +150,43 @@ function extractEmailAddress(value: string | undefined) {
   return match?.[1] ?? value;
 }
 
+function localDateParts(value: string) {
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return { date: `${year}-${month}-${day}`, time: `${hours}:${minutes}` };
+}
+
+function formFromEvent(event: EventSummary): EventForm {
+  const startsAt = localDateParts(event.startsAt);
+  const endsAt = localDateParts(event.endsAt);
+  return {
+    name: event.name,
+    description: event.description,
+    venue: event.venue,
+    address: event.address,
+    organizer: event.organizer,
+    contactEmail: event.contactEmail,
+    contactPhone: event.contactPhone ?? "",
+    passTheme: isPassTheme(event.passTheme) ? event.passTheme : "minimal",
+    date: startsAt.date,
+    startTime: startsAt.time,
+    endTime: endsAt.time,
+    capacity: String(event.capacity),
+    photoUrl: event.photoUrl ?? "",
+    allergenOptions: event.allergenOptions.join(", "),
+    menuOptions: event.menuOptions.join(", "),
+    registrationEnabled: event.registrationEnabled,
+    qrPassesEnabled: event.qrPassesEnabled,
+    emailConfirmationsEnabled: event.emailConfirmationsEnabled,
+    waitlistEnabled: event.waitlistEnabled,
+    registrationDeadline: event.registrationDeadline ? localDateParts(event.registrationDeadline).date : ""
+  };
+}
+
 export function EventsManager() {
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [form, setForm] = useState(initialForm);
@@ -159,6 +196,9 @@ export function EventsManager() {
   const [errors, setErrors] = useState<EventFormErrors>({});
   const [showArchived, setShowArchived] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<EventSummary | null>(null);
+  const [defaultOrganizer, setDefaultOrganizer] = useState("");
+  const [defaultContactEmail, setDefaultContactEmail] = useState("");
 
   async function loadEvents() {
     setLoading(true);
@@ -170,11 +210,15 @@ export function EventsManager() {
       if (!response.ok) throw new Error("Events could not be loaded.");
       const data = await response.json();
       const brandingData = brandingResponse.ok ? await brandingResponse.json() : {};
+      const organizer = brandingData.organization?.name || "";
+      const contactEmail = extractEmailAddress(brandingData.email?.from);
       setEvents(data.events ?? []);
+      setDefaultOrganizer(organizer);
+      setDefaultContactEmail(contactEmail);
       setForm((current) => ({
         ...current,
-        organizer: current.organizer || brandingData.organization?.name || "",
-        contactEmail: current.contactEmail || extractEmailAddress(brandingData.email?.from) || ""
+        organizer: current.organizer || organizer,
+        contactEmail: current.contactEmail || contactEmail
       }));
     } catch {
       setNotice({ tone: "error", text: "Events could not be loaded. Refresh the page to try again." });
@@ -203,7 +247,7 @@ export function EventsManager() {
     setNotice({ tone: "success", text: `${event.name} and its related information were permanently deleted.` });
   }
 
-  async function createEvent(status: "PUBLISHED" | "DRAFT") {
+  async function saveEvent(status: "PUBLISHED" | "DRAFT") {
     const clientErrors = validateEventForm(form);
     if (Object.keys(clientErrors).length > 0) {
       setErrors(clientErrors);
@@ -219,8 +263,8 @@ export function EventsManager() {
     const startsAt = new Date(`${form.date}T${form.startTime}:00`);
     const endsAt = new Date(`${form.date}T${form.endTime}:00`);
     try {
-      const response = await fetch("/api/events", {
-        method: "POST",
+      const response = await fetch(editingEvent ? `/api/events/${editingEvent.id}` : "/api/events", {
+        method: editingEvent ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name,
@@ -241,8 +285,8 @@ export function EventsManager() {
           qrPassesEnabled: form.qrPassesEnabled,
           emailConfirmationsEnabled: form.emailConfirmationsEnabled,
           waitlistEnabled: form.waitlistEnabled,
-          registrationDeadline: form.registrationDeadline ? new Date(`${form.registrationDeadline}T23:59:59`) : undefined,
-          status
+          registrationDeadline: form.registrationDeadline ? new Date(`${form.registrationDeadline}T23:59:59`) : editingEvent ? null : undefined,
+          ...(!editingEvent ? { status } : {})
         })
       });
       const payload = await response.json().catch(() => ({}));
@@ -260,12 +304,14 @@ export function EventsManager() {
         return;
       }
 
-      setForm(initialForm);
-      setNotice({ tone: "success", text: status === "PUBLISHED" ? "Event published successfully." : "Event saved safely as a draft." });
+      const savedName = form.name.trim();
+      setForm({ ...initialForm, organizer: defaultOrganizer, contactEmail: defaultContactEmail });
+      setNotice({ tone: "success", text: editingEvent ? `${savedName} updated successfully.` : status === "PUBLISHED" ? "Event published successfully." : "Event saved safely as a draft." });
       await loadEvents();
       setCreateOpen(false);
+      setEditingEvent(null);
     } catch {
-      setNotice({ tone: "error", text: "The server could not be reached. No event was created; check your connection and try again." });
+      setNotice({ tone: "error", text: `The server could not be reached. No event was ${editingEvent ? "updated" : "created"}; check your connection and try again.` });
     } finally {
       setSaving(false);
     }
@@ -335,14 +381,37 @@ export function EventsManager() {
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    void createEvent("PUBLISHED");
+    void saveEvent("PUBLISHED");
+  }
+
+  function openCreateEvent() {
+    setEditingEvent(null);
+    setForm({ ...initialForm, organizer: defaultOrganizer, contactEmail: defaultContactEmail });
+    setErrors({});
+    setNotice(null);
+    setCreateOpen(true);
+  }
+
+  function openEditEvent(event: EventSummary) {
+    setCreateOpen(false);
+    setEditingEvent(event);
+    setForm(formFromEvent(event));
+    setErrors({});
+    setNotice(null);
+  }
+
+  function closeEventEditor() {
+    setCreateOpen(false);
+    setEditingEvent(null);
+    setErrors({});
+    setNotice(null);
   }
 
   const visibleEvents = showArchived ? events : events.filter((event) => event.status !== "ARCHIVED");
 
   return (
     <div className="mt-7 space-y-5">
-      <LiquidModal open={createOpen} onClose={() => setCreateOpen(false)} title="Create event" description="Build the event, registration rules, and invitation-pass configuration in one focused workspace." size="xl">
+      <LiquidModal open={createOpen || Boolean(editingEvent)} onClose={closeEventEditor} title={editingEvent ? `Edit ${editingEvent.name}` : "Create event"} description={editingEvent ? "Update event details and registration rules without changing its publication status." : "Build the event, registration rules, and invitation-pass configuration in one focused workspace."} size="xl">
       <div>
         <form className="grid gap-4" onSubmit={submit} noValidate>
           {notice ? (
@@ -465,13 +534,13 @@ export function EventsManager() {
           </fieldset>
 
           <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row">
-            <Button disabled={saving} type="submit" className="sm:min-w-32">{saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Publish</Button>
-            <Button disabled={saving} type="button" variant="secondary" onClick={() => void createEvent("DRAFT")} className="sm:min-w-32">Save Draft</Button>
+            <Button disabled={saving} type="submit" className="sm:min-w-32">{saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : editingEvent ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />} {editingEvent ? "Save changes" : "Publish"}</Button>
+            {editingEvent ? <Button disabled={saving} type="button" variant="secondary" onClick={closeEventEditor} className="sm:min-w-32">Cancel</Button> : <Button disabled={saving} type="button" variant="secondary" onClick={() => void saveEvent("DRAFT")} className="sm:min-w-32">Save Draft</Button>}
           </div>
         </form>
       </div>
       </LiquidModal>
-      {!createOpen && notice ? (
+      {!createOpen && !editingEvent && notice ? (
         <div role={notice.tone === "error" ? "alert" : "status"} className={`liquid-notice ${notice.tone === "error" ? "border-destructive/30 text-destructive" : "border-primary/25 text-foreground"}`}>
           {notice.tone === "error" ? <AlertCircle className="h-4 w-4 shrink-0" /> : <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />}
           <span>{notice.text}</span>
@@ -482,7 +551,7 @@ export function EventsManager() {
           <p className="text-sm text-muted-foreground">
             {showArchived ? `Showing all ${events.length} events` : `${visibleEvents.length} active events`}
           </p>
-          <div className="flex flex-wrap gap-2"><Button type="button" onClick={() => { setNotice(null); setCreateOpen(true); }}><Plus className="h-4 w-4" /> Create event</Button><Button type="button" variant="secondary" onClick={() => setShowArchived((current) => !current)}>
+          <div className="flex flex-wrap gap-2"><Button type="button" onClick={openCreateEvent}><Plus className="h-4 w-4" /> Create event</Button><Button type="button" variant="secondary" onClick={() => setShowArchived((current) => !current)}>
             {showArchived ? "Hide archived" : "Show all"}
           </Button></div>
         </div>
@@ -538,6 +607,7 @@ export function EventsManager() {
               </div>
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={() => openEditEvent(event)}><Pencil className="h-4 w-4" /> Edit event</Button>
               <label className="flex h-10 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm font-medium">
                 <Palette className="h-4 w-4 text-primary" />
                 <span className="sr-only">Pass design for {event.name}</span>

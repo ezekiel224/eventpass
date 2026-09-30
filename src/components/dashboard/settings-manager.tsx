@@ -7,6 +7,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { CommunicationTemplatesManager } from "@/components/dashboard/communication-templates-manager";
 
 type BrandingState = {
   name: string;
@@ -144,6 +145,8 @@ export function SettingsManager() {
           <p className="text-muted-foreground">Email settings are managed from `.env` so production deploys stay explicit and secret-safe.</p>
         </div>
       </Card>
+
+      <CommunicationTemplatesManager />
 
       <Card className="p-5 sm:p-6 xl:col-span-2">
         <div className="flex items-center gap-2">

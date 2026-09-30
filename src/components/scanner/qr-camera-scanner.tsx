@@ -14,6 +14,8 @@ type QrCameraScannerProps = {
   previewClassName?: string;
   actionClassName?: string;
   onActiveChange?: (active: boolean) => void;
+  onStartRequest?: () => void;
+  immersive?: boolean;
 };
 
 type Html5Scanner = {
@@ -53,7 +55,9 @@ export function QrCameraScanner({
   className,
   previewClassName,
   actionClassName,
-  onActiveChange
+  onActiveChange,
+  onStartRequest,
+  immersive = false
 }: QrCameraScannerProps) {
   const generatedId = useId().replace(/:/g, "");
   const readerId = `qr-reader-${generatedId}`;
@@ -134,6 +138,7 @@ export function QrCameraScanner({
 
     setError("");
     setIsStarting(true);
+    onStartRequest?.();
 
     try {
       const { Html5Qrcode } = await import("html5-qrcode");
@@ -266,9 +271,9 @@ export function QrCameraScanner({
   }
 
   return (
-    <div className={cn("grid gap-3", className)}>
+    <div className={cn(immersive ? "absolute inset-0 overflow-hidden" : "grid gap-3", className)}>
       <div
-        className={isActive || isStarting ? cn("relative min-h-72 touch-none overflow-hidden rounded-xl border border-border bg-muted", previewClassName) : "hidden"}
+        className={isActive || isStarting ? cn(immersive ? "absolute inset-0 touch-none overflow-hidden bg-stone-950" : "relative min-h-72 touch-none overflow-hidden rounded-xl border border-border bg-muted", previewClassName) : "hidden"}
         onTouchStart={(event) => {
           if (event.touches.length === 2 && zoomRange) {
             pinchRef.current = { distance: pinchDistance(event.touches), zoom };
@@ -282,7 +287,7 @@ export function QrCameraScanner({
         }}
         onTouchEnd={() => { pinchRef.current = null; }}
       >
-        <div id={readerId} className="min-h-72 [&_video]:min-h-72 [&_video]:object-cover" />
+        <div id={readerId} className={cn(immersive ? "h-full min-h-0 [&_video]:h-full [&_video]:w-full [&_video]:object-cover" : "min-h-72 [&_video]:min-h-72 [&_video]:object-cover")} />
         <div
           className={`pointer-events-none absolute inset-0 grid place-items-center transition ${feedback === "success" ? "bg-emerald-500/30 opacity-100" : feedback === "error" ? "bg-destructive/25 opacity-100" : "opacity-0"}`}
           aria-live="polite"
@@ -314,36 +319,36 @@ export function QrCameraScanner({
         ) : null}
       </div>
       {cameras.length > 1 ? (
-        <label className="grid gap-1.5 text-sm font-medium">
-          Camera lens
+        <label className={cn("grid gap-1.5 text-sm font-medium", immersive && "absolute right-3 top-[calc(env(safe-area-inset-top)+7.5rem)] z-30 w-44 text-white")}>
+          <span className={immersive ? "sr-only" : undefined}>Camera lens</span>
           <select
             value={cameraId}
             onChange={(event) => void selectCamera(event.target.value)}
-            className="focus-ring h-11 rounded-xl border border-border bg-background px-3 text-sm"
+            className={cn("focus-ring h-11 rounded-xl border px-3 text-sm", immersive ? "border-white/25 bg-black/75 text-white backdrop-blur-md" : "border-border bg-background")}
             disabled={isStarting}
           >
             {cameras.map((camera, index) => (
               <option key={camera.id} value={camera.id}>{cameraName(camera, index)}</option>
             ))}
           </select>
-          <span className="text-xs font-normal text-muted-foreground">Choose front, rear, wide, or telephoto when your phone exposes those lenses.</span>
+          {immersive ? null : <span className="text-xs font-normal text-muted-foreground">Choose front, rear, wide, or telephoto when your phone exposes those lenses.</span>}
         </label>
       ) : null}
       {error ? (
-        <p className="flex items-start gap-2 rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+        <p className={cn("flex items-start gap-2 rounded-xl bg-destructive/10 p-3 text-sm text-destructive", immersive && "absolute inset-x-4 top-[calc(env(safe-area-inset-top)+8rem)] z-40 bg-black/85 text-white backdrop-blur-md")}>
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
           {error}
         </p>
       ) : null}
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="secondary" className={actionClassName} onClick={() => void startCamera()} disabled={disabled || isStarting}>
+      <div className={cn("flex flex-wrap gap-2", immersive && (isActive ? "absolute right-3 top-[calc(env(safe-area-inset-top)+4.25rem)] z-40" : "absolute inset-0 z-40 grid place-items-center bg-black/35"))}>
+        <Button type="button" variant="secondary" className={cn(immersive && "border-white/25 bg-black/75 text-white shadow-[0_12px_32px_rgb(0_0_0/.35)] backdrop-blur-md hover:bg-black/85", actionClassName)} onClick={() => void startCamera()} disabled={disabled || isStarting}>
           {isStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : isActive ? <StopCircle className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
           {isStarting ? "Starting camera" : isActive ? stopLabel : startLabel}
         </Button>
       </div>
-      {isActive ? <p className="text-xs text-muted-foreground">Camera stays active after each scan. Hold the next pass in view when feedback clears.{zoomRange ? " Pinch the preview or use the zoom controls." : ""}</p> : null}
+      {isActive && !immersive ? <p className="text-xs text-muted-foreground">Camera stays active after each scan. Hold the next pass in view when feedback clears.{zoomRange ? " Pinch the preview or use the zoom controls." : ""}</p> : null}
       {isActive && zoomChecked && !zoomRange ? (
-        <p className="text-xs text-muted-foreground">This browser did not expose zoom for the selected lens. Try another rear lens from the Camera lens menu or open this page in Chrome.</p>
+        <p className={cn("text-xs text-muted-foreground", immersive && "absolute bottom-24 left-1/2 z-30 w-[min(90vw,26rem)] -translate-x-1/2 rounded-xl bg-black/75 p-3 text-center text-white backdrop-blur-md")}>This browser did not expose zoom for the selected lens. Try another rear lens from the Camera lens menu or open this page in Chrome.</p>
       ) : null}
     </div>
   );

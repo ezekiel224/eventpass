@@ -108,18 +108,34 @@ model AuditLog {
 }
 
 model Organization {
-  id           String   @id @default(cuid())
-  name         String
-  logoUrl      String?
+  id                     String                  @id @default(cuid())
+  name                   String
+  logoUrl                String?
   // Retained for database compatibility. Application presentation uses immutable system tokens.
-  primaryColor String   @default("#315CF5")
-  accentColor  String   @default("#315CF5")
-  timezone     String   @default("America/Chicago")
-  domain       String?
-  events       Event[]
-  settings     Setting?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  primaryColor           String                  @default("#315CF5")
+  accentColor            String                  @default("#315CF5")
+  timezone               String                  @default("America/Chicago")
+  domain                 String?
+  events                 Event[]
+  settings               Setting?
+  communicationTemplates CommunicationTemplate[]
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+}
+
+model CommunicationTemplate {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  key            String
+  subject        String
+  body           String
+  actionLabel    String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, key])
+  @@index([organizationId])
 }
 
 model Event {

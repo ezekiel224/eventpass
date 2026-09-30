@@ -35,7 +35,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push(data.mustChangePassword ? "/change-password" : searchParams.get("next") ?? "/dashboard");
+    router.push(data.mustChangePassword ? "/change-password" : searchParams.get("next") ?? data.home ?? "/dashboard");
     router.refresh();
   }
 

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { attendeeInclude, createPassForAttendee, serializeAttendee, stringifyStringArray } from "@/lib/prisma-helpers";
 import { publicAttendeeRegistrationSchema } from "@/lib/validation";
 import { createGoogleCalendarUrl, renderPassEmail, sendEmail } from "@/services/email";
+import { getCommunicationTemplate, renderCommunicationTemplate } from "@/lib/communication-templates";
 import { rateLimit } from "@/services/rate-limit";
 import { formatDate, formatTime } from "@/lib/utils";
 
@@ -67,15 +68,32 @@ export async function POST(request: NextRequest) {
   const passUrl = `${appBaseUrl}/pass/${attendee.id}`;
 
   let emailStatus = "QUEUED";
+  let subject = `Your pass for ${event.name}`;
   let providerId: string | undefined;
   let emailError: string | undefined;
 
   try {
     const branding = await getBranding();
+    const template = await getCommunicationTemplate(event.organizationId, "PASS_CONFIRMATION");
+    const rendered = renderCommunicationTemplate(template, {
+      name: `${parsed.data.firstName} ${parsed.data.lastName}`,
+      eventName: event.name,
+      eventDescription: event.description ?? "",
+      eventDate: formatDate(event.startsAt, branding.timezone),
+      eventTime: `${formatTime(event.startsAt, branding.timezone)} - ${formatTime(event.endsAt, branding.timezone)}`,
+      venue: event.venue,
+      address: event.address,
+      ticketTier: attendee.ticketTier,
+      seat: attendee.seat ?? "",
+      organizer: event.organizer,
+      contactEmail: event.contactEmail,
+      organizationName: branding.name
+    });
+    subject = rendered.subject;
     const qrImageUrl = `${appBaseUrl}/api/pass/${attendee.id}/qr`;
     const delivery = await sendEmail({
       to: parsed.data.email,
-      subject: `Your pass for ${event.name}`,
+      subject,
       html: renderPassEmail({
         name: `${parsed.data.firstName} ${parsed.data.lastName}`,
         eventName: event.name,
@@ -101,6 +119,8 @@ export async function POST(request: NextRequest) {
         iCalendarUrl: `${appBaseUrl}/api/attendees/${attendee.id}/calendar`,
         qrImageUrl,
         fallbackCode: pass.fallbackCode,
+        messageHtml: rendered.bodyHtml,
+        actionLabel: rendered.actionLabel,
         organizationName: branding.name,
         primaryColor: branding.primaryColor
       })
@@ -118,7 +138,7 @@ export async function POST(request: NextRequest) {
       attendeeId: attendee.id,
       recipient: parsed.data.email,
       type: "Digital pass",
-      subject: `Your pass for ${event.name}`,
+      subject,
       providerId,
       status: emailStatus,
       error: emailError

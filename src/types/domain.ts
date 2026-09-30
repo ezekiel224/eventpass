@@ -69,4 +69,5 @@ export type CheckInResult = {
   under21Message: string | null;
   checkedInAt: string;
   attendee: AttendeeSummary;
+  testMode?: boolean;
 };
