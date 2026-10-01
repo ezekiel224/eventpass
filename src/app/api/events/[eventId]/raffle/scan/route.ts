@@ -31,6 +31,17 @@ function attendeeIdFromPayload(payload: string | undefined, eventId: string) {
   }
 }
 
+function fallbackCodeFromPayload(payload: string | undefined) {
+  if (!payload) return undefined;
+  try {
+    JSON.parse(payload);
+    return undefined;
+  } catch {
+    const fallbackCode = payload.trim();
+    return fallbackCode || undefined;
+  }
+}
+
 export async function POST(request: NextRequest, { params }: Params) {
   const { eventId } = await params;
   const parsed = scanSchema.safeParse(await request.json());
@@ -40,8 +51,9 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   const attendeeId = parsed.data.attendeeId || attendeeIdFromPayload(parsed.data.qrPayload, eventId);
-  const pass = parsed.data.fallbackCode
-    ? await prisma.pass.findFirst({ where: { OR: [{ fallbackCode: parsed.data.fallbackCode.trim() }, { id: parsed.data.fallbackCode.trim() }] } })
+  const fallbackCode = parsed.data.fallbackCode?.trim() || fallbackCodeFromPayload(parsed.data.qrPayload);
+  const pass = fallbackCode
+    ? await prisma.pass.findFirst({ where: { OR: [{ fallbackCode }, { id: fallbackCode }] } })
     : null;
   const resolvedAttendeeId = attendeeId || pass?.attendeeId;
 

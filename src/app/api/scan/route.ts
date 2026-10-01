@@ -30,6 +30,17 @@ function attendeeIdFromPayload(payload: string | undefined, eventId: string) {
   }
 }
 
+function fallbackCodeFromPayload(payload: string | undefined) {
+  if (!payload) return undefined;
+  try {
+    JSON.parse(payload);
+    return undefined;
+  } catch {
+    const fallbackCode = payload.trim();
+    return fallbackCode || undefined;
+  }
+}
+
 export async function GET(request: NextRequest) {
   const requestedEventId = request.nextUrl.searchParams.get("eventId") ?? "";
   const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
@@ -81,8 +92,9 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "Scan a pass or choose an attendee." }, { status: 400 });
 
   const attendeeId = parsed.data.attendeeId || attendeeIdFromPayload(parsed.data.qrPayload, parsed.data.eventId);
-  const pass = parsed.data.fallbackCode ? await prisma.pass.findFirst({
-    where: { OR: [{ fallbackCode: parsed.data.fallbackCode.trim() }, { id: parsed.data.fallbackCode.trim() }] }
+  const fallbackCode = parsed.data.fallbackCode?.trim() || fallbackCodeFromPayload(parsed.data.qrPayload);
+  const pass = fallbackCode ? await prisma.pass.findFirst({
+    where: { OR: [{ fallbackCode }, { id: fallbackCode }] }
   }) : null;
   const resolvedId = attendeeId || pass?.attendeeId;
   if (!resolvedId) return NextResponse.json({ error: "No matching pass was found." }, { status: 404 });

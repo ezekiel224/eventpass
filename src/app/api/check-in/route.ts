@@ -48,13 +48,17 @@ export async function POST(request: NextRequest) {
     try {
       decoded = JSON.parse(parsed.data.qrPayload);
     } catch {
-      return NextResponse.json({ valid: false, error: "QR payload is not valid JSON" }, { status: 400 });
+      const pass = await prisma.pass.findUnique({ where: { fallbackCode: parsed.data.qrPayload.trim() } });
+      attendeeId = pass?.attendeeId;
+      decoded = null;
     }
-    const payload = qrValidationSchema.safeParse(decoded);
-    if (!payload.success || !verifyQrPayload(payload.data)) {
-      return NextResponse.json({ valid: false, error: "Invalid QR signature" }, { status: 401 });
+    if (decoded) {
+      const payload = qrValidationSchema.safeParse(decoded);
+      if (!payload.success || !verifyQrPayload(payload.data)) {
+        return NextResponse.json({ valid: false, error: "Invalid QR signature" }, { status: 401 });
+      }
+      attendeeId = payload.data.attendeeId;
     }
-    attendeeId = payload.data.attendeeId;
   }
 
   if (parsed.data.fallbackCode) {
