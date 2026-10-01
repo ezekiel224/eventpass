@@ -164,8 +164,11 @@ export function ImmersiveScanner() {
     return true;
   }
 
-  function handleScan(qrPayload: string) {
-    return mode === "checkin" ? checkIn({ qrPayload }) : raffleLookup({ qrPayload });
+  function handleScan(scannedValue: string) {
+    const value = scannedValue.trim();
+    if (!value) return false;
+    const payload = value.startsWith("{") ? { qrPayload: value } : { fallbackCode: value };
+    return mode === "checkin" ? checkIn(payload) : raffleLookup(payload);
   }
 
   function chooseManual(attendeeId?: string) {
@@ -212,7 +215,7 @@ export function ImmersiveScanner() {
 
       <nav className="pointer-events-auto absolute left-1/2 top-[calc(env(safe-area-inset-top)+4.15rem)] z-40 flex -translate-x-1/2 rounded-xl border border-white/20 bg-black/65 p-1 backdrop-blur-md" aria-label="Scanner mode">
         <button type="button" onClick={() => { setMode("checkin"); setRaffleAttendee(null); setFeedback(null); }} className={`focus-ring rounded-lg px-4 py-2 text-xs font-black uppercase tracking-[.08em] ${mode === "checkin" ? "bg-primary text-white" : "text-white/70"}`}>Check-in</button>
-        <button type="button" onClick={() => { setMode("raffle"); setFeedback(null); }} className={`focus-ring rounded-lg px-4 py-2 text-xs font-black uppercase tracking-[.08em] ${mode === "raffle" ? "bg-primary text-white" : "text-white/70"}`}><Gift className="mr-1 inline h-3.5 w-3.5" />Raffle</button>
+        <button type="button" onClick={() => { setMode("raffle"); setFeedback(null); }} className={`focus-ring rounded-lg px-4 py-2 text-xs font-black uppercase tracking-[.08em] ${mode === "raffle" ? "bg-primary text-white" : "text-white/70"}`}><Gift className="mr-1 inline h-3.5 w-3.5" />Raffle tickets</button>
       </nav>
 
       <div className="pointer-events-none absolute inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+.75rem)] z-50 grid gap-2">

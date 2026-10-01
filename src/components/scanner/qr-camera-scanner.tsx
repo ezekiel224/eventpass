@@ -340,12 +340,12 @@ export function QrCameraScanner({
           {error}
         </p>
       ) : null}
-      <div className={cn("flex flex-wrap gap-2", immersive && (isActive ? "absolute right-3 top-[calc(env(safe-area-inset-top)+4.25rem)] z-40" : "absolute inset-0 z-40 grid place-items-center bg-black/35"))}>
+      {(!immersive || !isActive) ? <div className={cn("flex flex-wrap gap-2", immersive && "absolute inset-0 z-40 grid place-items-center bg-black/35")}>
         <Button type="button" variant="secondary" className={cn(immersive && "border-white/25 bg-black/75 text-white shadow-[0_12px_32px_rgb(0_0_0/.35)] backdrop-blur-md hover:bg-black/85", actionClassName)} onClick={() => void startCamera()} disabled={disabled || isStarting}>
           {isStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : isActive ? <StopCircle className="h-4 w-4" /> : <Camera className="h-4 w-4" />}
           {isStarting ? "Starting camera" : isActive ? stopLabel : startLabel}
         </Button>
-      </div>
+      </div> : null}
       {isActive && !immersive ? <p className="text-xs text-muted-foreground">Camera stays active after each scan. Hold the next pass in view when feedback clears.{zoomRange ? " Pinch the preview or use the zoom controls." : ""}</p> : null}
       {isActive && zoomChecked && !zoomRange ? (
         <p className={cn("text-xs text-muted-foreground", immersive && "absolute bottom-24 left-1/2 z-30 w-[min(90vw,26rem)] -translate-x-1/2 rounded-xl bg-black/75 p-3 text-center text-white backdrop-blur-md")}>This browser did not expose zoom for the selected lens. Try another rear lens from the Camera lens menu or open this page in Chrome.</p>
