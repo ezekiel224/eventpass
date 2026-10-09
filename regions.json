@@ -1,0 +1,22 @@
+{
+  "regions": [
+    { "id": "table-surface", "kind": "texture", "grid": "A0:A0", "note": "warm pale neutral tabletop texture surrounding the card" },
+    { "id": "ivory-stock", "kind": "texture", "grid": "C5:C5", "note": "clean warm ivory linen cardstock texture inside the printed frame" },
+    { "id": "burgundy-pattern", "kind": "texture", "grid": "D1:D1", "note": "burgundy and black embossed geometric border pattern tile" },
+    { "id": "top-border", "kind": "chrome", "grid": "C1:I1", "note": "top burgundy patterned playing-card border with black double keyline" },
+    { "id": "left-border", "kind": "chrome", "grid": "B1:C8", "note": "left burgundy patterned border rail with alternating suit marks" },
+    { "id": "right-border", "kind": "chrome", "grid": "I1:I8", "note": "right burgundy patterned border rail with alternating suit marks" },
+    { "id": "bottom-border", "kind": "chrome", "grid": "C8:I8", "note": "bottom burgundy patterned playing-card border with black double keyline" },
+    { "id": "corner-suits", "kind": "control", "grid": "B1:I8", "note": "four icon-sized gold spade and diamond corner indices", "container": true },
+    { "id": "event-title", "kind": "text", "grid": "D2:H2", "note": "two-line centered gold serif CASINO NIGHT title" },
+    { "id": "title-suits", "kind": "control", "grid": "D3:G3", "note": "small centered black spade burgundy diamond black spade ornament with gold flourishes" },
+    { "id": "pass-label", "kind": "text", "grid": "D3:G3", "note": "bold black uppercase VIP EVENT PASS label" },
+    { "id": "center-ornament", "kind": "control", "grid": "D4:G4", "note": "compact burgundy geometric diamond and black spade ornament" },
+    { "id": "guest-line", "kind": "text", "grid": "D4:G4", "note": "centered black guest label and ELIZA VANCE value" },
+    { "id": "date-line", "kind": "text", "grid": "D5:H5", "note": "centered muted-gold date label and NOVEMBER 14, 2026 value" },
+    { "id": "time-line", "kind": "text", "grid": "E5:G5", "note": "centered black time label and 8:00 PM value" },
+    { "id": "location-line", "kind": "text", "grid": "D5:H6", "note": "centered muted-gold location label and THE CRYSTAL PALACE value" },
+    { "id": "qr-code", "kind": "control", "grid": "D6:G7", "note": "large square runtime QR image in an unobstructed white quiet zone" },
+    { "id": "fallback-code", "kind": "text", "grid": "D8:G8", "note": "centered black uppercase TICKET #: CN-0047 fallback code" }
+  ]
+}

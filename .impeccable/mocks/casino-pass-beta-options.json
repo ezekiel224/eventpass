@@ -1,0 +1,48 @@
+{
+  "title": "Choose the Casino Pass 2.0 direction",
+  "question": "All three keep the QR code permanently visible, scale proportionally to the phone, and leave the current pass untouched. Pick the structure that should become the interactive beta.",
+  "options": [
+    {
+      "id": "cage-ledger",
+      "label": "Casino Cage Ledger",
+      "kicker": "THE ROLL",
+      "lineage": "casino cage plaques and serialized gaming ledgers",
+      "thesis": "A precision credential that feels issued from the casino cage, with every field accounted for and the QR protected as the validation seal.",
+      "palette": ["#080806", "#efe1b1", "#d6ac54", "#741d19"],
+      "materials": ["black lacquer", "brushed brass", "warm security paper"],
+      "viewport": "One tall proportional pass fills the phone: event marque at top, guest ledger through the middle, and a large white QR bay anchored at the bottom.",
+      "risk": "Its precision can feel formal unless the responsive brass details and tactile press states keep it alive.",
+      "comp": ".impeccable/mocks/decision/casino-cage-ledger.png"
+    },
+    {
+      "id": "playing-card-reveal",
+      "label": "Playing Card Reveal",
+      "lineage": "oversized court cards and casino table reveals",
+      "thesis": "The guest becomes the face card: identity, event and access form one dramatic composition while the scan zone remains fixed and untouched.",
+      "palette": ["#f3ead5", "#16110d", "#9f211c", "#c49a43"],
+      "materials": ["linen card stock", "red foil", "black edge paint"],
+      "viewport": "A near-full-screen court card holds the guest portrait hierarchy above a high-contrast QR panel; tilt reveals foil registration without moving the code.",
+      "risk": "The court-card metaphor must stay disciplined so identity and admission details never become ornamental.",
+      "comp": ".impeccable/mocks/decision/casino-playing-card-reveal.png"
+    },
+    {
+      "id": "royal-flush-ticket",
+      "label": "Royal Flush Ticket",
+      "lineage": "premium casino admission tickets and live-table markers",
+      "thesis": "A bold scan-first ticket with the energy of the casino floor and the speed of a modern mobile boarding pass.",
+      "palette": ["#110b09", "#f8f0dc", "#f4680a", "#d6ac54"],
+      "materials": ["soft-touch black stock", "orange edge ink", "gold numbering foil"],
+      "viewport": "The event title and guest name sit above an oversized central QR code, with date, venue and raffle balance compressed into one clear footer rail.",
+      "risk": "It is the most immediately usable direction, but also the closest to a familiar digital-ticket pattern.",
+      "comp": ".impeccable/mocks/decision/casino-royal-flush-ticket.png"
+    }
+  ],
+  "reroll": {
+    "registers": ["safer", "bolder"]
+  },
+  "buildPath": {
+    "value": "comp",
+    "toggle": true
+  },
+  "steer": true
+}

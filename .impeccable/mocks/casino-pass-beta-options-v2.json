@@ -1,0 +1,46 @@
+{
+  "title": "Refine Playing Card Reveal",
+  "question": "These three stay inside your reference's physical-card world: ivory textured stock, burgundy/black ink, restrained gold foil, natural light, and no digital effects. Pick the composition we should turn into the interactive Pass 2.0 beta.",
+  "options": [
+    {
+      "id": "classic-border-v2",
+      "label": "Classic Border",
+      "kicker": "CLOSEST TO YOUR REFERENCE",
+      "lineage": "bespoke casino stationery and traditional playing-card borders",
+      "thesis": "A richly framed physical card that preserves the reference's identity while giving the QR its own clean, scan-safe lower register.",
+      "palette": ["#f2eee5", "#171310", "#7d171d", "#b88a3b"],
+      "materials": ["ivory linen stock", "burgundy letterpress", "muted gold foil"],
+      "viewport": "The complete card nearly fills a portrait phone screen, with the ornate border framing a centered information hierarchy and large QR bay.",
+      "risk": "The patterned border is memorable, but it is also the busiest option and needs disciplined responsive scaling on very small phones.",
+      "comp": ".impeccable/mocks/decision/casino-playing-card-classic-border-v2.png"
+    },
+    {
+      "id": "split-seal-v2",
+      "label": "Split Seal",
+      "lineage": "modern private-club credentials and custom casino card decks",
+      "thesis": "A narrow suit rail carries the casino identity so the main field can stay exceptionally clean, contemporary, and scan-focused.",
+      "palette": ["#f3efe7", "#15120f", "#811b20", "#b88a3b"],
+      "materials": ["heavy uncoated stock", "burgundy edge ink", "fine gold stamping"],
+      "viewport": "A vertical burgundy rail stays visible at every size while the guest details and oversized QR occupy the quiet ivory field.",
+      "risk": "The asymmetric structure is more distinctive digitally, though it moves furthest from the traditional framed reference.",
+      "comp": ".impeccable/mocks/decision/casino-playing-card-split-seal-v2.png"
+    },
+    {
+      "id": "dealers-register-v2",
+      "label": "Dealer's Register",
+      "lineage": "casino table registers and restrained luxury invitation printing",
+      "thesis": "The most minimal version treats event data like a precisely ruled register, leaving the largest possible uninterrupted QR zone.",
+      "palette": ["#f4f1e9", "#171411", "#851c25", "#b28b42"],
+      "materials": ["warm cotton card", "debossed rules", "subtle gold foil"],
+      "viewport": "Thin perimeter rules and corner indices frame a centered ledger of details, followed by the largest QR treatment of the set.",
+      "risk": "It scans and scales best, but the quieter treatment may feel less like a special casino-night collectible.",
+      "comp": ".impeccable/mocks/decision/casino-playing-card-dealers-register-v2.png"
+    }
+  ],
+  "buildPath": {
+    "value": "comp",
+    "toggle": true
+  },
+  "steer": true,
+  "followup": true
+}

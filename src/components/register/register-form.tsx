@@ -1,7 +1,8 @@
 "use client";
 
-import { CheckCircle2, Mail } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { CheckCircle2, LoaderCircle, Mail, TicketCheck } from "lucide-react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { AgeChoice } from "@/components/ui/age-choice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,16 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
   const [saving, setSaving] = useState(false);
   const [waitlisted, setWaitlisted] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const clickAudioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setReducedMotion(mediaQuery.matches);
+    updatePreference();
+    mediaQuery.addEventListener("change", updatePreference);
+    return () => mediaQuery.removeEventListener("change", updatePreference);
+  }, []);
 
   function registerAnotherGuest() {
     setForm(initialForm);
@@ -59,36 +70,42 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
     }
     setSaving(true);
     setMessage("");
-    const response = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        eventId,
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        phone: form.phone || undefined,
-        company: form.company || undefined,
-        under21: form.under21 === "yes",
-        selectedAllergens: form.selectedAllergens,
-        selectedMenu: form.selectedMenu || undefined,
-        plusOneEnabled: form.plusOneEnabled,
-        plusOneFirstName: form.plusOneEnabled ? form.plusOneFirstName : undefined,
-        plusOneLastName: form.plusOneEnabled ? form.plusOneLastName : undefined,
-        plusOneUnder21: form.plusOneEnabled ? form.plusOneUnder21 === "yes" : false,
-        plusOneAllergens: form.plusOneEnabled ? form.plusOneAllergens : [],
-        plusOneMenu: form.plusOneEnabled ? form.plusOneMenu || undefined : undefined
-      })
-    });
-    const data = await response.json();
+    clickAudioRef.current?.play().catch(() => undefined);
+    try {
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          phone: form.phone || undefined,
+          company: form.company || undefined,
+          under21: form.under21 === "yes",
+          selectedAllergens: form.selectedAllergens,
+          selectedMenu: form.selectedMenu || undefined,
+          plusOneEnabled: form.plusOneEnabled,
+          plusOneFirstName: form.plusOneEnabled ? form.plusOneFirstName : undefined,
+          plusOneLastName: form.plusOneEnabled ? form.plusOneLastName : undefined,
+          plusOneUnder21: form.plusOneEnabled ? form.plusOneUnder21 === "yes" : false,
+          plusOneAllergens: form.plusOneEnabled ? form.plusOneAllergens : [],
+          plusOneMenu: form.plusOneEnabled ? form.plusOneMenu || undefined : undefined
+        })
+      });
+      const data = await response.json();
 
-    if (response.ok) {
-      if (data.waitlisted) setWaitlisted(true);
-      else setRegistered(true);
-    } else {
-      setMessage(data.error ?? "Could not register. Try a different email or check event availability.");
+      if (response.ok) {
+        if (data.waitlisted) setWaitlisted(true);
+        else setRegistered(true);
+      } else {
+        setMessage(data.error ?? "Could not register. Try a different email or check event availability.");
+      }
+    } catch {
+      setMessage("We couldn’t reach the registration service. Check your connection and try again.");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   if (waitlisted) {
@@ -96,7 +113,7 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
   }
 
   if (registered) {
-    return <div className="mt-6 py-10 text-center" role="status"><CheckCircle2 className="mx-auto h-11 w-11 text-primary" /><h3 className="mt-4 text-2xl font-semibold tracking-[-0.03em]">Thank you for registering</h3><p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">Your registration is complete. Check your email for event details and your digital pass.</p><Button className="mt-7" type="button" onClick={registerAnotherGuest}>Register another guest</Button></div>;
+    return <div className="registration-success mt-6 py-10 text-center" role="status"><div className="registration-success-lottie mx-auto" aria-hidden="true">{reducedMotion ? <span className="registration-success-fallback"><CheckCircle2 className="h-9 w-9" /></span> : <DotLottieReact src="/animations/registration-success.lottie" autoplay renderConfig={{ devicePixelRatio: 1.5 }} />}</div><h3 className="mt-5 text-2xl font-semibold tracking-[-0.03em]">Thank you for registering</h3><p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">Your registration is complete. Check your email for event details and your digital pass.</p><Button className="mt-7" type="button" onClick={registerAnotherGuest}>Register another guest</Button></div>;
   }
 
   return (
@@ -195,7 +212,13 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
         </div>
       ) : null}
       {message ? <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{message}</p> : null}
-      <Button className="h-12" disabled={saving} type="submit">{saving ? "Creating registration…" : "Register and generate pass"}</Button>
+      <div className="registration-submit-stage">
+        <Button className="h-12 w-full" disabled={saving} type="submit" aria-busy={saving}>
+          {saving ? <>{reducedMotion ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <span className="registration-submit-lottie" aria-hidden="true"><DotLottieReact src="/animations/registration-success.lottie" autoplay loop renderConfig={{ devicePixelRatio: 1.25 }} /></span>} Creating registration…</> : <><TicketCheck className="h-4 w-4" /> Register and generate pass</>}
+        </Button>
+        <span className="sr-only" aria-live="polite">{saving ? "Creating your registration and digital pass." : ""}</span>
+        <audio ref={clickAudioRef} src="/sounds/registration-click.mp3" preload="auto" aria-hidden="true" />
+      </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="control-panel flex items-center gap-2 p-3 text-xs text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> Unique attendee identity</div>
         <div className="control-panel flex items-center gap-2 p-3 text-xs text-muted-foreground"><Mail className="h-4 w-4 text-primary" /> Secure delivery workflow</div>

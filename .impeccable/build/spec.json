@@ -1,428 +1,475 @@
 {
   "tool": "comp-spec",
   "version": 1,
-  "createdAt": "2026-09-26T01:38:55.436Z",
-  "comp": ".impeccable/mocks/dashboard-c.png",
-  "warnings": [],
-  "uncoveredInkCells": [
-    "E1",
-    "F1",
-    "E2"
+  "createdAt": "2026-10-01T22:46:34.542Z",
+  "comp": ".impeccable/mocks/decision/casino-playing-card-classic-border-v2.png",
+  "warnings": [
+    "region corner-suits: \"container\": true set in the regions file (the region-size refusal is overridden: one undivided element)"
   ],
+  "uncoveredInkCells": [],
   "compSize": {
-    "width": 1586,
-    "height": 992
+    "width": 1024,
+    "height": 1536
   },
-  "aspect": 1.5988,
-  "orientation": "landscape",
+  "aspect": 0.6667,
+  "orientation": "portrait",
   "palette": [
     {
-      "hex": "#f2efee",
-      "coverage": 0.8065
+      "hex": "#dbd6cf",
+      "coverage": 0.7515
     },
     {
-      "hex": "#181818",
-      "coverage": 0.1639
+      "hex": "#151313",
+      "coverage": 0.1096
     },
     {
-      "hex": "#eb5909",
-      "coverage": 0.0133
+      "hex": "#b2a79e",
+      "coverage": 0.0696
     },
     {
-      "hex": "#808080",
-      "coverage": 0.0093
+      "hex": "#821820",
+      "coverage": 0.0431
     },
     {
-      "hex": "#bbbaba",
-      "coverage": 0.007
+      "hex": "#595044",
+      "coverage": 0.0262
     }
   ],
   "bands": [
     {
-      "y": 0.125,
-      "strength": 0.2311
+      "y": 0.0781,
+      "strength": 0.2424
     },
     {
-      "y": 0.3875,
-      "strength": 0.7611
+      "y": 0.1042,
+      "strength": 1
     },
     {
-      "y": 0.5,
-      "strength": 0.3693
+      "y": 0.151,
+      "strength": 0.3799
     },
     {
-      "y": 0.55,
-      "strength": 0.3278
+      "y": 0.1823,
+      "strength": 0.2032
+    },
+    {
+      "y": 0.3125,
+      "strength": 0.2442
+    },
+    {
+      "y": 0.349,
+      "strength": 0.3284
+    },
+    {
+      "y": 0.3698,
+      "strength": 0.2446
+    },
+    {
+      "y": 0.4688,
+      "strength": 0.4153
+    },
+    {
+      "y": 0.5052,
+      "strength": 0.2714
+    },
+    {
+      "y": 0.526,
+      "strength": 0.2116
+    },
+    {
+      "y": 0.5573,
+      "strength": 0.3614
+    },
+    {
+      "y": 0.6042,
+      "strength": 0.5993
+    },
+    {
+      "y": 0.6615,
+      "strength": 0.2671
+    },
+    {
+      "y": 0.7344,
+      "strength": 0.2526
+    },
+    {
+      "y": 0.7917,
+      "strength": 0.291
+    },
+    {
+      "y": 0.8542,
+      "strength": 0.5843
+    },
+    {
+      "y": 0.8802,
+      "strength": 1
+    },
+    {
+      "y": 0.9167,
+      "strength": 1
+    },
+    {
+      "y": 0.9375,
+      "strength": 0.2451
     }
   ],
   "regions": [
     {
-      "id": "primary-rail",
-      "kind": "chrome",
-      "note": "warm-black persistent navigation rail with EventPass wordmark, icons, labels, and footer",
-      "grid": null,
+      "id": "table-surface",
+      "kind": "texture",
+      "note": "warm pale neutral tabletop texture surrounding the card",
+      "grid": "A0:A0",
       "box": {
         "x": 0,
         "y": 0,
-        "w": 0.16,
-        "h": 1
+        "w": 0.1,
+        "h": 0.1
       },
       "px": {
         "x": 0,
         "y": 0,
-        "w": 254,
-        "h": 992
+        "w": 102,
+        "h": 154
       },
-      "aspect": 0.256,
+      "aspect": 0.6623,
       "palette": [
         {
-          "hex": "#191818",
-          "coverage": 0.977
-        },
-        {
-          "hex": "#e6e6e6",
-          "coverage": 0.009
-        },
-        {
-          "hex": "#474545",
-          "coverage": 0.0058
-        },
-        {
-          "hex": "#808080",
-          "coverage": 0.0055
-        },
-        {
-          "hex": "#b1b1b1",
-          "coverage": 0.0027
+          "hex": "#cbc5bb",
+          "coverage": 1
         }
       ],
       "detail": {
-        "energy": 8.3641
+        "energy": 2.3788
       },
-      "medium": "semantic",
-      "plate": null,
+      "medium": "raster",
+      "plate": "assets/plates/table-surface.png",
       "text": null
     },
     {
-      "id": "event-list-shell",
+      "id": "ivory-stock",
+      "kind": "texture",
+      "note": "clean warm ivory linen cardstock texture inside the printed frame",
+      "grid": "C5:C5",
+      "box": {
+        "x": 0.2,
+        "y": 0.5,
+        "w": 0.1,
+        "h": 0.1
+      },
+      "px": {
+        "x": 205,
+        "y": 768,
+        "w": 102,
+        "h": 154
+      },
+      "aspect": 0.6623,
+      "palette": [
+        {
+          "hex": "#dedbd7",
+          "coverage": 0.6882
+        },
+        {
+          "hex": "#141111",
+          "coverage": 0.1571
+        },
+        {
+          "hex": "#74101a",
+          "coverage": 0.1025
+        },
+        {
+          "hex": "#bf9d9a",
+          "coverage": 0.033
+        },
+        {
+          "hex": "#4e1318",
+          "coverage": 0.0192
+        }
+      ],
+      "detail": {
+        "energy": 13.4314
+      },
+      "medium": "raster",
+      "plate": "assets/plates/ivory-stock.png",
+      "text": null
+    },
+    {
+      "id": "burgundy-pattern",
+      "kind": "texture",
+      "note": "burgundy and black embossed geometric border pattern tile",
+      "grid": "D1:D1",
+      "box": {
+        "x": 0.3,
+        "y": 0.1,
+        "w": 0.1,
+        "h": 0.1
+      },
+      "px": {
+        "x": 307,
+        "y": 154,
+        "w": 102,
+        "h": 154
+      },
+      "aspect": 0.6623,
+      "palette": [
+        {
+          "hex": "#e5e1da",
+          "coverage": 0.6429
+        },
+        {
+          "hex": "#151313",
+          "coverage": 0.2092
+        },
+        {
+          "hex": "#651116",
+          "coverage": 0.0582
+        },
+        {
+          "hex": "#88191f",
+          "coverage": 0.0525
+        },
+        {
+          "hex": "#3e1012",
+          "coverage": 0.0373
+        }
+      ],
+      "detail": {
+        "energy": 17.0875
+      },
+      "medium": "raster",
+      "plate": "assets/plates/burgundy-pattern.png",
+      "text": null
+    },
+    {
+      "id": "top-border",
       "kind": "chrome",
-      "note": "alabaster event-list column with heading, tabs, add button, and ruled rows",
-      "grid": null,
+      "note": "top burgundy patterned playing-card border with black double keyline",
+      "grid": "C1:I1",
       "box": {
-        "x": 0.16,
-        "y": 0,
-        "w": 0.215,
-        "h": 1
+        "x": 0.2,
+        "y": 0.1,
+        "w": 0.7,
+        "h": 0.1
       },
       "px": {
-        "x": 254,
-        "y": 0,
-        "w": 341,
-        "h": 992
+        "x": 205,
+        "y": 154,
+        "w": 717,
+        "h": 154
       },
-      "aspect": 0.3438,
+      "aspect": 4.6558,
       "palette": [
         {
-          "hex": "#f2e8e7",
-          "coverage": 0.9804
+          "hex": "#e6e3dd",
+          "coverage": 0.613
         },
         {
-          "hex": "#848180",
-          "coverage": 0.0078
+          "hex": "#171515",
+          "coverage": 0.2125
         },
         {
-          "hex": "#ed5608",
-          "coverage": 0.0048
+          "hex": "#84161e",
+          "coverage": 0.0739
         },
         {
-          "hex": "#0b0b0d",
-          "coverage": 0.0045
+          "hex": "#401617",
+          "coverage": 0.0563
         },
         {
-          "hex": "#393939",
-          "coverage": 0.0024
+          "hex": "#601217",
+          "coverage": 0.0444
         }
       ],
       "detail": {
-        "energy": 8.3977
+        "energy": 61.8001
       },
       "medium": "semantic",
       "plate": null,
       "text": null
     },
     {
-      "id": "events-heading",
-      "kind": "text",
-      "note": "Events heading at the top of the event-list column",
-      "grid": null,
-      "box": {
-        "x": 0.175,
-        "y": 0.02,
-        "w": 0.075,
-        "h": 0.03
-      },
-      "px": {
-        "x": 278,
-        "y": 20,
-        "w": 119,
-        "h": 30
-      },
-      "aspect": 3.9667,
-      "palette": [
-        {
-          "hex": "#edeae9",
-          "coverage": 0.7899
-        },
-        {
-          "hex": "#0a0a14",
-          "coverage": 0.1215
-        },
-        {
-          "hex": "#5c5c64",
-          "coverage": 0.0557
-        },
-        {
-          "hex": "#2d2d31",
-          "coverage": 0.0177
-        },
-        {
-          "hex": "#bbb8bb",
-          "coverage": 0.0152
-        }
-      ],
-      "detail": {
-        "energy": 27.7182
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "event-tabs",
-      "kind": "control",
-      "note": "Active and Upcoming and Past Events tab controls with orange active underline",
-      "grid": null,
-      "box": {
-        "x": 0.17,
-        "y": 0.085,
-        "w": 0.16,
-        "h": 0.045
-      },
-      "px": {
-        "x": 270,
-        "y": 84,
-        "w": 254,
-        "h": 45
-      },
-      "aspect": 5.6444,
-      "palette": [
-        {
-          "hex": "#eee8e8",
-          "coverage": 0.8832
-        },
-        {
-          "hex": "#848181",
-          "coverage": 0.0504
-        },
-        {
-          "hex": "#f8630d",
-          "coverage": 0.0304
-        },
-        {
-          "hex": "#121010",
-          "coverage": 0.0216
-        },
-        {
-          "hex": "#b8b4b3",
-          "coverage": 0.0144
-        }
-      ],
-      "detail": {
-        "energy": 29.8784
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "selected-event-row",
-      "kind": "control",
-      "note": "selected Fall Community Gala event row with flat pale-orange fill, orange edge, date, and Live state",
-      "grid": null,
-      "box": {
-        "x": 0.16,
-        "y": 0.145,
-        "w": 0.215,
-        "h": 0.085
-      },
-      "px": {
-        "x": 254,
-        "y": 144,
-        "w": 341,
-        "h": 84
-      },
-      "aspect": 4.0595,
-      "palette": [
-        {
-          "hex": "#f7e7d9",
-          "coverage": 0.9347
-        },
-        {
-          "hex": "#8e857f",
-          "coverage": 0.0209
-        },
-        {
-          "hex": "#0f0f0f",
-          "coverage": 0.0187
-        },
-        {
-          "hex": "#c7bab0",
-          "coverage": 0.0145
-        },
-        {
-          "hex": "#ed4e09",
-          "coverage": 0.0113
-        }
-      ],
-      "detail": {
-        "energy": 21.2985
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "secondary-event-rows",
-      "kind": "control",
-      "note": "Autumn Benefit Dinner and Community Day rows with dates and Draft states",
-      "grid": null,
-      "box": {
-        "x": 0.16,
-        "y": 0.23,
-        "w": 0.215,
-        "h": 0.17
-      },
-      "px": {
-        "x": 254,
-        "y": 228,
-        "w": 341,
-        "h": 169
-      },
-      "aspect": 2.0178,
-      "palette": [
-        {
-          "hex": "#f5e8e8",
-          "coverage": 0.9343
-        },
-        {
-          "hex": "#81807f",
-          "coverage": 0.0329
-        },
-        {
-          "hex": "#b7b3b0",
-          "coverage": 0.0143
-        },
-        {
-          "hex": "#101010",
-          "coverage": 0.0105
-        },
-        {
-          "hex": "#4b4949",
-          "coverage": 0.008
-        }
-      ],
-      "detail": {
-        "energy": 21.9102
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "top-command-bar",
+      "id": "left-border",
       "kind": "chrome",
-      "note": "quiet top command row with search field and circular account control",
-      "grid": null,
+      "note": "left burgundy patterned border rail with alternating suit marks",
+      "grid": "B1:C8",
       "box": {
-        "x": 0.16,
-        "y": 0,
-        "w": 0.84,
-        "h": 0.065
+        "x": 0.1,
+        "y": 0.1,
+        "w": 0.2,
+        "h": 0.8
       },
       "px": {
-        "x": 254,
-        "y": 0,
-        "w": 1332,
-        "h": 64
+        "x": 102,
+        "y": 154,
+        "w": 205,
+        "h": 1229
       },
-      "aspect": 20.8125,
+      "aspect": 0.1668,
       "palette": [
         {
-          "hex": "#ebeae8",
-          "coverage": 0.9784
+          "hex": "#dedbd6",
+          "coverage": 0.5995
         },
         {
-          "hex": "#141316",
-          "coverage": 0.0147
+          "hex": "#141211",
+          "coverage": 0.1894
         },
         {
-          "hex": "#838383",
-          "coverage": 0.0045
+          "hex": "#78131a",
+          "coverage": 0.1166
         },
         {
-          "hex": "#b1b1b1",
-          "coverage": 0.0019
+          "hex": "#62594f",
+          "coverage": 0.0545
         },
         {
-          "hex": "#484848",
-          "coverage": 0.0005
+          "hex": "#521117",
+          "coverage": 0.0399
         }
       ],
       "detail": {
-        "energy": 12.154
+        "energy": 24.2857
       },
       "medium": "semantic",
       "plate": null,
       "text": null
     },
     {
-      "id": "search-field",
-      "kind": "control",
-      "note": "outlined Search events field",
-      "grid": null,
+      "id": "right-border",
+      "kind": "chrome",
+      "note": "right burgundy patterned border rail with alternating suit marks",
+      "grid": "I1:I8",
       "box": {
-        "x": 0.714,
-        "y": 0.012,
-        "w": 0.215,
-        "h": 0.042
+        "x": 0.8,
+        "y": 0.1,
+        "w": 0.1,
+        "h": 0.8
       },
       "px": {
-        "x": 1132,
-        "y": 12,
-        "w": 341,
-        "h": 42
+        "x": 819,
+        "y": 154,
+        "w": 102,
+        "h": 1229
       },
-      "aspect": 8.119,
+      "aspect": 0.083,
       "palette": [
         {
-          "hex": "#f5f3e7",
-          "coverage": 0.9549
+          "hex": "#e4e0db",
+          "coverage": 0.5645
         },
         {
-          "hex": "#b8b4b5",
-          "coverage": 0.0257
+          "hex": "#181515",
+          "coverage": 0.2024
         },
         {
-          "hex": "#767373",
-          "coverage": 0.0175
+          "hex": "#831921",
+          "coverage": 0.1497
         },
         {
-          "hex": "#6d6373",
-          "coverage": 0.0019
+          "hex": "#57141a",
+          "coverage": 0.0434
+        },
+        {
+          "hex": "#371011",
+          "coverage": 0.0399
         }
       ],
       "detail": {
-        "energy": 12.8256
+        "energy": 14.5241
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null
+    },
+    {
+      "id": "bottom-border",
+      "kind": "chrome",
+      "note": "bottom burgundy patterned playing-card border with black double keyline",
+      "grid": "C8:I8",
+      "box": {
+        "x": 0.2,
+        "y": 0.8,
+        "w": 0.7,
+        "h": 0.1
+      },
+      "px": {
+        "x": 205,
+        "y": 1229,
+        "w": 717,
+        "h": 154
+      },
+      "aspect": 4.6558,
+      "palette": [
+        {
+          "hex": "#e0ddd9",
+          "coverage": 0.5798
+        },
+        {
+          "hex": "#131110",
+          "coverage": 0.2215
+        },
+        {
+          "hex": "#741119",
+          "coverage": 0.1112
+        },
+        {
+          "hex": "#4d1316",
+          "coverage": 0.0509
+        },
+        {
+          "hex": "#2d1214",
+          "coverage": 0.0366
+        }
+      ],
+      "detail": {
+        "energy": 66.8004
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null
+    },
+    {
+      "id": "corner-suits",
+      "kind": "control",
+      "note": "four icon-sized gold spade and diamond corner indices",
+      "grid": "B1:I8",
+      "container": true,
+      "box": {
+        "x": 0.1,
+        "y": 0.1,
+        "w": 0.8,
+        "h": 0.8
+      },
+      "px": {
+        "x": 102,
+        "y": 154,
+        "w": 819,
+        "h": 1229
+      },
+      "aspect": 0.6664,
+      "palette": [
+        {
+          "hex": "#e3e0da",
+          "coverage": 0.7043
+        },
+        {
+          "hex": "#151313",
+          "coverage": 0.1734
+        },
+        {
+          "hex": "#7c151d",
+          "coverage": 0.0777
+        },
+        {
+          "hex": "#521319",
+          "coverage": 0.0243
+        },
+        {
+          "hex": "#95918e",
+          "coverage": 0.0203
+        }
+      ],
+      "detail": {
+        "energy": 57.9971
       },
       "medium": "semantic",
       "plate": null,
@@ -431,1016 +478,677 @@
     {
       "id": "event-title",
       "kind": "text",
-      "note": "large bold Fall Community Gala title",
-      "grid": null,
+      "note": "two-line centered gold serif CASINO NIGHT title",
+      "grid": "D2:H2",
+      "coverBox": {
+        "x": 0.3,
+        "y": 0.2,
+        "w": 0.5,
+        "h": 0.1
+      },
       "box": {
-        "x": 0.393,
-        "y": 0.11,
-        "w": 0.31,
-        "h": 0.038
+        "x": 0.3057,
+        "y": 0.1999,
+        "w": 0.3926,
+        "h": 0.1003
       },
       "px": {
-        "x": 623,
-        "y": 109,
-        "w": 492,
-        "h": 38
+        "x": 313,
+        "y": 307,
+        "w": 402,
+        "h": 154
       },
-      "aspect": 12.9474,
+      "aspect": 2.6104,
       "palette": [
         {
-          "hex": "#ece9e8",
-          "coverage": 0.7984
+          "hex": "#e7e3dc",
+          "coverage": 0.8154
         },
         {
-          "hex": "#0b0b16",
-          "coverage": 0.1433
+          "hex": "#b48c52",
+          "coverage": 0.1323
         },
         {
-          "hex": "#080828",
-          "coverage": 0.0225
+          "hex": "#946d38",
+          "coverage": 0.0254
         },
         {
-          "hex": "#565460",
-          "coverage": 0.0182
+          "hex": "#674823",
+          "coverage": 0.0146
         },
         {
-          "hex": "#302f3e",
-          "coverage": 0.0177
+          "hex": "#7f6c58",
+          "coverage": 0.0123
         }
       ],
       "detail": {
-        "energy": 85.0712
+        "energy": 32.8225
       },
       "medium": "semantic",
       "plate": null,
-      "text": null
-    },
-    {
-      "id": "event-date",
-      "kind": "text",
-      "note": "small uppercase event date and time above title",
-      "grid": null,
-      "box": {
-        "x": 0.393,
-        "y": 0.083,
-        "w": 0.18,
-        "h": 0.025
-      },
-      "px": {
-        "x": 623,
-        "y": 82,
-        "w": 285,
-        "h": 25
-      },
-      "aspect": 11.4,
-      "palette": [
-        {
-          "hex": "#eae8e7",
-          "coverage": 0.883
+      "text": null,
+      "type": {
+        "comp": {
+          "lines": 1,
+          "glyphs": 6,
+          "capHeightPx": 61.3,
+          "inkIsDark": true,
+          "allCaps": false,
+          "advance": 0.5299,
+          "advTall": 0.5299,
+          "advX": null,
+          "gap": 0.1141,
+          "xRatio": 0.5701,
+          "stemW": 0.1243,
+          "contrast": 2.3729,
+          "serif": 2.5251,
+          "densTall": 0.4136,
+          "densX": null,
+          "weight": 0.4136
         },
-        {
-          "hex": "#7f7e7e",
-          "coverage": 0.0713
-        },
-        {
-          "hex": "#b9b7b6",
-          "coverage": 0.0327
-        },
-        {
-          "hex": "#5f5e68",
-          "coverage": 0.0129
+        "widthClass": "condensed",
+        "weightClass": "regular",
+        "chosen": {
+          "family": "Emilys Candy",
+          "weight": 400,
+          "fontSizePx": 88,
+          "source": "catalog",
+          "estimatedSize": true,
+          "stamp": "0b460dc93924"
         }
-      ],
-      "detail": {
-        "energy": 26.8187
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
+      }
     },
     {
-      "id": "event-location",
-      "kind": "text",
-      "note": "venue and city metadata below title",
-      "grid": null,
-      "box": {
-        "x": 0.393,
-        "y": 0.153,
-        "w": 0.27,
-        "h": 0.028
-      },
-      "px": {
-        "x": 623,
-        "y": 152,
-        "w": 428,
-        "h": 28
-      },
-      "aspect": 15.2857,
-      "palette": [
-        {
-          "hex": "#e9e8e7",
-          "coverage": 0.8691
-        },
-        {
-          "hex": "#706f6f",
-          "coverage": 0.0693
-        },
-        {
-          "hex": "#aaa6a5",
-          "coverage": 0.0448
-        },
-        {
-          "hex": "#4d4c56",
-          "coverage": 0.0091
-        },
-        {
-          "hex": "#c5c2b5",
-          "coverage": 0.0077
-        }
-      ],
-      "detail": {
-        "energy": 31.6947
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "live-state",
-      "kind": "text",
-      "note": "small orange dot and Live state",
-      "grid": null,
-      "box": {
-        "x": 0.832,
-        "y": 0.098,
-        "w": 0.055,
-        "h": 0.026
-      },
-      "px": {
-        "x": 1320,
-        "y": 97,
-        "w": 87,
-        "h": 26
-      },
-      "aspect": 3.3462,
-      "palette": [
-        {
-          "hex": "#eae8e8",
-          "coverage": 0.9063
-        },
-        {
-          "hex": "#f35b10",
-          "coverage": 0.0547
-        },
-        {
-          "hex": "#f07540",
-          "coverage": 0.0234
-        },
-        {
-          "hex": "#f8b898",
-          "coverage": 0.0078
-        },
-        {
-          "hex": "#f8e8c8",
-          "coverage": 0.0078
-        }
-      ],
-      "detail": {
-        "energy": 6.4092
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "edit-event",
+      "id": "title-suits",
       "kind": "control",
-      "note": "outlined Edit event button and overflow action",
-      "grid": null,
+      "note": "small centered black spade burgundy diamond black spade ornament with gold flourishes",
+      "grid": "D3:G3",
+      "coverBox": {
+        "x": 0.3,
+        "y": 0.3,
+        "w": 0.4,
+        "h": 0.1
+      },
       "box": {
-        "x": 0.889,
-        "y": 0.09,
-        "w": 0.095,
-        "h": 0.045
+        "x": 0.3174,
+        "y": 0.3431,
+        "w": 0.3691,
+        "h": 0.0573
       },
       "px": {
-        "x": 1410,
-        "y": 89,
-        "w": 151,
-        "h": 45
+        "x": 325,
+        "y": 527,
+        "w": 378,
+        "h": 88
       },
-      "aspect": 3.3556,
+      "aspect": 4.2955,
       "palette": [
         {
-          "hex": "#eae9e7",
-          "coverage": 0.9018
+          "hex": "#e7e4dc",
+          "coverage": 0.8061
         },
         {
-          "hex": "#c2bcba",
-          "coverage": 0.0668
+          "hex": "#100f0f",
+          "coverage": 0.1273
         },
         {
-          "hex": "#191819",
-          "coverage": 0.0196
+          "hex": "#861820",
+          "coverage": 0.0283
         },
         {
-          "hex": "#3f3f3f",
-          "coverage": 0.0092
+          "hex": "#411313",
+          "coverage": 0.0198
         },
         {
-          "hex": "#808080",
-          "coverage": 0.0026
+          "hex": "#7d7e7d",
+          "coverage": 0.0184
         }
       ],
       "detail": {
-        "energy": 17.0881
+        "energy": 58.6773
       },
       "medium": "semantic",
       "plate": null,
       "text": null
     },
     {
-      "id": "workspace-tabs",
+      "id": "pass-label",
+      "kind": "text",
+      "note": "bold black uppercase VIP EVENT PASS label",
+      "grid": "D3:G3",
+      "coverBox": {
+        "x": 0.3,
+        "y": 0.3,
+        "w": 0.4,
+        "h": 0.1
+      },
+      "box": {
+        "x": 0.3174,
+        "y": 0.3431,
+        "w": 0.3691,
+        "h": 0.0573
+      },
+      "px": {
+        "x": 325,
+        "y": 527,
+        "w": 378,
+        "h": 88
+      },
+      "aspect": 4.2955,
+      "palette": [
+        {
+          "hex": "#e7e4dc",
+          "coverage": 0.8061
+        },
+        {
+          "hex": "#100f0f",
+          "coverage": 0.1273
+        },
+        {
+          "hex": "#861820",
+          "coverage": 0.0283
+        },
+        {
+          "hex": "#411313",
+          "coverage": 0.0198
+        },
+        {
+          "hex": "#7d7e7d",
+          "coverage": 0.0184
+        }
+      ],
+      "detail": {
+        "energy": 58.6773
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "type": {
+        "comp": {
+          "lines": 2,
+          "glyphs": 15,
+          "capHeightPx": 33.2,
+          "inkIsDark": true,
+          "allCaps": true,
+          "advance": 0.7139,
+          "advTall": 0.7139,
+          "advX": null,
+          "gap": 0.2758,
+          "xRatio": null,
+          "stemW": 0.2092,
+          "contrast": 1.1779,
+          "serif": 0.9475,
+          "densTall": 0.5515,
+          "densX": null,
+          "weight": 0.5515
+        },
+        "widthClass": "normal",
+        "weightClass": "medium"
+      }
+    },
+    {
+      "id": "center-ornament",
       "kind": "control",
-      "note": "overview, attendees, communications, check-in, raffles, voting, and settings tabs with orange active rule",
-      "grid": null,
+      "note": "compact burgundy geometric diamond and black spade ornament",
+      "grid": "D4:G4",
+      "coverBox": {
+        "x": 0.3,
+        "y": 0.4,
+        "w": 0.4,
+        "h": 0.1
+      },
       "box": {
-        "x": 0.386,
-        "y": 0.197,
-        "w": 0.48,
-        "h": 0.044
+        "x": 0.3232,
+        "y": 0.3997,
+        "w": 0.3574,
+        "h": 0.0742
       },
       "px": {
-        "x": 612,
-        "y": 195,
-        "w": 761,
-        "h": 44
+        "x": 331,
+        "y": 614,
+        "w": 366,
+        "h": 114
       },
-      "aspect": 17.2955,
+      "aspect": 3.2105,
       "palette": [
         {
-          "hex": "#e8e7e7",
-          "coverage": 0.9151
+          "hex": "#e7e3dc",
+          "coverage": 0.8054
         },
         {
-          "hex": "#7d7b7a",
-          "coverage": 0.0431
+          "hex": "#0d0c0c",
+          "coverage": 0.0841
         },
         {
-          "hex": "#b9b6b3",
-          "coverage": 0.0241
+          "hex": "#84171e",
+          "coverage": 0.0644
         },
         {
-          "hex": "#5e595e",
-          "coverage": 0.0091
+          "hex": "#4d0e0f",
+          "coverage": 0.0339
         },
         {
-          "hex": "#e8a479",
-          "coverage": 0.0086
+          "hex": "#c2b9b6",
+          "coverage": 0.0122
         }
       ],
       "detail": {
-        "energy": 17.8946
+        "energy": 62.4496
       },
       "medium": "semantic",
       "plate": null,
       "text": null
     },
     {
-      "id": "readiness-panel",
-      "kind": "chrome",
-      "note": "large ruled readiness panel with three flat metrics",
-      "grid": null,
-      "box": {
-        "x": 0.385,
-        "y": 0.255,
-        "w": 0.602,
-        "h": 0.167
-      },
-      "px": {
-        "x": 611,
-        "y": 253,
-        "w": 955,
-        "h": 166
-      },
-      "aspect": 5.753,
-      "palette": [
-        {
-          "hex": "#f7f7f6",
-          "coverage": 0.9279
-        },
-        {
-          "hex": "#ea5508",
-          "coverage": 0.0369
-        },
-        {
-          "hex": "#0e0e10",
-          "coverage": 0.0174
-        },
-        {
-          "hex": "#bfbcbc",
-          "coverage": 0.0094
-        },
-        {
-          "hex": "#818181",
-          "coverage": 0.0085
-        }
-      ],
-      "detail": {
-        "energy": 26.3369
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "readiness-heading",
+      "id": "guest-line",
       "kind": "text",
-      "note": "Event readiness heading",
-      "grid": null,
+      "note": "centered black guest label and ELIZA VANCE value",
+      "grid": "D4:G4",
+      "coverBox": {
+        "x": 0.3,
+        "y": 0.4,
+        "w": 0.4,
+        "h": 0.1
+      },
       "box": {
-        "x": 0.4,
-        "y": 0.272,
-        "w": 0.14,
-        "h": 0.025
+        "x": 0.3232,
+        "y": 0.3997,
+        "w": 0.3574,
+        "h": 0.0742
       },
       "px": {
-        "x": 634,
-        "y": 270,
-        "w": 222,
-        "h": 25
+        "x": 331,
+        "y": 614,
+        "w": 366,
+        "h": 114
       },
-      "aspect": 8.88,
+      "aspect": 3.2105,
       "palette": [
         {
-          "hex": "#f7f7f7",
-          "coverage": 0.8502
+          "hex": "#e7e3dc",
+          "coverage": 0.8054
         },
         {
-          "hex": "#0c0c14",
-          "coverage": 0.0872
+          "hex": "#0d0c0c",
+          "coverage": 0.0841
         },
         {
-          "hex": "#76737b",
-          "coverage": 0.0291
+          "hex": "#84171e",
+          "coverage": 0.0644
         },
         {
-          "hex": "#2a2c32",
-          "coverage": 0.0199
+          "hex": "#4d0e0f",
+          "coverage": 0.0339
         },
         {
-          "hex": "#444453",
-          "coverage": 0.0138
+          "hex": "#c2b9b6",
+          "coverage": 0.0122
         }
       ],
       "detail": {
-        "energy": 52.104
+        "energy": 62.4496
       },
       "medium": "semantic",
       "plate": null,
-      "text": null
+      "text": null,
+      "type": {
+        "comp": {
+          "lines": 2,
+          "glyphs": 20,
+          "capHeightPx": 25.5,
+          "inkIsDark": true,
+          "allCaps": true,
+          "advance": 0.6708,
+          "advTall": 0.6813,
+          "advX": null,
+          "gap": 0.1572,
+          "xRatio": null,
+          "stemW": 0.2126,
+          "contrast": 0.9762,
+          "serif": 1.0117,
+          "densTall": 0.502,
+          "densX": null,
+          "weight": 0.502
+        },
+        "widthClass": "normal",
+        "weightClass": "medium"
+      }
     },
     {
-      "id": "readiness-helper",
+      "id": "date-line",
       "kind": "text",
-      "note": "Everything looks good to go status copy",
-      "grid": null,
+      "note": "centered muted-gold date label and NOVEMBER 14, 2026 value",
+      "grid": "D5:H5",
+      "coverBox": {
+        "x": 0.3,
+        "y": 0.5,
+        "w": 0.5,
+        "h": 0.1
+      },
       "box": {
-        "x": 0.842,
-        "y": 0.274,
-        "w": 0.13,
-        "h": 0.024
+        "x": 0.3818,
+        "y": 0.5195,
+        "w": 0.2402,
+        "h": 0.0273
       },
       "px": {
-        "x": 1335,
-        "y": 272,
-        "w": 206,
-        "h": 24
+        "x": 391,
+        "y": 798,
+        "w": 246,
+        "h": 42
       },
-      "aspect": 8.5833,
+      "aspect": 5.8571,
       "palette": [
         {
-          "hex": "#f8f8f7",
-          "coverage": 0.7772
+          "hex": "#e6e3dc",
+          "coverage": 0.7624
         },
         {
-          "hex": "#767676",
-          "coverage": 0.1051
+          "hex": "#0c0b0b",
+          "coverage": 0.1808
         },
         {
-          "hex": "#c8c8c7",
-          "coverage": 0.058
-        },
-        {
-          "hex": "#a19fa0",
-          "coverage": 0.0543
-        },
-        {
-          "hex": "#635d6d",
-          "coverage": 0.0054
-        }
-      ],
-      "detail": {
-        "energy": 31.2518
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "attendee-metric",
-      "kind": "text",
-      "note": "Attendees label, 186 of 240 value, orange flat bar, and 78 percent",
-      "grid": null,
-      "box": {
-        "x": 0.4,
-        "y": 0.315,
-        "w": 0.16,
-        "h": 0.088
-      },
-      "px": {
-        "x": 634,
-        "y": 312,
-        "w": 254,
-        "h": 87
-      },
-      "aspect": 2.9195,
-      "palette": [
-        {
-          "hex": "#f8f8f7",
-          "coverage": 0.8463
-        },
-        {
-          "hex": "#ed5808",
-          "coverage": 0.0736
-        },
-        {
-          "hex": "#0b0b0b",
-          "coverage": 0.0289
-        },
-        {
-          "hex": "#d6d6cc",
-          "coverage": 0.0271
-        },
-        {
-          "hex": "#f8ceb2",
-          "coverage": 0.0241
-        }
-      ],
-      "detail": {
-        "energy": 27.4217
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "checkin-metric",
-      "kind": "text",
-      "note": "Checked in label, 142 value, orange flat bar, and 74 percent",
-      "grid": null,
-      "box": {
-        "x": 0.6,
-        "y": 0.315,
-        "w": 0.16,
-        "h": 0.088
-      },
-      "px": {
-        "x": 952,
-        "y": 312,
-        "w": 254,
-        "h": 87
-      },
-      "aspect": 2.9195,
-      "palette": [
-        {
-          "hex": "#f8f8f7",
-          "coverage": 0.8448
-        },
-        {
-          "hex": "#eb5808",
-          "coverage": 0.0628
-        },
-        {
-          "hex": "#121010",
-          "coverage": 0.0416
-        },
-        {
-          "hex": "#d7d5ca",
-          "coverage": 0.03
-        },
-        {
-          "hex": "#f8d5b9",
-          "coverage": 0.0208
-        }
-      ],
-      "detail": {
-        "energy": 20.3125
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "delivery-metric",
-      "kind": "text",
-      "note": "Email delivery label, 98 percent value, orange flat bar, and 98 percent",
-      "grid": null,
-      "box": {
-        "x": 0.797,
-        "y": 0.315,
-        "w": 0.176,
-        "h": 0.088
-      },
-      "px": {
-        "x": 1264,
-        "y": 312,
-        "w": 279,
-        "h": 87
-      },
-      "aspect": 3.2069,
-      "palette": [
-        {
-          "hex": "#f8f8f7",
-          "coverage": 0.8324
-        },
-        {
-          "hex": "#ed5808",
-          "coverage": 0.0855
-        },
-        {
-          "hex": "#0d0d0e",
-          "coverage": 0.0366
-        },
-        {
-          "hex": "#e88049",
-          "coverage": 0.0286
-        },
-        {
-          "hex": "#8f8e8c",
-          "coverage": 0.0168
-        }
-      ],
-      "detail": {
-        "energy": 25.7509
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "setup-panel",
-      "kind": "chrome",
-      "note": "large Get ready for your event task panel with ruled checklist and action column",
-      "grid": null,
-      "box": {
-        "x": 0.385,
-        "y": 0.437,
-        "w": 0.602,
-        "h": 0.272
-      },
-      "px": {
-        "x": 611,
-        "y": 434,
-        "w": 955,
-        "h": 270
-      },
-      "aspect": 3.537,
-      "palette": [
-        {
-          "hex": "#f7f7f7",
-          "coverage": 0.9136
-        },
-        {
-          "hex": "#eb5808",
-          "coverage": 0.0556
-        },
-        {
-          "hex": "#838383",
-          "coverage": 0.0141
-        },
-        {
-          "hex": "#bbbaba",
-          "coverage": 0.0126
-        },
-        {
-          "hex": "#191919",
-          "coverage": 0.0042
-        }
-      ],
-      "detail": {
-        "energy": 16.9818
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "setup-heading",
-      "kind": "text",
-      "note": "Get ready for your event heading",
-      "grid": null,
-      "box": {
-        "x": 0.397,
-        "y": 0.449,
-        "w": 0.18,
-        "h": 0.025
-      },
-      "px": {
-        "x": 630,
-        "y": 445,
-        "w": 285,
-        "h": 25
-      },
-      "aspect": 11.4,
-      "palette": [
-        {
-          "hex": "#f7f7f6",
-          "coverage": 0.8493
-        },
-        {
-          "hex": "#c1c0c1",
-          "coverage": 0.0688
-        },
-        {
-          "hex": "#0b0b12",
-          "coverage": 0.0391
-        },
-        {
-          "hex": "#8f8e90",
-          "coverage": 0.0225
-        },
-        {
-          "hex": "#6a696f",
-          "coverage": 0.0202
-        }
-      ],
-      "detail": {
-        "energy": 58.0114
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "setup-progress",
-      "kind": "text",
-      "note": "4 of 5 complete progress text",
-      "grid": null,
-      "box": {
-        "x": 0.907,
-        "y": 0.449,
-        "w": 0.065,
-        "h": 0.025
-      },
-      "px": {
-        "x": 1439,
-        "y": 445,
-        "w": 103,
-        "h": 25
-      },
-      "aspect": 4.12,
-      "palette": [
-        {
-          "hex": "#f6f6f6",
-          "coverage": 0.9016
-        },
-        {
-          "hex": "#7f7e7f",
-          "coverage": 0.0635
-        },
-        {
-          "hex": "#bfbcbf",
-          "coverage": 0.0349
-        }
-      ],
-      "detail": {
-        "energy": 16.1996
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "readiness-tasks",
-      "kind": "control",
-      "note": "five ruled readiness task rows with square completion controls, labels, descriptions, and arrows",
-      "grid": null,
-      "box": {
-        "x": 0.397,
-        "y": 0.482,
-        "w": 0.377,
-        "h": 0.205
-      },
-      "px": {
-        "x": 630,
-        "y": 478,
-        "w": 598,
-        "h": 203
-      },
-      "aspect": 2.9458,
-      "palette": [
-        {
-          "hex": "#f7f7f7",
-          "coverage": 0.9442
-        },
-        {
-          "hex": "#838282",
-          "coverage": 0.0199
-        },
-        {
-          "hex": "#bbb9b8",
-          "coverage": 0.0183
-        },
-        {
-          "hex": "#ef5b09",
-          "coverage": 0.0112
-        },
-        {
-          "hex": "#232323",
-          "coverage": 0.0064
-        }
-      ],
-      "detail": {
-        "energy": 16.5783
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "open-checkin",
-      "kind": "control",
-      "note": "flat Spanish-orange Open check-in primary button with QR icon",
-      "grid": null,
-      "box": {
-        "x": 0.805,
-        "y": 0.495,
-        "w": 0.17,
-        "h": 0.06
-      },
-      "px": {
-        "x": 1277,
-        "y": 491,
-        "w": 270,
-        "h": 60
-      },
-      "aspect": 4.5,
-      "palette": [
-        {
-          "hex": "#ea5809",
-          "coverage": 0.8222
-        },
-        {
-          "hex": "#f8f7f1",
-          "coverage": 0.1276
-        },
-        {
-          "hex": "#f8e1ca",
-          "coverage": 0.0217
-        },
-        {
-          "hex": "#f7ba90",
-          "coverage": 0.0145
-        },
-        {
-          "hex": "#f47f3e",
-          "coverage": 0.0139
-        }
-      ],
-      "detail": {
-        "energy": 20.913
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "open-checkin-copy",
-      "kind": "text",
-      "note": "Ready to welcome attendees support text under the primary action",
-      "grid": null,
-      "box": {
-        "x": 0.805,
-        "y": 0.575,
-        "w": 0.17,
-        "h": 0.068
-      },
-      "px": {
-        "x": 1277,
-        "y": 570,
-        "w": 270,
-        "h": 67
-      },
-      "aspect": 4.0299,
-      "palette": [
-        {
-          "hex": "#f7f6f5",
-          "coverage": 0.8795
-        },
-        {
-          "hex": "#7e7d7e",
-          "coverage": 0.0622
-        },
-        {
-          "hex": "#bcbbba",
-          "coverage": 0.0481
-        },
-        {
-          "hex": "#585656",
-          "coverage": 0.0068
-        },
-        {
-          "hex": "#a398a3",
-          "coverage": 0.0034
-        }
-      ],
-      "detail": {
-        "energy": 36.7885
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "activity-panel",
-      "kind": "chrome",
-      "note": "ruled Recent activity ledger panel",
-      "grid": null,
-      "box": {
-        "x": 0.385,
-        "y": 0.727,
-        "w": 0.602,
-        "h": 0.25
-      },
-      "px": {
-        "x": 611,
-        "y": 721,
-        "w": 955,
-        "h": 248
-      },
-      "aspect": 3.8508,
-      "palette": [
-        {
-          "hex": "#f5f5f4",
-          "coverage": 0.9776
-        },
-        {
-          "hex": "#818181",
-          "coverage": 0.0103
-        },
-        {
-          "hex": "#bababa",
-          "coverage": 0.0083
-        },
-        {
-          "hex": "#141414",
-          "coverage": 0.0019
-        },
-        {
-          "hex": "#484848",
-          "coverage": 0.0019
-        }
-      ],
-      "detail": {
-        "energy": 11.4516
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "activity-heading",
-      "kind": "text",
-      "note": "Recent activity heading",
-      "grid": null,
-      "box": {
-        "x": 0.398,
-        "y": 0.739,
-        "w": 0.14,
-        "h": 0.025
-      },
-      "px": {
-        "x": 631,
-        "y": 733,
-        "w": 222,
-        "h": 25
-      },
-      "aspect": 8.88,
-      "palette": [
-        {
-          "hex": "#f7f7f6",
-          "coverage": 0.861
-        },
-        {
-          "hex": "#0c0d0f",
-          "coverage": 0.0695
-        },
-        {
-          "hex": "#5e5c62",
-          "coverage": 0.0272
-        },
-        {
-          "hex": "#2e2b39",
+          "hex": "#7c7c7a",
           "coverage": 0.0227
         },
         {
-          "hex": "#bdbabc",
-          "coverage": 0.0196
+          "hex": "#494a48",
+          "coverage": 0.0218
+        },
+        {
+          "hex": "#aeaaa5",
+          "coverage": 0.0122
         }
       ],
       "detail": {
-        "energy": 45.0471
+        "energy": 56.5033
       },
       "medium": "semantic",
       "plate": null,
-      "text": null
+      "text": null,
+      "type": {
+        "comp": {
+          "lines": 1,
+          "glyphs": 15,
+          "capHeightPx": 23.4,
+          "inkIsDark": true,
+          "allCaps": true,
+          "advance": 0.2133,
+          "advTall": 0.192,
+          "advX": null,
+          "gap": 0.1493,
+          "xRatio": null,
+          "stemW": 0.183,
+          "contrast": 1.1106,
+          "serif": 0.9343,
+          "densTall": 0.8985,
+          "densX": null,
+          "weight": 0.8985
+        },
+        "widthClass": "compressed",
+        "weightClass": "black"
+      }
     },
     {
-      "id": "activity-action",
-      "kind": "control",
-      "note": "View all activity text action",
-      "grid": null,
-      "box": {
-        "x": 0.93,
-        "y": 0.739,
-        "w": 0.042,
-        "h": 0.025
-      },
-      "px": {
-        "x": 1475,
-        "y": 733,
-        "w": 67,
-        "h": 25
-      },
-      "aspect": 2.68,
-      "palette": [
-        {
-          "hex": "#f7f7f6",
-          "coverage": 0.9082
-        },
-        {
-          "hex": "#858284",
-          "coverage": 0.0531
-        },
-        {
-          "hex": "#c2bec0",
-          "coverage": 0.0386
-        }
-      ],
-      "detail": {
-        "energy": 10.2765
-      },
-      "medium": "semantic",
-      "plate": null,
-      "text": null
-    },
-    {
-      "id": "activity-table",
+      "id": "time-line",
       "kind": "text",
-      "note": "activity table headings and five event activity rows with time, type, details, and identifier",
-      "grid": null,
+      "note": "centered black time label and 8:00 PM value",
+      "grid": "E5:G5",
+      "coverBox": {
+        "x": 0.4,
+        "y": 0.5,
+        "w": 0.3,
+        "h": 0.1
+      },
       "box": {
-        "x": 0.395,
-        "y": 0.772,
-        "w": 0.582,
-        "h": 0.19
+        "x": 0.4004,
+        "y": 0.5508,
+        "w": 0.2998,
+        "h": 0.0273
       },
       "px": {
-        "x": 626,
-        "y": 766,
-        "w": 923,
-        "h": 188
+        "x": 410,
+        "y": 846,
+        "w": 307,
+        "h": 42
       },
-      "aspect": 4.9096,
+      "aspect": 7.3095,
       "palette": [
         {
-          "hex": "#f4f4f3",
-          "coverage": 0.9727
+          "hex": "#e7e2db",
+          "coverage": 0.7808
         },
         {
-          "hex": "#818181",
-          "coverage": 0.0131
+          "hex": "#764b1a",
+          "coverage": 0.0759
         },
         {
-          "hex": "#bbbaba",
-          "coverage": 0.0115
+          "hex": "#c4b7a6",
+          "coverage": 0.0602
         },
         {
-          "hex": "#505050",
-          "coverage": 0.0015
+          "hex": "#976525",
+          "coverage": 0.0487
         },
         {
-          "hex": "#303030",
-          "coverage": 0.0013
+          "hex": "#8b704e",
+          "coverage": 0.0344
         }
       ],
       "detail": {
-        "energy": 12.6383
+        "energy": 52.2056
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "type": {
+        "comp": {
+          "lines": 1,
+          "glyphs": 15,
+          "capHeightPx": 23.2,
+          "inkIsDark": true,
+          "allCaps": true,
+          "advance": 0.6029,
+          "advTall": 0.6352,
+          "advX": null,
+          "gap": 0.2153,
+          "xRatio": null,
+          "stemW": 0.1668,
+          "contrast": 1.0641,
+          "serif": 1.0776,
+          "densTall": 0.4823,
+          "densX": null,
+          "weight": 0.4823
+        },
+        "widthClass": "normal",
+        "weightClass": "medium"
+      }
+    },
+    {
+      "id": "location-line",
+      "kind": "text",
+      "note": "centered muted-gold location label and THE CRYSTAL PALACE value",
+      "grid": "D5:H6",
+      "coverBox": {
+        "x": 0.3,
+        "y": 0.5,
+        "w": 0.5,
+        "h": 0.2
+      },
+      "box": {
+        "x": 0.3486,
+        "y": 0.6003,
+        "w": 0.3008,
+        "h": 0.0996
+      },
+      "px": {
+        "x": 357,
+        "y": 922,
+        "w": 308,
+        "h": 153
+      },
+      "aspect": 2.0131,
+      "palette": [
+        {
+          "hex": "#e4e0da",
+          "coverage": 0.4451
+        },
+        {
+          "hex": "#151414",
+          "coverage": 0.3929
+        },
+        {
+          "hex": "#a1a09d",
+          "coverage": 0.0884
+        },
+        {
+          "hex": "#656662",
+          "coverage": 0.05
+        },
+        {
+          "hex": "#413f3f",
+          "coverage": 0.0236
+        }
+      ],
+      "detail": {
+        "energy": 50.1941
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "type": {
+        "comp": null,
+        "measuredAt": "2026-10-01T22:46:47.553Z",
+        "note": "no separable lettering in the crop; size by the region box"
+      }
+    },
+    {
+      "id": "qr-code",
+      "kind": "control",
+      "note": "large square runtime QR image in an unobstructed white quiet zone",
+      "grid": "D6:G7",
+      "coverBox": {
+        "x": 0.3,
+        "y": 0.6,
+        "w": 0.4,
+        "h": 0.2
+      },
+      "box": {
+        "x": 0.3486,
+        "y": 0.6003,
+        "w": 0.3008,
+        "h": 0.1966
+      },
+      "px": {
+        "x": 357,
+        "y": 922,
+        "w": 308,
+        "h": 302
+      },
+      "aspect": 1.0199,
+      "palette": [
+        {
+          "hex": "#e4e0da",
+          "coverage": 0.4751
+        },
+        {
+          "hex": "#141313",
+          "coverage": 0.4034
+        },
+        {
+          "hex": "#a3a19f",
+          "coverage": 0.0664
+        },
+        {
+          "hex": "#50504f",
+          "coverage": 0.0416
+        },
+        {
+          "hex": "#767770",
+          "coverage": 0.0135
+        }
+      ],
+      "detail": {
+        "energy": 48.2682
       },
       "medium": "semantic",
       "plate": null,
       "text": null
+    },
+    {
+      "id": "fallback-code",
+      "kind": "text",
+      "note": "centered black uppercase TICKET #: CN-0047 fallback code",
+      "grid": "D8:G8",
+      "coverBox": {
+        "x": 0.3,
+        "y": 0.8,
+        "w": 0.4,
+        "h": 0.1
+      },
+      "box": {
+        "x": 0.2998,
+        "y": 0.8353,
+        "w": 0.4004,
+        "h": 0.0586
+      },
+      "px": {
+        "x": 307,
+        "y": 1283,
+        "w": 410,
+        "h": 90
+      },
+      "aspect": 4.5556,
+      "palette": [
+        {
+          "hex": "#141111",
+          "coverage": 0.3673
+        },
+        {
+          "hex": "#e1dfdb",
+          "coverage": 0.3643
+        },
+        {
+          "hex": "#771018",
+          "coverage": 0.1517
+        },
+        {
+          "hex": "#762b2c",
+          "coverage": 0.0629
+        },
+        {
+          "hex": "#300b0c",
+          "coverage": 0.0538
+        }
+      ],
+      "detail": {
+        "energy": 63.7524
+      },
+      "medium": "semantic",
+      "plate": null,
+      "text": null,
+      "type": {
+        "comp": {
+          "lines": 3,
+          "glyphs": 3,
+          "capHeightPx": 6.4,
+          "inkIsDark": false,
+          "allCaps": true,
+          "advance": 65.1594,
+          "advTall": 65.1594,
+          "advX": null,
+          "gap": 0,
+          "xRatio": null,
+          "stemW": null,
+          "contrast": null,
+          "serif": null,
+          "densTall": 0.9144,
+          "densX": null,
+          "weight": 0.9144
+        },
+        "widthClass": "wide",
+        "weightClass": "black"
+      }
     }
   ]
 }
