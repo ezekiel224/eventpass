@@ -159,7 +159,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
   let acceptance = null;
   try {
-    acceptance = await issuePrizeAcceptance(result.prize.id, request.nextUrl.origin);
+    acceptance = await issuePrizeAcceptance(result.prize.id, request);
   } catch (error) {
     console.error("Could not issue prize acceptance", error);
   }

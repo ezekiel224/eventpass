@@ -14,11 +14,12 @@ export async function proxy(request: NextRequest) {
   }
 
   const isPublicPassCalendar = /^\/api\/attendees\/[^/]+\/calendar$/.test(pathname);
+  const isPublicPassDownload = /^\/api\/attendees\/[^/]+\/pass-download$/.test(pathname);
   const isPublicPassQr = /^\/api\/pass\/[^/]+\/qr$/.test(pathname);
   const isPublicPrizeAcceptance = /^\/api\/prize-acceptance\/[^/]+$/.test(pathname);
   const isPublicRaffleDisplay = pathname === "/api/raffle-display/pair" || pathname === "/api/raffle-display/session";
   const isPublicVoting = pathname.startsWith("/api/public/voting/");
-  const isPublicApi = isPublicPassCalendar || isPublicPassQr || isPublicPrizeAcceptance || isPublicRaffleDisplay || isPublicVoting || PUBLIC_API_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const isPublicApi = isPublicPassCalendar || isPublicPassDownload || isPublicPassQr || isPublicPrizeAcceptance || isPublicRaffleDisplay || isPublicVoting || PUBLIC_API_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
   const requiresAuth = pathname.startsWith("/dashboard")
     || pathname.startsWith("/admin")
     || pathname === "/scan"

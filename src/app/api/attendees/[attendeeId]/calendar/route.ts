@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getPublicAppBaseUrl } from "@/lib/public-url";
 
 type Params = { params: Promise<{ attendeeId: string }> };
 
@@ -23,7 +24,8 @@ export async function GET(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Pass not found" }, { status: 404 });
   }
 
-  const passUrl = new URL(`/pass/${attendee.id}`, request.nextUrl.origin).toString();
+  const appBaseUrl = getPublicAppBaseUrl(request);
+  const passUrl = `${appBaseUrl}/pass/${encodeURIComponent(attendee.id)}`;
   const location = [attendee.event.venue, attendee.event.address].filter(Boolean).join(", ");
   const description = `Your individual registration pass: ${passUrl}`;
   const calendar = [
@@ -51,7 +53,8 @@ export async function GET(request: NextRequest, { params }: Params) {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
       "Content-Disposition": `attachment; filename="${filename}"`,
-      "Cache-Control": "private, no-store"
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff"
     }
   });
 }

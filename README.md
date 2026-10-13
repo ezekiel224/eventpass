@@ -54,7 +54,7 @@ For Cloudflare Tunnel testing, either point an existing tunnel at `http://localh
 docker compose --profile tunnel up --build
 ```
 
-Set `APP_URL` to your Cloudflare hostname before testing pass email links, for example `https://events.example.com`.
+Set `APP_URL` to the public HTTPS hostname before testing email links, for example `https://events.example.com`. Production email delivery now rejects localhost and private-network origins instead of sending inaccessible links; when a public reverse-proxy host is available, it is used as a safe fallback.
 
 Before exposing a production container, replace the placeholder `AUTH_SECRET` and `QR_SIGNING_SECRET` values in `.env` with independent long random values. Production still requires HTTPS at the reverse proxy or Cloudflare Tunnel.
 

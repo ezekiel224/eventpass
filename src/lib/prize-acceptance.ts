@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getBranding } from "@/lib/branding";
 import { getCommunicationTemplate, renderCommunicationTemplate } from "@/lib/communication-templates";
 import { renderActionEmail, sendEmail } from "@/services/email";
+import { getPublicAppBaseUrl } from "@/lib/public-url";
 
 export const PRIZE_ACCEPTANCE_DAYS = 30;
 
@@ -12,7 +13,7 @@ export function hashPrizeAcceptanceToken(token: string) {
 
 export async function issuePrizeAcceptance(
   prizeId: string,
-  fallbackOrigin: string,
+  request: Request,
   { emailWinner = false }: { emailWinner?: boolean } = {}
 ) {
   const prize = await prisma.rafflePrize.findUnique({
@@ -36,8 +37,8 @@ export async function issuePrizeAcceptance(
 
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + PRIZE_ACCEPTANCE_DAYS * 24 * 60 * 60 * 1000);
-  const appBaseUrl = process.env.APP_URL?.trim() || fallbackOrigin;
-  const acceptanceUrl = `${appBaseUrl.replace(/\/+$/, "")}/prize-acceptance/${token}`;
+  const appBaseUrl = getPublicAppBaseUrl(request);
+  const acceptanceUrl = `${appBaseUrl}/prize-acceptance/${encodeURIComponent(token)}`;
 
   await prisma.rafflePrize.update({
     where: { id: prize.id },
