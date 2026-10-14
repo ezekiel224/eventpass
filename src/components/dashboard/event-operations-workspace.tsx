@@ -36,7 +36,9 @@ export type WorkspaceEvent = {
   capacity: number;
   status: string;
   attendeeTotal: number;
+  plusOneTotal: number;
   checkedIn: number;
+  plusOnesCheckedIn: number;
   emailSuccess: number | null;
   registrationEnabled: boolean;
   qrPassesEnabled: boolean;
@@ -65,6 +67,21 @@ function progress(value: number, total: number) {
   return total ? Math.min(100, Math.round((value / total) * 100)) : 0;
 }
 
+type MetricSegment = {
+  label: string;
+  value: number;
+  amount: number;
+  className: string;
+};
+
+type ReadinessMetric = {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  amount: number;
+  segments?: MetricSegment[];
+};
+
 export function EventOperationsWorkspace({ events, permissions }: { events: WorkspaceEvent[]; permissions: string[] }) {
   const [selectedId, setSelectedId] = useState(events[0]?.id ?? "");
   const selected = useMemo(() => events.find((event) => event.id === selectedId) ?? events[0], [events, selectedId]);
@@ -91,11 +108,32 @@ export function EventOperationsWorkspace({ events, permissions }: { events: Work
     ["Registration", selected.registrationEnabled, "Guest registration open", "/dashboard/events", "events:manage"]
   ] as const;
   const readyCount = readiness.filter((item) => item[1]).length;
-  const attendance = progress(selected.attendeeTotal, selected.capacity);
-  const checkin = progress(selected.checkedIn, selected.attendeeTotal);
-  const readinessMetrics: Array<{ icon: LucideIcon; label: string; value: string; amount: number }> = [
-    { icon: Users, label: "Attendees", value: `${selected.attendeeTotal} of ${selected.capacity}`, amount: attendance },
-    { icon: TicketCheck, label: "Checked in", value: String(selected.checkedIn), amount: checkin },
+  const totalPeople = selected.attendeeTotal + selected.plusOneTotal;
+  const totalCheckedIn = selected.checkedIn + selected.plusOnesCheckedIn;
+  const attendanceDenominator = Math.max(selected.capacity, totalPeople);
+  const attendance = progress(totalPeople, selected.capacity);
+  const checkin = progress(totalCheckedIn, totalPeople);
+  const readinessMetrics: ReadinessMetric[] = [
+    {
+      icon: Users,
+      label: "Attendees",
+      value: `${totalPeople} of ${selected.capacity}`,
+      amount: attendance,
+      segments: [
+        { label: "Attendees", value: selected.attendeeTotal, amount: progress(selected.attendeeTotal, attendanceDenominator), className: "bg-primary" },
+        { label: "Plus-ones", value: selected.plusOneTotal, amount: progress(selected.plusOneTotal, attendanceDenominator), className: "bg-primary/[0.55]" }
+      ]
+    },
+    {
+      icon: TicketCheck,
+      label: "Checked in",
+      value: `${totalCheckedIn} of ${totalPeople}`,
+      amount: checkin,
+      segments: [
+        { label: "Attendees", value: selected.checkedIn, amount: progress(selected.checkedIn, totalPeople), className: "bg-primary" },
+        { label: "Plus-ones", value: selected.plusOnesCheckedIn, amount: progress(selected.plusOnesCheckedIn, totalPeople), className: "bg-primary/[0.55]" }
+      ]
+    },
     { icon: Mail, label: "Email delivery", value: selected.emailSuccess === null ? "—" : `${selected.emailSuccess}%`, amount: selected.emailSuccess ?? 0 }
   ];
 
@@ -176,11 +214,34 @@ export function EventOperationsWorkspace({ events, permissions }: { events: Work
                 <p className="text-xs text-muted-foreground">{readyCount === readiness.length ? "Everything looks good to go." : `${readyCount} of ${readiness.length} ready`}</p>
               </div>
               <div className="grid divide-y divide-border md:grid-cols-3 md:divide-x md:divide-y-0">
-                {readinessMetrics.map(({ icon: Icon, label, value, amount }) => (
+                {readinessMetrics.map(({ icon: Icon, label, value, amount, segments }) => (
                   <div key={label} className="px-5 py-4">
                     <div className="flex items-center gap-2 text-sm font-semibold"><Icon className="h-4 w-4" />{label}</div>
                     <p className="mt-3 text-3xl font-bold tracking-[-0.035em] tabular-nums">{value}</p>
-                    <div className="mt-4 flex items-center gap-3"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted"><motion.div initial={{ width: 0 }} animate={{ width: `${amount}%` }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }} className="h-full rounded-full bg-primary" /></div><span className="text-xs tabular-nums text-muted-foreground">{amount}%</span></div>
+                    <div className="mt-4 flex items-center gap-3">
+                      <div className="flex h-1.5 flex-1 overflow-hidden rounded-full bg-muted" role="img" aria-label={segments ? segments.map((segment) => `${segment.value} ${segment.label.toLowerCase()}`).join(", ") : `${amount}%`}>
+                        {(segments ?? [{ label, value: amount, amount, className: "bg-primary" }]).map((segment) => (
+                          <motion.div
+                            key={segment.label}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${segment.amount}%` }}
+                            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                            className={cn("h-full shrink-0", segment.className)}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs tabular-nums text-muted-foreground">{amount}%</span>
+                    </div>
+                    {segments ? (
+                      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        {segments.map((segment) => (
+                          <span key={segment.label} className="inline-flex items-center gap-1.5 tabular-nums">
+                            <span className={cn("h-2 w-2 rounded-full", segment.className)} aria-hidden="true" />
+                            {segment.value} {segment.label.toLowerCase()}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>

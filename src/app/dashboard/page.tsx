@@ -18,7 +18,10 @@ export default async function DashboardPage() {
   }), currentUser ? getAuthorizationForUser(currentUser.id) : null]);
 
   const workspaceEvents: WorkspaceEvent[] = events.map((event) => {
-    const successfulCheckIns = event.attendees.reduce((total, attendee) => total + (attendee.checkIns.some((checkIn) => !checkIn.duplicate) ? 1 : 0), 0);
+    const plusOneTotal = event.attendees.filter((attendee) => attendee.plusOneEnabled).length;
+    const checkedInAttendees = event.attendees.filter((attendee) => attendee.checkIns.some((checkIn) => !checkIn.duplicate));
+    const successfulCheckIns = checkedInAttendees.length;
+    const checkedInPlusOnes = checkedInAttendees.filter((attendee) => attendee.plusOneEnabled).length;
     const emailSuccesses = event.emailLogs.filter((log) => log.status !== "FAILED").length;
     const attendeeActivity = event.attendees.flatMap((attendee) => {
       const name = `${attendee.firstName} ${attendee.lastName}`.trim();
@@ -58,7 +61,9 @@ export default async function DashboardPage() {
       capacity: event.capacity,
       status: event.status,
       attendeeTotal: event.attendees.length,
+      plusOneTotal,
       checkedIn: successfulCheckIns,
+      plusOnesCheckedIn: checkedInPlusOnes,
       emailSuccess: event.emailLogs.length ? Math.round((emailSuccesses / event.emailLogs.length) * 100) : null,
       registrationEnabled: event.registrationEnabled,
       qrPassesEnabled: event.qrPassesEnabled,
