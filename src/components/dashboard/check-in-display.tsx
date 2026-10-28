@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Clock3, Radio, ShieldAlert, Star, Users } from "lucide-react";
+import { Building2, CheckCircle2, Clock3, Radio, ShieldAlert, Star, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { initials } from "@/lib/utils";
 import { AttendeeSummary, EventSummary } from "@/types/domain";
@@ -90,6 +90,7 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
                   <h2 className="text-4xl font-semibold leading-none sm:text-5xl">{latest.attendee.firstName} {latest.attendee.lastName}</h2>
                   <span className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-black text-primary" title={`${latestPartySize} ${latestPartySize === 1 ? "person" : "people"} on this pass`}><Users className="h-4 w-4" /> {latestPartySize}</span>
                   {latest.attendee.vip ? <span className="flex items-center gap-1 rounded-full bg-amber-400/15 px-3 py-1 text-sm font-bold text-amber-500"><Star className="h-4 w-4 fill-current" /> VIP</span> : null}
+                  {latest.attendee.company ? <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-background/70 px-3 py-1 text-sm font-semibold text-foreground" title={`Work center: ${latest.attendee.company}`}><Building2 className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="truncate">{latest.attendee.company}</span></span> : null}
                 </div>
                 <p className="mt-3 text-lg text-muted-foreground">{latest.attendee.ticketTier} · {latest.attendee.eventName}</p>
                 {latest.attendee.plusOneName ? <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><Users className="h-4 w-4" /> Plus-one: {latest.attendee.plusOneName}</p> : null}
@@ -124,6 +125,7 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate font-bold">{log.attendee.firstName} {log.attendee.lastName}</p>
                       {log.attendee.vip ? <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-500">VIP</span> : null}
+                      {log.attendee.company ? <span className="inline-flex max-w-44 items-center gap-1 rounded-full border border-border bg-background/70 px-2 py-0.5 text-[11px] font-semibold text-foreground" title={`Work center: ${log.attendee.company}`}><Building2 className="h-3 w-3 shrink-0 text-muted-foreground" /><span className="truncate">{log.attendee.company}</span></span> : null}
                       <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-black text-primary" title={`${log.attendee.plusOneEnabled ? 2 : 1} people on this pass`}><Users className="h-3 w-3" /> {log.attendee.plusOneEnabled ? 2 : 1}</span>
                       {under21 ? <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-black uppercase text-destructive">Under 21</span> : null}
                       {log.duplicate ? <span className="rounded-full bg-destructive px-2 py-0.5 text-[10px] font-black uppercase text-white">Duplicate</span> : null}
