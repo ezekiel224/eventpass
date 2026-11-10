@@ -62,6 +62,7 @@ export function QrCameraScanner({
   const generatedId = useId().replace(/:/g, "");
   const readerId = `qr-reader-${generatedId}`;
   const scannerRef = useRef<Html5Scanner | null>(null);
+  const onScanRef = useRef(onScan);
   const scanLockedRef = useRef(false);
   const lastScanRef = useRef({ value: "", at: 0 });
   const unlockTimerRef = useRef<number | null>(null);
@@ -76,6 +77,10 @@ export function QrCameraScanner({
   const [zoomRange, setZoomRange] = useState<ZoomRange | null>(null);
   const [zoom, setZoom] = useState(1);
   const [zoomChecked, setZoomChecked] = useState(false);
+
+  useEffect(() => {
+    onScanRef.current = onScan;
+  }, [onScan]);
 
   function playFeedback(success: boolean) {
     if (!success) return;
@@ -175,7 +180,7 @@ export function QrCameraScanner({
           scanLockedRef.current = true;
           lastScanRef.current = { value: decodedText, at: now };
           setFeedback(null);
-          void Promise.resolve(onScan(decodedText))
+          void Promise.resolve(onScanRef.current(decodedText))
             .then((result) => {
               const success = result !== false;
               setFeedback(success ? "success" : "error");
