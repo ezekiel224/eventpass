@@ -40,6 +40,7 @@ type DisplaySession = {
 const TOKEN_KEY = "eventpass_raffle_display_token";
 const PAIRING_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const sceneTransition = { duration: 0.75, ease: [0.16, 1, 0.3, 1] as const };
+const CELEBRATION_COLORS = ["#F4680A", "#F99D45", "#F0EBE5", "#191614"];
 
 function chunk<T>(items: T[], size: number) {
   const pages: T[][] = [];
@@ -303,6 +304,78 @@ export function RaffleTvDisplay() {
     return () => window.clearTimeout(timeout);
   }, [winnerReveal]);
 
+  useEffect(() => {
+    if (!winnerReveal || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let cancelled = false;
+    const timers: number[] = [];
+    let resetConfetti: (() => void) | undefined;
+
+    void import("canvas-confetti").then(({ default: confetti }) => {
+      if (cancelled) return;
+      resetConfetti = () => confetti.reset();
+
+      const fire = (delay: number, origin: { x: number; y: number }, angle: number) => {
+        timers.push(window.setTimeout(() => {
+          if (cancelled) return;
+          confetti({
+            angle,
+            colors: CELEBRATION_COLORS,
+            decay: 0.92,
+            disableForReducedMotion: true,
+            drift: angle < 90 ? 0.15 : -0.15,
+            gravity: 0.9,
+            origin,
+            particleCount: 150,
+            scalar: 1.25,
+            spread: 72,
+            startVelocity: 68,
+            ticks: 240,
+            zIndex: 60
+          });
+        }, delay));
+      };
+
+      fire(100, { x: 0.03, y: 0.82 }, 58);
+      fire(100, { x: 0.97, y: 0.82 }, 122);
+      fire(850, { x: 0.12, y: 0.72 }, 66);
+      fire(850, { x: 0.88, y: 0.72 }, 114);
+      fire(1750, { x: 0.04, y: 0.88 }, 54);
+      fire(1750, { x: 0.96, y: 0.88 }, 126);
+
+      const showerEndsAt = Date.now() + 6500;
+      const shower = window.setInterval(() => {
+        if (cancelled || Date.now() >= showerEndsAt) {
+          window.clearInterval(shower);
+          return;
+        }
+        confetti({
+          colors: CELEBRATION_COLORS,
+          decay: 0.94,
+          disableForReducedMotion: true,
+          gravity: 0.62,
+          origin: { x: Math.random(), y: -0.08 },
+          particleCount: 12,
+          scalar: 0.95,
+          spread: 50,
+          startVelocity: 12,
+          ticks: 300,
+          zIndex: 60
+        });
+      }, 180);
+      timers.push(shower);
+    });
+
+    return () => {
+      cancelled = true;
+      timers.forEach((timer) => {
+        window.clearTimeout(timer);
+        window.clearInterval(timer);
+      });
+      resetConfetti?.();
+    };
+  }, [winnerReveal]);
+
   const cycle = session ? Math.floor((tick + clockOffset) / (session.profile.rotationSeconds * 1000)) : 0;
   if (token === null) return <PairingScreen onPaired={setToken} />;
   if (!session) return <main className="raffle-tv-shell grid min-h-dvh place-items-center"><div className="text-center"><Radio className="mx-auto h-14 w-14 animate-pulse text-primary" /><p className="mt-5 text-xl font-semibold">Connecting display</p></div></main>;
@@ -363,7 +436,7 @@ export function RaffleTvDisplay() {
       ) : null}
 
       {!online ? <div className="pointer-events-none absolute right-[2vmin] top-[2vmin] flex items-center gap-2 rounded-full border border-amber-500/30 bg-background/90 px-4 py-2 text-sm font-semibold text-amber-600"><WifiOff className="h-4 w-4" /> Last live data retained</div> : null}
-      <AnimatePresence>{winnerReveal ? <motion.div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-background/95 p-[5vmin] text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><motion.div initial={{ y: "6vmin", scale: 0.9 }} animate={{ y: 0, scale: 1 }} transition={sceneTransition}><Trophy className="mx-auto h-[clamp(5rem,16vmin,15rem)] w-[clamp(5rem,16vmin,15rem)] text-primary" /><p className="raffle-tv-kicker mt-[3vmin] justify-center">Winner</p><h2 className="mt-[1.5vmin] text-[clamp(4rem,15vmin,15rem)] font-semibold leading-[0.8] tracking-[-0.07em]">{winnerReveal.winnerName}</h2><p className="mt-[3vmin] text-[clamp(1.4rem,4vmin,4rem)] text-muted-foreground">wins <span className="font-semibold text-foreground">{winnerReveal.prizeName}</span></p></motion.div></motion.div> : null}</AnimatePresence>
+      <AnimatePresence>{winnerReveal ? <motion.div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-background/95 p-[5vmin] text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="status" aria-live="assertive"><div className="absolute inset-0 bg-primary/[0.08]" /><motion.div className="relative w-full max-w-[92vw]" initial={{ y: "6vmin", scale: 0.9, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} transition={sceneTransition}><motion.p className="raffle-tv-kicker justify-center" initial={{ letterSpacing: "0.5em", opacity: 0 }} animate={{ letterSpacing: "0.22em", opacity: 1 }} transition={{ delay: 0.18, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>Winner</motion.p><motion.h2 className="mx-auto mt-[2.4vmin] max-w-[12ch] text-[clamp(4rem,15vmin,15rem)] font-semibold leading-[0.8] tracking-[-0.04em]" initial={{ filter: "blur(18px)", scale: 0.82 }} animate={{ filter: "blur(0px)", scale: 1 }} transition={{ delay: 0.08, duration: 1.15, ease: [0.16, 1, 0.3, 1] }}>{winnerReveal.winnerName}</motion.h2><motion.div className="mx-auto mt-[3.5vmin] h-px w-[min(70vw,42rem)] bg-primary/50" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.45, duration: 1.1, ease: [0.16, 1, 0.3, 1] }} /><motion.p className="mt-[3vmin] text-[clamp(1.4rem,4vmin,4rem)] text-muted-foreground" initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.55, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>wins <span className="font-semibold text-foreground">{winnerReveal.prizeName}</span></motion.p></motion.div></motion.div> : null}</AnimatePresence>
     </main>
   );
 }
