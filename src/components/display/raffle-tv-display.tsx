@@ -27,6 +27,8 @@ type DisplaySession = {
     paused: boolean;
     forcedPrizeId: string | null;
     rotationSeconds: number;
+    confettiPreset: string;
+    confettiColors: string[];
   };
   coordination: { slotIndex: number; displayCount: number };
   content: {
@@ -40,7 +42,7 @@ type DisplaySession = {
 const TOKEN_KEY = "eventpass_raffle_display_token";
 const PAIRING_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const sceneTransition = { duration: 0.75, ease: [0.16, 1, 0.3, 1] as const };
-const CELEBRATION_COLORS = ["#F4680A", "#F99D45", "#F0EBE5", "#191614"];
+const FALLBACK_CELEBRATION_COLORS = ["#F4680A", "#F99D45", "#F0EBE5", "#191614"];
 const WINNER_REVEAL_DURATION_MS = 20_000;
 const CONFETTI_DURATION_MS = 13_000;
 
@@ -252,6 +254,7 @@ export function RaffleTvDisplay() {
   const initializedDraw = useRef(false);
   const [winnerReveal, setWinnerReveal] = useState<DisplaySession["content"]["latestDraw"]>(null);
   const [portrait, setPortrait] = useState(false);
+  const confettiPaletteKey = (session?.profile.confettiColors?.length ? session.profile.confettiColors : FALLBACK_CELEBRATION_COLORS).join(",");
 
   useEffect(() => {
     const measure = () => setPortrait(window.innerHeight > window.innerWidth);
@@ -316,13 +319,14 @@ export function RaffleTvDisplay() {
     void import("canvas-confetti").then(({ default: confetti }) => {
       if (cancelled) return;
       resetConfetti = () => confetti.reset();
+      const celebrationColors = confettiPaletteKey.split(",");
 
       const fire = (delay: number, origin: { x: number; y: number }, angle: number) => {
         timers.push(window.setTimeout(() => {
           if (cancelled) return;
           confetti({
             angle,
-            colors: CELEBRATION_COLORS,
+            colors: celebrationColors,
             decay: 0.92,
             disableForReducedMotion: true,
             drift: angle < 90 ? 0.15 : -0.15,
@@ -352,7 +356,7 @@ export function RaffleTvDisplay() {
           return;
         }
         confetti({
-          colors: CELEBRATION_COLORS,
+          colors: celebrationColors,
           decay: 0.94,
           disableForReducedMotion: true,
           gravity: 0.62,
@@ -376,7 +380,7 @@ export function RaffleTvDisplay() {
       });
       resetConfetti?.();
     };
-  }, [winnerReveal]);
+  }, [confettiPaletteKey, winnerReveal]);
 
   const cycle = session ? Math.floor((tick + clockOffset) / (session.profile.rotationSeconds * 1000)) : 0;
   if (token === null) return <PairingScreen onPaired={setToken} />;

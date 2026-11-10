@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { DISPLAY_HEARTBEAT_WINDOW_MS, getRaffleDisplayContent, hashDisplaySecret, isRaffleDisplayMode } from "@/lib/raffle-display";
+import { DISPLAY_HEARTBEAT_WINDOW_MS, getRaffleDisplayContent, hashDisplaySecret, isRaffleDisplayMode, isRaffleConfettiPreset, parseConfettiColors } from "@/lib/raffle-display";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +48,9 @@ export async function POST(request: NextRequest) {
       mode: isRaffleDisplayMode(updated.mode) ? updated.mode : "WALL",
       paused: updated.paused,
       forcedPrizeId: updated.forcedPrizeId,
-      rotationSeconds: updated.rotationSeconds
+      rotationSeconds: updated.rotationSeconds,
+      confettiPreset: isRaffleConfettiPreset(updated.confettiPreset) ? updated.confettiPreset : "BRAND",
+      confettiColors: parseConfettiColors(updated.confettiColors, updated.confettiPreset)
     },
     coordination: { slotIndex, displayCount: Math.max(1, activeDisplays.length) },
     content

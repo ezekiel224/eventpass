@@ -332,6 +332,8 @@ model RaffleDisplay {
   paused           Boolean   @default(false)
   forcedPrizeId    String?
   rotationSeconds  Int       @default(12)
+  confettiPreset   String    @default("BRAND")
+  confettiColors   String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
