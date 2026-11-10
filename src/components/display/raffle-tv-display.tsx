@@ -41,6 +41,8 @@ const TOKEN_KEY = "eventpass_raffle_display_token";
 const PAIRING_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const sceneTransition = { duration: 0.75, ease: [0.16, 1, 0.3, 1] as const };
 const CELEBRATION_COLORS = ["#F4680A", "#F99D45", "#F0EBE5", "#191614"];
+const WINNER_REVEAL_DURATION_MS = 20_000;
+const CONFETTI_DURATION_MS = 13_000;
 
 function chunk<T>(items: T[], size: number) {
   const pages: T[][] = [];
@@ -300,7 +302,7 @@ export function RaffleTvDisplay() {
 
   useEffect(() => {
     if (!winnerReveal) return;
-    const timeout = window.setTimeout(() => setWinnerReveal(null), 10_000);
+    const timeout = window.setTimeout(() => setWinnerReveal(null), WINNER_REVEAL_DURATION_MS);
     return () => window.clearTimeout(timeout);
   }, [winnerReveal]);
 
@@ -336,14 +338,14 @@ export function RaffleTvDisplay() {
         }, delay));
       };
 
-      fire(100, { x: 0.03, y: 0.82 }, 58);
-      fire(100, { x: 0.97, y: 0.82 }, 122);
-      fire(850, { x: 0.12, y: 0.72 }, 66);
-      fire(850, { x: 0.88, y: 0.72 }, 114);
-      fire(1750, { x: 0.04, y: 0.88 }, 54);
-      fire(1750, { x: 0.96, y: 0.88 }, 126);
+      fire(200, { x: 0.03, y: 0.82 }, 58);
+      fire(200, { x: 0.97, y: 0.82 }, 122);
+      fire(1700, { x: 0.12, y: 0.72 }, 66);
+      fire(1700, { x: 0.88, y: 0.72 }, 114);
+      fire(3500, { x: 0.04, y: 0.88 }, 54);
+      fire(3500, { x: 0.96, y: 0.88 }, 126);
 
-      const showerEndsAt = Date.now() + 6500;
+      const showerEndsAt = Date.now() + CONFETTI_DURATION_MS;
       const shower = window.setInterval(() => {
         if (cancelled || Date.now() >= showerEndsAt) {
           window.clearInterval(shower);
