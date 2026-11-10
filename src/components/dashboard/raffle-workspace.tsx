@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Copy, Download, FileSignature, Gift, ImagePlus, LayoutDashboard, Plus, RefreshCcw, Save, Search, Send, Shuffle, SlidersHorizontal, Sparkles, Ticket, Trash2, UserCheck, Users } from "lucide-react";
+import { ArrowRight, Copy, Download, FileSignature, Gift, ImagePlus, LayoutDashboard, Plus, RefreshCcw, Save, Search, Send, Shuffle, SlidersHorizontal, Sparkles, Ticket, Trash2, UserCheck, UserMinus, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
@@ -369,6 +369,29 @@ export function RaffleWorkspace() {
     await loadRaffle();
   }
 
+  async function clearWinner(prize: RafflePrize) {
+    if (!prize.winnerName || !window.confirm(`Clear ${prize.winnerName} as the winner of ${prize.name}? They will be eligible to win again, and any receipt or signature data for this prize will be removed.`)) {
+      return;
+    }
+
+    const response = await fetch(`/api/events/${eventId}/raffle/prizes/${prize.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clearWinner" })
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setMessage(data.error ?? "Could not clear the winner.");
+      return;
+    }
+
+    setWinner("");
+    setAcceptanceLink("");
+    setMessage(`${data.clearedWinner} was cleared from ${prize.name} and can win again.`);
+    await loadRaffle();
+  }
+
   async function saveReceiptSettings(event: FormEvent) {
     event.preventDefault();
     const response = await fetch(`/api/events/${eventId}`, {
@@ -647,7 +670,7 @@ export function RaffleWorkspace() {
                       <div className="min-w-0"><p className="font-semibold">{prize.name}</p><p className="mt-1 text-sm text-muted-foreground">{prize.totalTickets} tickets entered{prize.value ? ` · $${Number(prize.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</p>{prize.description ? <p className="mt-2 text-sm text-muted-foreground">{prize.description}</p> : null}{prize.winnerName ? <div className="mt-3 flex flex-wrap gap-2"><span className="inline-flex rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">Final winner: {prize.winnerName}{prize.rerollCount > 0 ? ` · ${prize.rerollCount} reroll${prize.rerollCount === 1 ? "" : "s"}` : ""}</span><span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${prize.acceptanceStatus === "SIGNED" ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-600"}`}>{prize.acceptanceStatus === "SIGNED" ? `Signed${prize.acceptanceSignerName ? ` by ${prize.acceptanceSignerName}` : ""}${prize.acceptedAt ? ` · ${new Date(prize.acceptedAt).toLocaleDateString()}` : ""}` : prize.acceptanceStatus === "PENDING" ? "Signing link ready" : "Signature not requested"}</span></div> : null}</div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {prize.winnerName ? <>{prize.acceptanceStatus !== "SIGNED" ? <Button type="button" variant="secondary" onClick={() => void requestAcceptance(prize)}><Send className="h-4 w-4" /> {prize.acceptanceStatus === "PENDING" ? "Email new signing link" : "Email signing link"}</Button> : null}<Button type="button" variant="danger" onClick={() => void drawWinner(prize, true)} disabled={prize.totalTickets === 0}><RefreshCcw className="h-4 w-4" /> Override &amp; reroll</Button></> : <Button type="button" variant="secondary" onClick={() => void drawWinner(prize)} disabled={prize.totalTickets === 0}><Shuffle className="h-4 w-4" /> Draw &amp; reveal</Button>}
+                      {prize.winnerName ? <>{prize.acceptanceStatus !== "SIGNED" ? <Button type="button" variant="secondary" onClick={() => void requestAcceptance(prize)}><Send className="h-4 w-4" /> {prize.acceptanceStatus === "PENDING" ? "Email new signing link" : "Email signing link"}</Button> : null}<Button type="button" variant="secondary" onClick={() => void clearWinner(prize)} title="Testing: remove this result and restore winner eligibility"><UserMinus className="h-4 w-4" /> Clear winner</Button><Button type="button" variant="danger" onClick={() => void drawWinner(prize, true)} disabled={prize.totalTickets === 0}><RefreshCcw className="h-4 w-4" /> Override &amp; reroll</Button></> : <Button type="button" variant="secondary" onClick={() => void drawWinner(prize)} disabled={prize.totalTickets === 0}><Shuffle className="h-4 w-4" /> Draw &amp; reveal</Button>}
                       <Button type="button" variant="ghost" className="h-10 w-10 px-0" onClick={() => void archivePrize(prize.id)} aria-label={`Remove ${prize.name}`} title="Remove prize"><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </div>
