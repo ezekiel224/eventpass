@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Copy, KeyRound, Loader2, RefreshCw, Save, UserPlus } from "lucide-react";
+import { Copy, KeyRound, Loader2, RefreshCw, Save, Trash2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,7 @@ export function AccountsManager({ currentUserId }: { currentUserId: string }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [temporaryPassword, setTemporaryPassword] = useState("");
+  const [temporaryPasswordAccount, setTemporaryPasswordAccount] = useState("");
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editRoleIds, setEditRoleIds] = useState<string[]>([]);
@@ -106,8 +107,55 @@ export function AccountsManager({ currentUserId }: { currentUserId: string }) {
       return;
     }
     setTemporaryPassword(data.temporaryPassword ?? suppliedPassword);
+    setTemporaryPasswordAccount(data.user.email);
     setMessage(`Account created for ${data.user.email}. Copy the temporary password now; it will not be shown again.`);
     event.currentTarget.reset();
+    await load();
+  }
+
+  async function resetPassword() {
+    if (!editingUser || !csrf.token || !window.confirm(`Reset the password for ${editingUser.email}? Their current password will stop working immediately.`)) return;
+    setSaving(true);
+    setError("");
+    setMessage("");
+    const response = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-csrf-token": csrf.token },
+      body: JSON.stringify({ userId: editingUser.id })
+    });
+    const data = await response.json().catch(() => ({}));
+    setSaving(false);
+    if (!response.ok) {
+      setError(data.error ?? "Could not reset the password.");
+      if (response.status === 403) await csrf.refresh();
+      return;
+    }
+    setTemporaryPassword(data.temporaryPassword);
+    setTemporaryPasswordAccount(data.email);
+    setMessage(`Temporary password generated for ${data.email}. Copy it now; it will not be shown again.`);
+    setEditingUser(null);
+    await load();
+  }
+
+  async function deleteAccount() {
+    if (!editingUser || !csrf.token || !window.confirm(`Permanently delete ${editingUser.email}? Their access, roles, and permission overrides will be removed. This cannot be undone.`)) return;
+    setSaving(true);
+    setError("");
+    setMessage("");
+    const response = await fetch("/api/admin/users", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "x-csrf-token": csrf.token },
+      body: JSON.stringify({ userId: editingUser.id })
+    });
+    const data = await response.json().catch(() => ({}));
+    setSaving(false);
+    if (!response.ok) {
+      setError(data.error ?? "Could not delete the account.");
+      if (response.status === 403) await csrf.refresh();
+      return;
+    }
+    setMessage(`${data.email} was deleted.`);
+    setEditingUser(null);
     await load();
   }
 
@@ -162,6 +210,17 @@ export function AccountsManager({ currentUserId }: { currentUserId: string }) {
         </p>
       ) : null}
 
+      {temporaryPassword ? (
+        <div className="rounded-xl border border-primary/25 bg-primary/10 p-4">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">One-time temporary password</p>
+          <p className="mt-1 text-sm text-muted-foreground">{temporaryPasswordAccount} must use this once, then choose a new password.</p>
+          <div className="mt-3 flex items-center gap-2">
+            <code className="min-w-0 flex-1 overflow-x-auto rounded-lg bg-background px-3 py-2 text-sm">{temporaryPassword}</code>
+            <Button type="button" variant="secondary" className="px-3" onClick={() => void navigator.clipboard.writeText(temporaryPassword)}><Copy className="h-4 w-4" /> Copy</Button>
+          </div>
+        </div>
+      ) : null}
+
       <Card className="p-5">
         <div className="flex items-center justify-between gap-3">
           <div><h2 className="text-lg font-semibold">Create account</h2><p className="mt-1 text-sm text-muted-foreground">Every new account must change its temporary password on first sign-in.</p></div>
@@ -195,15 +254,6 @@ export function AccountsManager({ currentUserId }: { currentUserId: string }) {
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />} Create account
           </Button>
         </form>
-        {temporaryPassword ? (
-          <div className="mt-5 rounded-xl border border-amber-500/25 bg-amber-500/10 p-4">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-300">One-time temporary password</p>
-            <div className="mt-2 flex items-center gap-2">
-              <code className="min-w-0 flex-1 overflow-x-auto rounded-lg bg-background px-3 py-2 text-sm">{temporaryPassword}</code>
-              <Button type="button" variant="secondary" className="px-3" onClick={() => void navigator.clipboard.writeText(temporaryPassword)}><Copy className="h-4 w-4" /> Copy</Button>
-            </div>
-          </div>
-        ) : null}
       </Card>
 
       <Card className="p-5">
@@ -253,6 +303,14 @@ export function AccountsManager({ currentUserId }: { currentUserId: string }) {
                 ))}
               </div>
             </fieldset>
+            <section className="form-section p-4" aria-labelledby="account-security-heading">
+              <h3 id="account-security-heading" className="text-sm font-semibold">Account security</h3>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">Generate a one-time password or permanently remove this account.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button type="button" variant="secondary" disabled={saving || !csrf.token} onClick={() => void resetPassword()}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Reset password</Button>
+                <Button type="button" variant="danger" disabled={saving || !csrf.token} onClick={() => void deleteAccount()}><Trash2 className="h-4 w-4" /> Delete account</Button>
+              </div>
+            </section>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="secondary" onClick={() => setEditingUser(null)}>Cancel</Button>
               <Button type="button" disabled={saving || !csrf.token || !editRoleIds.length} onClick={() => void saveAccess()}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save access</Button>

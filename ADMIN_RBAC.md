@@ -32,6 +32,8 @@ The first administrator is not seeded. When there are no user accounts and no co
 - Passwords use bcrypt with work factor 12.
 - New accounts always receive `mustChangePassword = true`.
 - Temporary passwords are generated with `crypto.getRandomValues()` and returned once.
+- Administrators can reset another account to a server-generated temporary password; the old password stops working and the user must choose a new one at next login.
+- Account deletion is audited, cannot target the current user, and cannot remove the last active Admin account.
 - Login accepts email or username and returns a generic invalid-credentials response.
 - Disabled accounts are rejected even when an older signed session cookie exists.
 - Permission changes take effect immediately because authorization is resolved from the database per request.
@@ -58,6 +60,8 @@ The first administrator is not seeded. When there are no user accounts and no co
 - `GET /api/admin/users`
 - `POST /api/admin/users`
 - `PUT /api/admin/users`
+- `PATCH /api/admin/users` — generate a temporary password and require a password change
+- `DELETE /api/admin/users` — permanently delete another account
 - `GET /api/admin/roles`
 - `PUT /api/admin/roles`
 - `GET /api/admin/permissions`

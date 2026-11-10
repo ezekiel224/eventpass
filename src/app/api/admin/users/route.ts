@@ -1,7 +1,7 @@
 import { hash } from "bcryptjs";
 import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-import { createAdminUserSchema, updateAdminUserSchema } from "@/lib/admin-validation";
+import { createAdminUserSchema, deleteAdminUserSchema, resetAdminUserPasswordSchema, updateAdminUserSchema } from "@/lib/admin-validation";
 import { auditLogData } from "@/lib/audit";
 import { authorizeApi } from "@/lib/authorization";
 import { validateCsrf } from "@/lib/csrf";
@@ -168,4 +168,84 @@ export async function PUT(request: NextRequest) {
   });
 
   return NextResponse.json({ user: serializeUser(updated) });
+}
+
+export async function PATCH(request: NextRequest) {
+  const access = await authorizeApi(request, "users:manage");
+  if (!access.ok) return access.response;
+  const csrfFailure = validateCsrf(request);
+  if (csrfFailure) return csrfFailure;
+
+  const parsed = resetAdminUserPasswordSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Choose an account to reset." }, { status: 400 });
+  if (parsed.data.userId === access.authorization.user.id) {
+    return NextResponse.json({ error: "Use Change Password to update your own password." }, { status: 400 });
+  }
+
+  const target = await prisma.user.findUnique({ where: { id: parsed.data.userId }, select: { id: true, email: true } });
+  if (!target) return NextResponse.json({ error: "Account not found." }, { status: 404 });
+
+  const generatedPassword = temporaryPassword();
+  const passwordHash = await hash(generatedPassword, 12);
+  await prisma.$transaction(async (transaction) => {
+    await transaction.user.update({
+      where: { id: target.id },
+      data: { passwordHash, mustChangePassword: true, passwordChangedAt: null }
+    });
+    await transaction.auditLog.create({
+      data: auditLogData({
+        request,
+        actorUserId: access.authorization.user.id,
+        action: "admin.user_password_reset",
+        targetType: "User",
+        targetId: target.id,
+        metadata: { email: target.email }
+      })
+    });
+  });
+
+  return NextResponse.json({ temporaryPassword: generatedPassword, email: target.email });
+}
+
+export async function DELETE(request: NextRequest) {
+  const access = await authorizeApi(request, "users:manage");
+  if (!access.ok) return access.response;
+  const csrfFailure = validateCsrf(request);
+  if (csrfFailure) return csrfFailure;
+
+  const parsed = deleteAdminUserSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "Choose an account to delete." }, { status: 400 });
+  if (parsed.data.userId === access.authorization.user.id) {
+    return NextResponse.json({ error: "You cannot delete your own account." }, { status: 400 });
+  }
+
+  const target = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: { id: true, email: true, active: true, roles: { select: { role: { select: { slug: true } } } } }
+  });
+  if (!target) return NextResponse.json({ error: "Account not found." }, { status: 404 });
+  if (target.active && target.roles.some(({ role }) => role.slug === "admin")) {
+    const activeAdminCount = await prisma.user.count({
+      where: { active: true, roles: { some: { role: { slug: "admin" } } } }
+    });
+    if (activeAdminCount <= 1) {
+      return NextResponse.json({ error: "The last active Admin account cannot be deleted." }, { status: 409 });
+    }
+  }
+
+  await prisma.$transaction(async (transaction) => {
+    await transaction.auditLog.create({
+      data: auditLogData({
+        request,
+        actorUserId: access.authorization.user.id,
+        action: "admin.user_deleted",
+        targetType: "User",
+        targetId: target.id,
+        metadata: { email: target.email }
+      })
+    });
+    await transaction.user.delete({ where: { id: target.id } });
+  });
+
+  return NextResponse.json({ deleted: true, email: target.email });
 }
