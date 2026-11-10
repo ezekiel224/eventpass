@@ -1,10 +1,16 @@
 "use client";
 
-import { ExternalLink, Link2, Monitor, Pause, Play, Plus, Save, Trash2, Wifi, WifiOff } from "lucide-react";
+import { ExternalLink, Link2, Monitor, Pause, Play, Plus, Save, Settings2, Trash2, Wifi, WifiOff } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
+import { OperationSelect } from "@/components/ui/operation-select";
+import { PreviewSheet } from "@/components/ui/preview-sheet";
+import { RollingNumber } from "@/components/ui/rolling-number";
 import type { RaffleDisplayMode } from "@/lib/raffle-display";
+import { formatTime } from "@/lib/utils";
+import "./raffle-live-operations.css";
 
 type Display = {
   id: string;
@@ -28,21 +34,25 @@ type ControlData = { displays: Display[]; events: EventOption[] };
 
 const modes: { value: RaffleDisplayMode; label: string; description: string }[] = [
   { value: "WALL", label: "Prize Wall", description: "Responsive multi-prize slideshow" },
-  { value: "SPOTLIGHT", label: "Prize Spotlight", description: "One cinematic prize at a time" },
+  { value: "SPOTLIGHT", label: "Prize Spotlight", description: "One prize at a time" },
   { value: "RACE", label: "Live Pool Race", description: "Relative live ticket activity" },
   { value: "STAGE", label: "Draw Stage", description: "Latest draw and winner focus" },
-  { value: "WINNERS", label: "Winner Gallery", description: "Completed prize drawings" }
+  { value: "WINNERS", label: "Winner Gallery", description: "Completed prize drawings" },
 ];
 
-const selectClass = "focus-ring h-11 w-full rounded-xl border border-border/80 bg-background/75 px-3 text-sm";
-
 function displayStatus(display: Display) {
-  if (!display.paired) return { label: "Waiting to pair", className: "text-amber-600", icon: Link2 };
-  if (display.online) return { label: "Online", className: "text-emerald-600", icon: Wifi };
-  return { label: "Offline", className: "text-muted-foreground", icon: WifiOff };
+  if (!display.paired) return { label: "Waiting to pair", tone: "waiting", icon: Link2 };
+  if (display.online) return { label: "Online", tone: "online", icon: Wifi };
+  return { label: "Offline", tone: "offline", icon: WifiOff };
 }
 
-function DisplayEditor({ display, events, onChanged }: { display: Display; events: EventOption[]; onChanged: () => Promise<void> }) {
+function modeLabel(mode: RaffleDisplayMode) {
+  return modes.find((option) => option.value === mode)?.label ?? mode;
+}
+
+function DisplayEditor({ display, events, onChanged, timeZone }: { display: Display; events: EventOption[]; onChanged: () => Promise<void>; timeZone: string }) {
+  const [open, setOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [draft, setDraft] = useState(display);
   const [saving, setSaving] = useState(false);
   const [pairingCode, setPairingCode] = useState("");
@@ -51,11 +61,17 @@ function DisplayEditor({ display, events, onChanged }: { display: Display; event
   const StatusIcon = status.icon;
   const prizes = events.find((event) => event.id === draft.eventId)?.rafflePrizes ?? [];
 
-  async function patchDisplay(patch: Partial<Display>) {
+  async function patchDisplay(patch: Partial<Display>, closeWhenSaved = false) {
     setSaving(true);
-    const response = await fetch(`/api/raffle-displays/${display.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) });
+    const response = await fetch(`/api/raffle-displays/${display.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
     setSaving(false);
-    if (response.ok) await onChanged();
+    if (!response.ok) return;
+    await onChanged();
+    if (closeWhenSaved) setOpen(false);
   }
 
   async function pairDisplay() {
@@ -63,7 +79,7 @@ function DisplayEditor({ display, events, onChanged }: { display: Display; event
     const response = await fetch(`/api/raffle-displays/${display.id}/pairing`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: pairingCode })
+      body: JSON.stringify({ code: pairingCode }),
     });
     const data = await response.json();
     if (!response.ok) return setPairingMessage(data.error ?? "The display could not be linked.");
@@ -72,99 +88,179 @@ function DisplayEditor({ display, events, onChanged }: { display: Display; event
     window.setTimeout(() => void onChanged(), 3000);
   }
 
+  function requestRemoval() {
+    setOpen(false);
+    window.setTimeout(() => setDeleteOpen(true), 180);
+  }
+
   async function removeDisplay() {
-    if (!window.confirm(`Remove ${display.name}? This streaming device will need to be paired again if recreated.`)) return;
     const response = await fetch(`/api/raffle-displays/${display.id}`, { method: "DELETE" });
     if (response.ok) await onChanged();
   }
 
   return (
-    <article className="liquid-card p-5">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border/60 pb-4">
-        <div className="min-w-0"><p className="panel-label">Display device</p><h3 className="mt-2 truncate font-display text-2xl font-semibold tracking-[-0.04em]">{display.name}</h3><p className={`mt-2 flex items-center gap-2 text-xs font-semibold ${status.className}`}><StatusIcon className="h-3.5 w-3.5" /> {status.label}{display.lastSeenAt ? ` · ${new Date(display.lastSeenAt).toLocaleTimeString()}` : ""}</p></div>
-        <div className="text-right text-xs text-muted-foreground"><p>{display.eventName}</p><p className="mt-1">{display.viewportWidth && display.viewportHeight ? `${display.viewportWidth} × ${display.viewportHeight}` : "Viewport pending"}</p></div>
-      </div>
-
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <label className="text-sm font-medium">Display name<Input className="mt-2" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
-        <label className="text-sm font-medium">Event<select className={`${selectClass} mt-2`} value={draft.eventId} onChange={(event) => setDraft({ ...draft, eventId: event.target.value, forcedPrizeId: null })}>{events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}</select></label>
-        <label className="text-sm font-medium">Display mode<select className={`${selectClass} mt-2`} value={draft.mode} onChange={(event) => setDraft({ ...draft, mode: event.target.value as RaffleDisplayMode })}>{modes.map((mode) => <option key={mode.value} value={mode.value}>{mode.label}</option>)}</select></label>
-        <label className="text-sm font-medium">Rotation interval<Input className="mt-2" type="number" min={6} max={60} value={draft.rotationSeconds} onChange={(event) => setDraft({ ...draft, rotationSeconds: Number(event.target.value) })} /></label>
-        <label className="text-sm font-medium sm:col-span-2">Temporary prize focus<select className={`${selectClass} mt-2`} value={draft.forcedPrizeId ?? ""} onChange={(event) => setDraft({ ...draft, forcedPrizeId: event.target.value || null })}><option value="">Automatic rotation</option>{prizes.map((prize) => <option key={prize.id} value={prize.id}>{prize.name}</option>)}</select></label>
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        <Button disabled={saving} onClick={() => void patchDisplay({ name: draft.name, eventId: draft.eventId, mode: draft.mode, rotationSeconds: draft.rotationSeconds, forcedPrizeId: draft.forcedPrizeId })}><Save className="h-4 w-4" /> Save configuration</Button>
-        <Button variant="secondary" onClick={() => void patchDisplay({ paused: !display.paused })}>{display.paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />} {display.paused ? "Resume" : "Pause"}</Button>
-        <Button variant="danger" onClick={() => void removeDisplay()}><Trash2 className="h-4 w-4" /> Remove</Button>
-      </div>
-      <div className="mt-5 rounded-2xl border border-border/70 bg-background/45 p-4">
-        <p className="text-sm font-semibold">{display.paired ? "Pair a different screen" : "Link this display"}</p>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">Open the raffle display page on the signage device, then enter the code shown on that screen.</p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-          <Input value={pairingCode} onChange={(event) => setPairingCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))} className="font-mono text-lg font-semibold uppercase tracking-[0.2em]" placeholder="ABC234" autoComplete="off" aria-label={`Pairing code for ${display.name}`} />
-          <Button type="button" variant="secondary" disabled={pairingCode.length !== 6} onClick={() => void pairDisplay()}><Link2 className="h-4 w-4" /> Link screen</Button>
+    <>
+      <article className="ep-display-row">
+        <div className="ep-display-identity">
+          <span className="ep-display-status-dot" data-status={status.tone} aria-hidden="true" />
+          <div>
+            <strong>{display.name}</strong>
+            <span>{display.eventName ?? "Event unavailable"}</span>
+          </div>
         </div>
-        {pairingMessage ? <p className={`mt-2 text-xs font-medium ${pairingMessage.startsWith("Code accepted") ? "text-emerald-600" : "text-destructive"}`}>{pairingMessage}</p> : null}
-      </div>
-    </article>
+        <div className="ep-display-detail"><span>Mode</span><strong>{modeLabel(display.mode)}</strong></div>
+        <div className="ep-display-detail"><span>Connection</span><strong data-status={status.tone}><StatusIcon aria-hidden="true" /> {status.label}</strong></div>
+        <div className="ep-display-detail"><span>Viewport</span><strong>{display.viewportWidth && display.viewportHeight ? `${display.viewportWidth} × ${display.viewportHeight}` : "Pending"}</strong></div>
+        <Button type="button" variant="secondary" onClick={() => setOpen(true)}><Settings2 className="h-4 w-4" /> Configure</Button>
+      </article>
+
+      <PreviewSheet
+        open={open}
+        onOpenChange={setOpen}
+        title={`Configure ${display.name}`}
+        description="Control this screen without interrupting the live display."
+        closeLabel="Close display configuration"
+      >
+        <div className="ep-display-sheet-summary">
+          <div><span className="ep-display-status-dot" data-status={status.tone} /><strong>{status.label}</strong></div>
+          <span>{display.lastSeenAt ? `Last seen ${formatTime(display.lastSeenAt, timeZone)}` : "This screen has not connected yet"}</span>
+          <span>{display.paused ? "Playback paused" : `${draft.rotationSeconds}-second rotation`}</span>
+        </div>
+
+        <section className="ep-sheet-section">
+          <header className="ep-operation-panel-header">
+            <div className="ep-section-heading"><h2>Display settings</h2></div>
+          </header>
+          <div className="ep-display-editor-grid">
+            <label>Display name<Input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
+            <label>Event<OperationSelect label="Event" value={draft.eventId} onValueChange={(value) => setDraft({ ...draft, eventId: value, forcedPrizeId: null })} options={events.map((event) => ({ value: event.id, label: event.name }))} /></label>
+            <label>Display mode<OperationSelect label="Display mode" value={draft.mode} onValueChange={(value) => setDraft({ ...draft, mode: value as RaffleDisplayMode })} options={modes.map((mode) => ({ value: mode.value, label: mode.label }))} /></label>
+            <label>Rotation interval<Input type="number" min={6} max={60} value={draft.rotationSeconds} onChange={(event) => setDraft({ ...draft, rotationSeconds: Number(event.target.value) })} /></label>
+            <label className="ep-display-editor-wide">Temporary prize focus<OperationSelect label="Temporary prize focus" value={draft.forcedPrizeId ?? ""} onValueChange={(value) => setDraft({ ...draft, forcedPrizeId: value || null })} options={[{ value: "", label: "Automatic rotation" }, ...prizes.map((prize) => ({ value: prize.id, label: prize.name }))]} /></label>
+          </div>
+          <footer className="ep-display-editor-actions">
+            <Button loading={saving} loadingLabel="Saving configuration…" onClick={() => void patchDisplay({ name: draft.name, eventId: draft.eventId, mode: draft.mode, rotationSeconds: draft.rotationSeconds, forcedPrizeId: draft.forcedPrizeId }, true)}><Save className="h-4 w-4" /> Save configuration</Button>
+            <Button variant="secondary" onClick={() => void patchDisplay({ paused: !display.paused })}>{display.paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />} {display.paused ? "Resume display" : "Pause display"}</Button>
+          </footer>
+        </section>
+
+        <section className="ep-sheet-section">
+          <header className="ep-operation-panel-header">
+            <div className="ep-section-heading"><h2>{display.paired ? "Pair a different screen" : "Link this display"}</h2><p>Open the pairing page on the signage device, then enter its six-character code.</p></div>
+          </header>
+          <div className="ep-display-pairing">
+            <Input value={pairingCode} onChange={(event) => setPairingCode(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))} className="font-mono text-lg font-semibold uppercase tracking-[0.2em]" placeholder="ABC234" autoComplete="off" aria-label={`Pairing code for ${display.name}`} />
+            <Button type="button" variant="secondary" disabled={pairingCode.length !== 6} onClick={() => void pairDisplay()}><Link2 className="h-4 w-4" /> Link screen</Button>
+            {pairingMessage ? <p data-state={pairingMessage.startsWith("Code accepted") ? "success" : "error"} role="status">{pairingMessage}</p> : null}
+          </div>
+        </section>
+
+        <section className="ep-display-danger-row">
+          <div><strong>Remove display</strong><span>The signage device will need to be paired again if this display is recreated.</span></div>
+          <Button type="button" variant="danger" onClick={requestRemoval}><Trash2 className="h-4 w-4" /> Remove</Button>
+        </section>
+      </PreviewSheet>
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={`Remove ${display.name}?`}
+        description="This removes the display configuration. The signage device will need to be paired again if it is recreated."
+        confirmLabel="Remove display"
+        destructive
+        onConfirm={() => void removeDisplay()}
+      />
+    </>
   );
 }
 
-export function RaffleDisplayControl() {
+export function RaffleDisplayControl({ timeZone, eventId = "" }: { timeZone: string; eventId?: string }) {
   const [data, setData] = useState<ControlData>({ displays: [], events: [] });
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
-  const [create, setCreate] = useState({ name: "", eventId: "", mode: "WALL" as RaffleDisplayMode, rotationSeconds: 12 });
+  const [create, setCreate] = useState({ name: "", eventId, mode: "WALL" as RaffleDisplayMode, rotationSeconds: 12 });
 
   const load = useCallback(async () => {
+    setLoading(true);
     const response = await fetch("/api/raffle-displays", { cache: "no-store" });
     const next: ControlData = await response.json();
     setData(next);
-    setCreate((current) => ({ ...current, eventId: next.events.some((event) => event.id === current.eventId) ? current.eventId : next.events[0]?.id ?? "" }));
+    setCreate((current) => ({
+      ...current,
+      eventId: next.events.some((event) => event.id === eventId)
+        ? eventId
+        : next.events.some((event) => event.id === current.eventId)
+          ? current.eventId
+          : next.events[0]?.id ?? "",
+    }));
     setLoading(false);
-  }, []);
+  }, [eventId]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timeout);
   }, [load]);
 
-  const onlineCount = useMemo(() => data.displays.filter((display) => display.online).length, [data.displays]);
+  const displays = useMemo(() => eventId ? data.displays.filter((display) => display.eventId === eventId) : data.displays, [data.displays, eventId]);
+  const selectedEvent = data.events.find((event) => event.id === eventId);
+  const onlineCount = displays.filter((display) => display.online).length;
+  const pairedCount = displays.filter((display) => display.paired).length;
 
   async function addDisplay(event: FormEvent) {
     event.preventDefault();
     setMessage("");
-    const response = await fetch("/api/raffle-displays", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(create) });
+    const response = await fetch("/api/raffle-displays", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(create),
+    });
     const result = await response.json();
     if (!response.ok) return setMessage(result.error ?? "Could not create the display.");
     setCreate((current) => ({ ...current, name: "" }));
+    setMessage("Display created. Open its configuration to pair a screen.");
     await load();
   }
 
   return (
-    <div className="mt-8 space-y-6">
-      <section className="liquid-notice flex flex-col justify-between gap-5 p-5 sm:flex-row sm:items-center">
-        <div><p className="panel-label">Display cluster</p><p className="mt-2 text-lg font-semibold">{onlineCount} online · {data.displays.length} configured</p><p className="mt-1 text-sm text-muted-foreground">Offsets and slideshow coverage recalculate automatically inside each event and display mode.</p></div>
-        <a href="/display/raffle" target="_blank" rel="noreferrer"><Button variant="secondary"><ExternalLink className="h-4 w-4" /> Open display pairing page</Button></a>
+    <div className="ep-display-workspace">
+      <section className="ep-display-control">
+        <div className="ep-display-control-header">
+          <div className="ep-section-heading"><h2>{selectedEvent ? `${selectedEvent.name} displays` : "Displays"}</h2></div>
+          <a href="/display/raffle" target="_blank" rel="noreferrer"><Button variant="secondary"><ExternalLink className="h-4 w-4" /> Open pairing page</Button></a>
+        </div>
+        <dl className="ep-display-metric-strip">
+          <div><dt>Configured</dt><dd><RollingNumber value={displays.length} /></dd></div>
+          <div><dt>Paired</dt><dd><RollingNumber value={pairedCount} /></dd></div>
+          <div><dt>Online</dt><dd>{onlineCount}</dd></div>
+          <div><dt>Offline</dt><dd>{pairedCount - onlineCount}</dd></div>
+        </dl>
       </section>
 
-      {message ? <p className="text-sm font-medium text-primary">{message}</p> : null}
+      <section className="ep-display-create">
+        <header className="ep-operation-panel-header">
+          <div className="ep-section-heading"><h2>Add a display</h2></div>
+          <Plus aria-hidden="true" />
+        </header>
+        <form onSubmit={addDisplay}>
+          <label>Name<Input required placeholder="Ballroom North" value={create.name} onChange={(event) => setCreate({ ...create, name: event.target.value })} /></label>
+          <label>Event<OperationSelect label="Event" value={create.eventId} onValueChange={(value) => setCreate({ ...create, eventId: value })} options={data.events.map((event) => ({ value: event.id, label: event.name }))} /></label>
+          <label>Mode<OperationSelect label="Mode" value={create.mode} onValueChange={(value) => setCreate({ ...create, mode: value as RaffleDisplayMode })} options={modes.map((mode) => ({ value: mode.value, label: mode.label }))} /></label>
+          <label>Rotation<Input type="number" min={6} max={60} value={create.rotationSeconds} onChange={(event) => setCreate({ ...create, rotationSeconds: Number(event.target.value) })} /></label>
+          <Button className="w-full" disabled={!create.eventId || loading}><Monitor className="h-4 w-4" /> Create display</Button>
+        </form>
+      </section>
 
-      <form onSubmit={addDisplay} className="liquid-card p-5">
-        <div className="flex items-center gap-3"><span className="liquid-lens"><Plus className="h-4 w-4" /></span><div><p className="panel-label">Displays</p><h2 className="mt-1 font-display text-2xl font-semibold tracking-[-0.04em]">Add Display</h2></div></div>
-        <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1fr_1fr_10rem_auto] md:items-end">
-          <label className="text-sm font-medium">Name<Input className="mt-2" required placeholder="Ballroom North" value={create.name} onChange={(event) => setCreate({ ...create, name: event.target.value })} /></label>
-          <label className="text-sm font-medium">Event<select className={`${selectClass} mt-2`} value={create.eventId} onChange={(event) => setCreate({ ...create, eventId: event.target.value })}>{data.events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}</select></label>
-          <label className="text-sm font-medium">Mode<select className={`${selectClass} mt-2`} value={create.mode} onChange={(event) => setCreate({ ...create, mode: event.target.value as RaffleDisplayMode })}>{modes.map((mode) => <option key={mode.value} value={mode.value}>{mode.label}</option>)}</select></label>
-          <label className="text-sm font-medium">Seconds<Input className="mt-2" type="number" min={6} max={60} value={create.rotationSeconds} onChange={(event) => setCreate({ ...create, rotationSeconds: Number(event.target.value) })} /></label>
-          <Button className="w-full md:w-auto" disabled={!create.eventId || loading}><Monitor className="h-4 w-4" /> Create</Button>
-        </div>
-      </form>
+      {message ? <p className="ep-operation-notice" role="status">{message}</p> : null}
 
-      <section className="grid gap-5 xl:grid-cols-2">
-        {data.displays.map((display) => <DisplayEditor key={`${display.id}:${display.updatedAt ?? display.lastSeenAt ?? "new"}`} display={display} events={data.events} onChanged={load} />)}
-        {!loading && !data.displays.length ? <div className="liquid-card p-8 text-center text-muted-foreground xl:col-span-2">No venue displays are configured yet.</div> : null}
+      <section className="ep-display-ledger">
+        <header className="ep-operation-panel-header">
+          <div className="ep-section-heading"><h2>Displays</h2></div>
+          <span className="ep-count-badge">{displays.length}</span>
+        </header>
+        <div className="ep-display-ledger-labels" aria-hidden="true"><span>Display</span><span>Mode</span><span>Connection</span><span>Viewport</span><span /></div>
+        {displays.map((display) => <DisplayEditor key={`${display.id}:${display.updatedAt ?? display.lastSeenAt ?? "new"}`} display={display} events={data.events} onChanged={load} timeZone={timeZone} />)}
+        {loading ? <div className="ep-operation-empty"><Monitor /><strong>Loading displays…</strong></div> : null}
+        {!loading && displays.length === 0 ? <div className="ep-operation-empty"><Monitor /><strong>No displays configured</strong><span>Create the first screen endpoint for this event above.</span></div> : null}
       </section>
     </div>
   );

@@ -36,6 +36,10 @@ export function permissionForRequest(pathname: string, method: string): Permissi
   if (pathname.startsWith("/admin/settings/accounts")) return "users:view";
   if (pathname.startsWith("/admin/settings/permissions")) return "roles:view";
   if (pathname.startsWith("/dashboard/events")) return "events:manage";
+  if (pathname.startsWith("/dashboard/registration")) return "events:manage";
+  if (pathname.startsWith("/dashboard/waitlist")) return "attendees:manage";
+  if (pathname.startsWith("/dashboard/campaigns")) return "settings:manage";
+  if (pathname.startsWith("/dashboard/analytics")) return "dashboard:view";
   if (pathname.startsWith("/dashboard/attendees")) return "attendees:manage";
   if (pathname.startsWith("/dashboard/pass-designs")) return "passes:manage";
   if (pathname.startsWith("/dashboard/check-in")) return "checkins:manage";

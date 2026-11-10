@@ -48,7 +48,7 @@ export function VotingManualEmployee({
       </div>
       <p className="text-xs leading-5 text-muted-foreground">Employee IDs are normalized and stored as secure hashes. Entering an existing ID updates that employee’s name.</p>
       {message ? <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{message}</p> : null}
-      <div className="flex justify-end"><Button disabled={saving}><UserPlus className="h-4 w-4" /> {saving ? "Adding…" : "Add employee"}</Button></div>
+      <div className="flex justify-end"><Button loading={saving} loadingLabel="Adding employee…"><UserPlus className="h-4 w-4" /> Add employee</Button></div>
     </form>
   );
 }

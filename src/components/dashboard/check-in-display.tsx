@@ -2,7 +2,7 @@
 
 import { CheckCircle2, Clock3, Radio, ShieldAlert, Star, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { initials } from "@/lib/utils";
+import { formatTime, initials } from "@/lib/utils";
 import { AttendeeSummary, EventSummary } from "@/types/domain";
 
 type CheckInLog = {
@@ -12,7 +12,7 @@ type CheckInLog = {
   attendee: AttendeeSummary;
 };
 
-export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: string }) {
+export function CheckInDisplay({ initialEventId = "", timeZone }: { initialEventId?: string; timeZone: string }) {
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [eventId, setEventId] = useState(initialEventId);
   const [logs, setLogs] = useState<CheckInLog[]>([]);
@@ -69,8 +69,8 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
             <p className="mt-2 text-muted-foreground">Updates appear automatically as passes are scanned.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <span className={`flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold ${connected ? "bg-emerald-500/10 text-emerald-500" : "bg-destructive/10 text-destructive"}`}>
-              <span className={`h-2 w-2 rounded-full ${connected ? "animate-pulse bg-emerald-500" : "bg-destructive"}`} />
+            <span className={`flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold ${connected ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"}`}>
+              <span className={`h-2 w-2 rounded-full ${connected ? "animate-pulse bg-primary" : "bg-destructive"}`} />
               {connected ? "Live" : "Reconnecting"}
             </span>
             <select value={eventId} onChange={(event) => { setEventId(event.target.value); setLogs([]); setConnected(false); }} className="focus-ring h-10 rounded-xl border border-border bg-card px-3 text-sm" aria-label="Event">
@@ -89,7 +89,7 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
                 <div className="mt-5 flex flex-wrap items-center gap-3">
                   <h2 className="text-4xl font-semibold leading-none sm:text-5xl">{latest.attendee.firstName} {latest.attendee.lastName}</h2>
                   <span className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-black text-primary" title={`${latestPartySize} ${latestPartySize === 1 ? "person" : "people"} on this pass`}><Users className="h-4 w-4" /> {latestPartySize}</span>
-                  {latest.attendee.vip ? <span className="flex items-center gap-1 rounded-full bg-amber-400/15 px-3 py-1 text-sm font-bold text-amber-500"><Star className="h-4 w-4 fill-current" /> VIP</span> : null}
+                  {latest.attendee.vip ? <span className="flex items-center gap-1 rounded-full bg-primary/15 px-3 py-1 text-sm font-bold text-primary"><Star className="h-4 w-4 fill-current" /> VIP</span> : null}
                 </div>
                 <p className="mt-3 text-lg text-muted-foreground">{latest.attendee.ticketTier} · {latest.attendee.eventName}</p>
                 {latest.attendee.plusOneName ? <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><Users className="h-4 w-4" /> Plus-one: {latest.attendee.plusOneName}</p> : null}
@@ -99,9 +99,9 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
                     <div><p className="text-base font-black uppercase tracking-[0.08em]">Under 21 warning</p><p className="mt-1 text-sm font-semibold">{latest.attendee.under21 && latest.attendee.plusOneUnder21 ? `${latest.attendee.firstName} (primary attendee) and ${latest.attendee.plusOneName ?? "the guest"} are under 21.` : latest.attendee.under21 ? `${latest.attendee.firstName} is the primary attendee and is under 21.` : `${latest.attendee.plusOneName ?? "The guest"} is the guest and is under 21.`}</p></div>
                   </div>
                 ) : null}
-                <p className={`mt-5 flex items-center gap-2 rounded-2xl border p-4 font-bold ${latest.duplicate ? "border-destructive/60 bg-destructive/20 text-destructive" : "border-emerald-500/25 bg-emerald-500/10 text-emerald-500"}`} role={latest.duplicate ? "alert" : "status"}>
+                <p className={`mt-5 flex items-center gap-2 rounded-2xl border p-4 font-bold ${latest.duplicate ? "border-destructive/60 bg-destructive/20 text-destructive" : "border-primary/25 bg-primary/10 text-primary"}`} role={latest.duplicate ? "alert" : "status"}>
                   {latest.duplicate ? <ShieldAlert className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
-                  {latest.duplicate ? "DUPLICATE SCAN · Guest was already checked in" : "Checked in"} · {new Date(latest.scannedAt).toLocaleTimeString()}
+                  {latest.duplicate ? "DUPLICATE SCAN · Guest was already checked in" : "Checked in"} · {formatTime(latest.scannedAt, timeZone)}
                 </p>
               </div>
             ) : <p className="mt-8 text-muted-foreground">Waiting for the first arrival…</p>}
@@ -118,12 +118,12 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
                 const under21 = log.attendee.under21 || log.attendee.plusOneUnder21;
                 const alert = log.duplicate || under21;
                 return (
-                <div key={log.id} className={`flex min-h-16 items-center gap-3 rounded-2xl border px-3 py-2.5 ${alert ? "border-destructive/55 bg-destructive/10" : log.attendee.vip ? "border-amber-400/40 bg-amber-400/5" : "border-border bg-background/60"}`}>
+                <div key={log.id} className={`flex min-h-16 items-center gap-3 rounded-2xl border px-3 py-2.5 ${alert ? "border-destructive/55 bg-destructive/10" : log.attendee.vip ? "border-primary/40 bg-primary/5" : "border-border bg-background/60"}`}>
                   <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl font-semibold ${alert ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary"}`}>{initials(log.attendee.name)}</span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate font-bold">{log.attendee.firstName} {log.attendee.lastName}</p>
-                      {log.attendee.vip ? <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-500">VIP</span> : null}
+                      {log.attendee.vip ? <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-bold text-primary">VIP</span> : null}
                       <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-black text-primary" title={`${log.attendee.plusOneEnabled ? 2 : 1} people on this pass`}><Users className="h-3 w-3" /> {log.attendee.plusOneEnabled ? 2 : 1}</span>
                       {under21 ? <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-black uppercase text-destructive">Under 21</span> : null}
                       {log.duplicate ? <span className="rounded-full bg-destructive px-2 py-0.5 text-[10px] font-black uppercase text-white">Duplicate</span> : null}
@@ -131,7 +131,7 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
                     <p className="truncate text-sm text-muted-foreground">{log.attendee.ticketTier}{log.attendee.plusOneName ? ` · +1 ${log.attendee.plusOneName}` : ""}</p>
                     {under21 ? <p className="truncate text-xs font-semibold text-destructive">{log.attendee.under21 && log.attendee.plusOneUnder21 ? "Primary attendee + guest under 21" : log.attendee.under21 ? "Primary attendee under 21" : "Guest under 21"}</p> : null}
                   </div>
-                  <span className="flex shrink-0 items-center gap-1 text-sm text-muted-foreground"><Clock3 className="h-4 w-4" /> {new Date(log.scannedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}</span>
+                  <span className="flex shrink-0 items-center gap-1 text-sm text-muted-foreground"><Clock3 className="h-4 w-4" /> {new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", second: "2-digit", timeZone }).format(new Date(log.scannedAt))}</span>
                 </div>
               );})}
             </div>

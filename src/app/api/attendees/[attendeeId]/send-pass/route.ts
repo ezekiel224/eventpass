@@ -37,9 +37,11 @@ export async function POST(request: Request, { params }: Params) {
 
   try {
     const branding = await getBranding();
-    const template = await getCommunicationTemplate(attendee.event.organizationId, "PASS_CONFIRMATION");
+    const template = await getCommunicationTemplate(attendee.event.organizationId, "PASS_CONFIRMATION", attendee.event.id);
     const rendered = renderCommunicationTemplate(template, {
       name: `${attendee.firstName} ${attendee.lastName}`,
+      firstName: attendee.firstName,
+      lastName: attendee.lastName,
       eventName: attendee.event.name,
       eventDescription: attendee.event.description ?? "",
       eventDate: formatDate(attendee.event.startsAt, branding.timezone),

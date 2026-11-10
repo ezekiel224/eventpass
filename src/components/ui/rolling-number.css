@@ -1,0 +1,9 @@
+.ep-rolling-number { display: inline-flex; font-variant-numeric: tabular-nums; }
+.ep-rolling-number-track { display: inline-flex; align-items: baseline; }
+.ep-rolling-number .is-digit,
+.ep-rolling-number .is-punctuation { position: relative; display: inline-block; height: 1.1em; overflow: hidden; line-height: 1.1; }
+.ep-rolling-number .is-digit { width: .64em; }
+.ep-rolling-number .is-punctuation { width: .34em; }
+.ep-rolling-number .is-digit > span,
+.ep-rolling-number .is-punctuation > span { position: absolute; inset: 0; display: block; text-align: center; }
+.ep-rolling-number .is-suffix { margin-left: .08em; }

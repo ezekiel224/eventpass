@@ -5,6 +5,7 @@ import { setSessionCookie } from "@/lib/auth";
 import { getAuthorizationForUser } from "@/lib/authorization";
 import { prisma } from "@/lib/db";
 import { rateLimit } from "@/services/rate-limit";
+import { auditLogData } from "@/lib/audit";
 
 const loginSchema = z.object({
   identifier: z.string().trim().min(3).max(254),
@@ -33,10 +34,31 @@ export async function POST(request: NextRequest) {
   });
 
   if (!user?.passwordHash || !user.active || !(await compare(parsed.data.password, user.passwordHash))) {
+    await prisma.auditLog.create({
+      data: auditLogData({
+        request,
+        actorUserId: user?.id ?? null,
+        actor: user ? { id: user.id, email: user.email, name: user.name } : null,
+        action: "auth.login_failed",
+        targetType: "Session",
+        targetId: user?.id ?? null,
+        metadata: { identifier, reason: !user ? "account_not_found" : !user.active ? "account_disabled" : "invalid_credentials" }
+      })
+    });
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
   await setSessionCookie(user);
+  await prisma.auditLog.create({
+    data: auditLogData({
+      request,
+      actorUserId: user.id,
+      actor: { id: user.id, email: user.email, name: user.name },
+      action: "auth.login_succeeded",
+      targetType: "Session",
+      targetId: user.id
+    })
+  });
   const authorization = await getAuthorizationForUser(user.id);
   const home = authorization?.permissions.has("dashboard:view") ? "/dashboard" : authorization?.permissions.has("checkins:manage") ? "/scan" : "/forbidden";
   return NextResponse.json({ ok: true, mustChangePassword: user.mustChangePassword, home });

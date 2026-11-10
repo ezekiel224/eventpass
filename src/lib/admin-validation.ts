@@ -33,6 +33,11 @@ export const updateAdminUserSchema = z.object({
   }).strict()).max(100)
 }).strict();
 
+export const deleteAdminUserSchema = z.object({
+  userId: z.string().min(1),
+  confirmationEmail: z.string().trim().email().max(254).transform((value) => value.toLowerCase())
+}).strict();
+
 export const roleMutationSchema = z.object({
   id: z.string().min(1).optional(),
   name: z.string().trim().min(2).max(80),

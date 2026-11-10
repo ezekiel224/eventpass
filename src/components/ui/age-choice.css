@@ -1,0 +1,9 @@
+.ep-age-choice { min-width: 0; border: 0; padding: 0; margin: 0; }
+.ep-age-choice > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ep-age-choice-option { min-width: 0; flex: 1 1 180px; }
+.ep-age-choice-option svg { width: 16px; height: 16px; }
+.ep-age-choice-option[data-selected] { border-color: var(--primary-control); color: var(--primary-control-foreground); background: var(--primary-control); box-shadow: 0 10px 24px color-mix(in srgb, var(--primary-control) 18%, transparent); }
+.ep-age-choice-option[data-selected][data-age="minor"] { border-color: var(--c-color-alert-600); color: white; background: var(--c-color-alert-600); box-shadow: 0 10px 24px color-mix(in srgb, var(--c-color-alert-600) 18%, transparent); }
+.ep-public-register .ep-age-choice-option[data-selected] { border-color: hsl(var(--ep-primary)) !important; color: hsl(var(--ep-primary-foreground)) !important; background: hsl(var(--ep-primary)) !important; box-shadow: 0 10px 24px hsl(var(--ep-primary) / .18); }
+.ep-public-register .ep-age-choice-option[data-selected][data-age="minor"] { border-color: hsl(var(--ep-destructive)) !important; color: white !important; background: hsl(var(--ep-destructive)) !important; box-shadow: 0 10px 24px hsl(var(--ep-destructive) / .16); }
+@media (max-width: 440px) { .ep-age-choice > div { grid-template-columns: 1fr; } }

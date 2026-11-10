@@ -1,3 +1,30 @@
 {
-  "buildPath": "comp"
+  "buildPath": "comp",
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "layout-transition",
+        "value": "*",
+        "files": [
+          "src/components/dashboard/tamagui-app-frame.css"
+        ],
+        "createdAt": "2026-10-21T01:44:08.338Z",
+        "reason": "user confirmed: requested the Tamagui.dev flat-to-pill scroll morph copied 1 for 1 with gentle, smooth animation"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-10-21T03:12:26.573Z",
+        "reason": "DESIGN.md defines Inter as EventPass's product typeface, and this task requires one identical navigation font across every route."
+      },
+      {
+        "rule": "design-system-font",
+        "value": "body",
+        "createdAt": "2026-10-23T00:35:03.289Z",
+        "reason": "DESIGN.md declares Inter as the body typeface and Tamagui v3's project-owned Tabs skin references that configured body token."
+      }
+    ]
+  }
 }

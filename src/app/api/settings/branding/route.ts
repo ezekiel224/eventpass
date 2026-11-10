@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getDefaultOrganization } from "@/lib/prisma-helpers";
 import { prisma } from "@/lib/db";
+import { isValidTimeZone } from "@/lib/utils";
 
 const brandingSchema = z.object({
   name: z.string().min(2).max(120),
   logoUrl: z.string().url().or(z.literal("")).optional(),
-  timezone: z.string().min(2).max(80),
+  timezone: z.string().min(2).max(80).refine(isValidTimeZone, "Choose a valid IANA time zone."),
   domain: z.string().max(160).optional()
 });
 

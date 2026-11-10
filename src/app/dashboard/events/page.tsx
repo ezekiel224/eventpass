@@ -1,12 +1,10 @@
 import { AppShell } from "@/components/dashboard/app-shell";
-import { EventsManager } from "@/components/dashboard/events-manager";
-import { PageTitle } from "@/components/dashboard/page-title";
+import { TamaguiEventsManager } from "@/components/dashboard/tamagui-events-manager";
 
 export default function EventsPage() {
   return (
     <AppShell active="Events">
-      <PageTitle eyebrow="Management" title="Events" />
-      <EventsManager />
+      <TamaguiEventsManager />
     </AppShell>
   );
 }

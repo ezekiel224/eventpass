@@ -1,7 +1,7 @@
 import { AccountsManager } from "@/components/admin/accounts-manager";
 import { AppShell } from "@/components/dashboard/app-shell";
 import { PageTitle } from "@/components/dashboard/page-title";
-import { requirePermission } from "@/lib/authorization";
+import { isAdministrator, requirePermission } from "@/lib/authorization";
 
 export default async function AccountsPage() {
   const authorization = await requirePermission("users:view");
@@ -10,8 +10,8 @@ export default async function AccountsPage() {
 
   return (
     <AppShell active="Accounts">
-      <PageTitle eyebrow="Access" title="Accounts" />
-      <AccountsManager currentUserId={authorization.user.id} />
+      <PageTitle title="Accounts" />
+      <AccountsManager currentUserId={authorization.user.id} canDeleteAccounts={isAdministrator(authorization)} />
     </AppShell>
   );
 }

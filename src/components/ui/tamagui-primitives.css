@@ -1,0 +1,93 @@
+.ep-tamagui-button {
+  position: relative;
+  min-height: 44px !important;
+  height: auto;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px !important;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 20px !important;
+  cursor: pointer;
+  transition: transform 220ms cubic-bezier(.16,1,.3,1), background-color 160ms ease, border-color 160ms ease, opacity 160ms ease;
+}
+
+.ep-button-content,
+.ep-button-loading { display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: inherit; }
+.ep-button-content { transition: opacity 160ms ease, transform 220ms cubic-bezier(.16,1,.3,1); }
+.ep-button-loading { position: absolute; inset: 0; padding: inherit; animation: ep-button-loading-enter 180ms cubic-bezier(.16,1,.3,1); }
+.ep-button-loading svg { width: 16px; height: 16px; animation: ep-button-spin 800ms linear infinite; }
+.ep-tamagui-button.is-loading .ep-button-content { opacity: 0; transform: translateY(-4px); }
+@keyframes ep-button-spin { to { transform: rotate(360deg); } }
+@keyframes ep-button-loading-enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+.ep-tamagui-button[data-variant="primary"] {
+  color: var(--primary-control-foreground) !important;
+  background: var(--primary-control) !important;
+}
+
+.ep-tamagui-button > :is(span, svg) { color: inherit !important; }
+
+.ep-tamagui-button[data-variant="secondary"] {
+  color: var(--color) !important;
+  border-color: var(--border-color) !important;
+  background: var(--background) !important;
+}
+
+.ep-tamagui-button[data-variant="ghost"] {
+  color: var(--color-8) !important;
+  background: transparent !important;
+}
+
+.ep-tamagui-button[data-variant="danger"] {
+  color: var(--c-color-alert-950) !important;
+  background: var(--c-color-alert-500) !important;
+}
+
+.ep-tamagui-button:hover { transform: translateY(-1px); }
+.ep-tamagui-button[data-variant="secondary"]:hover { border-color: var(--border-color-hover) !important; background: var(--background-hover) !important; }
+.ep-tamagui-button[data-variant="ghost"]:hover { color: var(--color) !important; background: var(--background-hover) !important; }
+.ep-tamagui-button:active { transform: scale(.98); }
+.ep-tamagui-button:focus-visible { outline: 2px solid var(--c-color-brand-500) !important; outline-offset: 2px; }
+.ep-tamagui-button:disabled { cursor: not-allowed; opacity: .45; transform: none; }
+
+.ep-tamagui-card {
+  color: var(--color);
+  border-color: var(--border-color) !important;
+  border-radius: 16px !important;
+  background: var(--background) !important;
+  box-shadow: none !important;
+}
+
+.ep-tamagui-input {
+  width: 100% !important;
+  min-height: 44px !important;
+  height: 44px;
+  padding: 0 14px !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  color: var(--color) !important;
+  background: var(--background) !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 220ms ease;
+}
+
+.ep-tamagui-input::placeholder { color: var(--color-8); }
+.ep-tamagui-input:hover { border-color: var(--border-color-hover) !important; }
+.ep-tamagui-input:focus-visible {
+  border-color: var(--c-color-brand-600) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-color-brand-500) 28%, transparent) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ep-tamagui-button,
+  .ep-tamagui-input { transition-duration: .01ms !important; }
+  .ep-button-loading,
+  .ep-button-loading svg { animation-duration: .01ms !important; }
+}

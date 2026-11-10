@@ -9,7 +9,7 @@ export default async function PermissionsPage() {
 
   return (
     <AppShell active="Permissions">
-      <PageTitle eyebrow="Access" title="Roles & Permissions" />
+      <PageTitle title="Roles & Permissions" />
       <PermissionsManager />
     </AppShell>
   );

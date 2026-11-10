@@ -1,0 +1,271 @@
+.ep-attendees-workspace,
+.ep-campaign-tabs {
+  margin-top: 28px;
+  color: var(--color);
+}
+
+.ep-attendees-workspace { display: grid; gap: 20px; }
+
+.ep-attendee-context,
+.ep-roster-panel,
+.ep-campaign-compose,
+.ep-campaign-ledger,
+.ep-lifecycle-panel {
+  border: 1px solid var(--border-color) !important;
+  border-radius: 16px !important;
+  background: var(--background) !important;
+  box-shadow: none !important;
+}
+
+.ep-attendee-context {
+  min-height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px 20px;
+}
+
+.ep-attendee-context h2,
+.ep-roster-header h2,
+.ep-campaign-panel-header h2 {
+  margin: 0;
+  color: var(--color);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 20px;
+  letter-spacing: -.015em;
+}
+
+.ep-attendee-context p,
+.ep-roster-header p,
+.ep-campaign-panel-header p,
+.ep-template-intro p {
+  margin: 4px 0 0;
+  color: var(--color-8);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.ep-attendees-workspace > .control-panel {
+  border-color: var(--border-color);
+  border-radius: 16px;
+  background: var(--background-hover);
+  box-shadow: none;
+}
+
+.ep-roster-panel { overflow: hidden; }
+.ep-roster-header,
+.ep-campaign-panel-header {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ep-campaign-panel-header > svg { flex: 0 0 auto; color: var(--c-color-brand-700); }
+.ep-roster-count {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: var(--c-color-brand-800);
+  background: var(--c-color-brand-100);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ep-roster-tools {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--background-hover);
+}
+
+.ep-attendee-search { position: relative; display: block; max-width: 520px; }
+.ep-attendee-search > svg { position: absolute; z-index: 1; top: 14px; left: 13px; color: var(--color-8); pointer-events: none; }
+.ep-attendee-search .ep-tamagui-input { padding-left: 38px !important; }
+.ep-attendee-filters { display: flex; align-items: center; gap: 8px; }
+.ep-attendee-filters .ep-operation-select,
+.ep-campaign-form .ep-operation-select { min-width: 168px; margin-top: 0; }
+.ep-attendee-filters .ep-operation-select { width: 168px; }
+
+.ep-roster-table-wrap { overflow-x: auto; }
+.ep-roster-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 13px; }
+.ep-roster-table th { padding: 11px 16px; color: var(--color-8); background: var(--background); font-size: 10px; font-weight: 800; letter-spacing: .07em; text-align: left; text-transform: uppercase; }
+.ep-roster-table th:first-child,
+.ep-roster-table td:first-child { padding-left: 20px; }
+.ep-roster-table th:last-child,
+.ep-roster-table td:last-child { width: 60px; padding-right: 14px; text-align: right; }
+.ep-roster-table tbody tr { border-top: 1px solid var(--border-color); transition: background-color 160ms ease; }
+.ep-roster-table tbody tr:hover { background: var(--background-hover); }
+.ep-roster-table tbody tr[data-vip] { background: var(--c-color-brand-50); }
+.ep-roster-table td { padding: 14px 16px; vertical-align: middle; }
+.ep-roster-table td > strong,
+.ep-roster-table td > span,
+.ep-roster-table td > small { display: block; }
+.ep-roster-table td > strong { font-size: 12px; }
+.ep-roster-table td > span,
+.ep-roster-table td > small { margin-top: 2px; color: var(--color-8); font-size: 11px; }
+.ep-roster-table code,
+.ep-attendee-card code { color: var(--color); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+.ep-attendee-identity { min-width: 0; display: flex; align-items: center; gap: 11px; }
+.ep-attendee-identity > div { min-width: 0; }
+.ep-attendee-avatar { width: 38px; height: 38px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 12px; color: var(--c-color-brand-800); background: var(--c-color-brand-100); font-size: 12px; font-weight: 800; }
+.ep-attendee-name { display: flex; align-items: center; gap: 7px; color: var(--color); font-size: 13px; font-weight: 750; }
+.ep-attendee-identity p { max-width: 36ch; margin: 2px 0 0; overflow: hidden; color: var(--color-8); font-size: 11px; line-height: 16px; text-overflow: ellipsis; white-space: nowrap; }
+.ep-vip-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 999px; color: var(--c-color-brand-800); background: var(--c-color-brand-100); font-size: 9px; font-weight: 800; line-height: 13px; }
+.ep-age-alert { display: inline-block; margin-top: 4px; color: var(--c-color-alert-700); font-size: 10px; font-weight: 750; }
+.ep-checkin-status { color: var(--color-8) !important; }
+.ep-checkin-status.is-complete { color: var(--c-color-brand-800) !important; font-weight: 750; }
+.ep-row-menu-trigger { width: 40px; min-height: 40px !important; padding: 0 !important; }
+.ep-attendee-action-menu { padding: 4px; }
+.ep-attendee-menu-item { min-height: 40px; width: 100%; display: flex; flex-direction: row !important; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 11px; border-radius: 8px; outline: none; cursor: pointer; }
+.ep-attendee-menu-item:focus { background: var(--background-focus); }
+.ep-attendee-menu-item[data-disabled] { cursor: not-allowed; opacity: .42; }
+.ep-attendee-menu-separator { height: 1px; margin: 4px 0; background: var(--border-color); }
+.ep-roster-state { min-height: 116px; padding: 32px 20px !important; color: var(--color-8); font-size: 12px; text-align: center !important; }
+.ep-roster-cards { display: none; }
+
+.ep-campaign-tab-list { display: grid !important; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; padding: 4px; border: 1px solid var(--border-color); border-radius: 16px; background: var(--background); }
+.ep-campaign-tab { min-height: 48px; border-radius: 12px !important; color: var(--color-8) !important; font-weight: 750 !important; transition: color 160ms ease, background-color 160ms ease; }
+.ep-campaign-tab[data-state="active"] { color: var(--c-color-brand-900) !important; background: var(--c-color-brand-100) !important; }
+.ep-campaign-tab-content { padding-top: 16px; outline: none; }
+.ep-campaign-tab-content:focus-visible { border-radius: 16px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-color-brand-500) 24%, transparent); }
+.ep-campaign-tab-content > .ep-lifecycle-panel { margin-top: 0; }
+.ep-campaign-global-notice { margin: 14px 0 0; }
+.ep-campaign-compose,
+.ep-campaign-ledger { min-width: 0; overflow: hidden; }
+.ep-campaign-form,
+.ep-template-editor { display: grid; gap: 16px; padding: 20px; }
+.ep-attendee-editor { display: grid; gap: 16px; }
+.ep-attendee-editor-actions { position: sticky; bottom: 0; z-index: 2; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 12px 0 4px; background: var(--background); }
+.ep-campaign-form-grid { display: grid; grid-template-columns: 1fr 220px; gap: 12px; }
+.ep-field-label { display: grid; gap: 7px; color: var(--color); font-size: 12px; font-weight: 750; }
+.ep-field-label > span { display: block; }
+.ep-schedule-block { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .75fr); align-items: center; gap: 16px; padding: 14px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--background-hover); }
+.ep-schedule-heading { min-width: 0; display: flex; align-items: flex-start; gap: 10px; }
+.ep-schedule-heading > svg { flex: 0 0 auto; margin-top: 2px; color: var(--c-color-brand-700); }
+.ep-schedule-heading strong,
+.ep-schedule-heading span { display: block; }
+.ep-schedule-heading strong { font-size: 12px; }
+.ep-schedule-heading span { margin-top: 3px; color: var(--color-8); font-size: 10px; line-height: 15px; }
+.ep-schedule-fields { display: grid; grid-template-columns: 1fr 104px; gap: 8px; }
+.ep-campaign-compose-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 4px; }
+.ep-campaign-compose-footer > div:first-child { color: var(--color-8); font-size: 12px; }
+.ep-campaign-compose-footer > div:first-child strong { color: var(--color); font-size: 20px; font-variant-numeric: tabular-nums; }
+.ep-campaign-compose-footer small { display: block; margin-top: 2px; font-size: 10px; }
+.ep-campaign-compose-footer > div:last-child { display: flex; gap: 8px; }
+.ep-campaign-list { display: grid; }
+.ep-campaign-row { padding: 18px 20px; border-top: 1px solid var(--border-color); }
+.ep-campaign-row:first-child { border-top: 0; }
+.ep-campaign-row-main { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.ep-campaign-row h3 { margin: 8px 0 0; font-size: 13px; font-weight: 800; line-height: 18px; }
+.ep-campaign-row p { margin: 3px 0 0; color: var(--color-8); font-size: 11px; line-height: 16px; }
+.ep-campaign-status { padding: 3px 7px; border-radius: 999px; color: var(--color-8); background: var(--background-hover); font-size: 9px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.ep-campaign-status[data-status="sent"],
+.ep-campaign-status[data-status="scheduled"] { color: var(--c-color-brand-800); background: var(--c-color-brand-100); }
+.ep-campaign-status[data-status="failed"] { color: var(--c-color-alert-700); background: var(--c-color-alert-100); }
+.ep-campaign-row footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color); color: var(--color-8); font-size: 10px; line-height: 15px; font-variant-numeric: tabular-nums; }
+.ep-campaign-row footer strong { color: var(--color); }
+.ep-campaign-loading,
+.ep-campaign-empty { min-height: 146px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px; color: var(--color-8); font-size: 12px; text-align: center; }
+.ep-campaign-empty strong { color: var(--color); font-size: 13px; }
+.ep-campaign-empty span { max-width: 38ch; margin-top: 5px; line-height: 18px; }
+
+.ep-lifecycle-panel { margin-top: 28px; overflow: hidden; }
+.ep-lifecycle-layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); }
+.ep-template-list { display: grid; align-content: start; gap: 4px; padding: 12px; border-right: 1px solid var(--border-color); background: var(--background-hover); }
+.ep-template-option { appearance: none; display: grid; gap: 3px; padding: 11px 12px; border: 1px solid transparent; border-radius: 12px; color: var(--color-8); background: transparent; text-align: left; cursor: pointer; transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease; }
+.ep-template-option:hover { color: var(--color); background: var(--background); }
+.ep-template-option[data-active] { color: var(--c-color-brand-900); border-color: var(--c-color-brand-200); background: var(--c-color-brand-100); }
+.ep-template-option:focus-visible { outline: 2px solid var(--c-color-brand-500); outline-offset: 2px; }
+.ep-template-option span { font-size: 12px; font-weight: 800; line-height: 17px; }
+.ep-template-option small { overflow: hidden; font-size: 10px; line-height: 15px; text-overflow: ellipsis; white-space: nowrap; }
+.ep-template-intro h3 { margin: 0; font-size: 14px; font-weight: 800; }
+.ep-template-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.ep-campaign-notice { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 11px 13px; border: 1px solid var(--border-color); border-radius: 12px; color: var(--color); background: var(--background-hover); font-size: 12px; line-height: 18px; }
+.ep-campaign-notice[data-tone="error"] { color: var(--c-color-alert-700); border-color: var(--c-color-alert-300); background: var(--c-color-alert-50); }
+.ep-campaign-notice > svg { flex: 0 0 auto; margin-top: 1px; }
+.ep-email-preview { overflow: hidden; border: 1px solid var(--border-color); border-radius: 16px; background: var(--background); }
+.ep-email-preview > header { display: grid; gap: 4px; padding: 16px 20px; border-bottom: 1px solid var(--border-color); }
+.ep-email-preview > header span { color: var(--color-8); font-size: 10px; font-weight: 750; }
+.ep-email-preview > header strong { font-size: 14px; }
+.ep-email-preview > div { padding: 24px 20px; color: var(--color); font-size: 13px; line-height: 21px; }
+.ep-email-preview-action { min-height: 40px; display: inline-flex; align-items: center; margin-top: 20px; padding: 0 14px; border-radius: 12px; color: var(--primary-control-foreground); background: var(--primary-control); font-size: 12px; font-weight: 800; }
+
+@media (max-width: 1080px) {
+  .ep-campaign-tab-content { padding-top: 14px; }
+}
+
+@media (max-width: 860px) {
+  .ep-roster-tools { grid-template-columns: 1fr; }
+  .ep-attendee-search { max-width: none; }
+  .ep-attendee-filters { display: grid; grid-template-columns: 1fr 1fr auto; }
+  .ep-attendee-filters .ep-operation-select { width: 100%; min-width: 0; }
+  .ep-lifecycle-layout { grid-template-columns: 1fr; }
+  .ep-template-list { grid-template-columns: repeat(2,minmax(0,1fr)); border-right: 0; border-bottom: 1px solid var(--border-color); }
+}
+
+@media (max-width: 720px) {
+  .ep-attendees-workspace,
+  .ep-campaign-tabs,
+  .ep-lifecycle-panel { margin-top: 20px; }
+  .ep-attendee-context { align-items: stretch; flex-direction: column; }
+  .ep-attendee-context .ep-tamagui-button { width: 100%; }
+  .ep-attendees-workspace > .control-panel > div { align-items: stretch; }
+  .ep-attendees-workspace > .control-panel .ep-tamagui-button { flex: 1; }
+  .ep-roster-header,
+  .ep-campaign-panel-header { padding: 15px 16px; }
+  .ep-roster-tools { padding: 12px 14px; }
+  .ep-attendee-filters { grid-template-columns: 1fr 1fr; }
+  .ep-attendee-filters .ep-tamagui-button { grid-column: 1 / -1; }
+  .ep-roster-table-wrap { display: none; }
+  .ep-roster-cards { display: grid; }
+  .ep-attendee-card { padding: 15px 14px; border-top: 1px solid var(--border-color); }
+  .ep-attendee-card:first-child { border-top: 0; }
+  .ep-attendee-card[data-vip] { background: var(--c-color-brand-50); }
+  .ep-attendee-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .ep-attendee-card dl { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 14px 0 0; padding-top: 13px; border-top: 1px solid var(--border-color); }
+  .ep-attendee-card dt { color: var(--color-8); font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+  .ep-attendee-card dd { margin: 4px 0 0; overflow: hidden; font-size: 11px; line-height: 16px; text-overflow: ellipsis; }
+  .ep-attendee-card-note { margin: 10px 0 0; color: var(--color-8); font-size: 10px; }
+  .ep-campaign-form { padding: 16px; }
+  .ep-campaign-form-grid,
+  .ep-schedule-block { grid-template-columns: 1fr; }
+  .ep-campaign-form .ep-operation-select { width: 100%; }
+  .ep-campaign-compose-footer { align-items: stretch; flex-direction: column; }
+  .ep-campaign-compose-footer > div:last-child { display: grid; grid-template-columns: 1fr 1fr; }
+  .ep-campaign-row { padding: 16px; }
+  .ep-campaign-row-main { align-items: stretch; flex-direction: column; }
+  .ep-campaign-row-main .ep-tamagui-button { width: 100%; }
+  .ep-campaign-row footer { align-items: flex-start; flex-direction: column; }
+  .ep-template-editor { padding: 16px; }
+}
+
+@media (max-width: 430px) {
+  .ep-attendee-filters,
+  .ep-template-list,
+  .ep-schedule-fields,
+  .ep-campaign-compose-footer > div:last-child { grid-template-columns: 1fr; }
+  .ep-attendee-filters .ep-tamagui-button { grid-column: auto; }
+  .ep-attendee-card dl { grid-template-columns: 1fr 1fr; }
+  .ep-template-actions { display: grid; grid-template-columns: 1fr; }
+  .ep-template-actions .ep-tamagui-button { width: 100%; }
+  .ep-attendee-editor-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .ep-attendee-editor-actions .ep-tamagui-button { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ep-attendees-workspace *,
+  .ep-campaign-tabs *,
+  .ep-lifecycle-panel * { transition-duration: .01ms !important; }
+}

@@ -289,10 +289,10 @@ export function QrCameraScanner({
       >
         <div id={readerId} className={cn(immersive ? "h-full min-h-0 [&_video]:h-full [&_video]:w-full [&_video]:object-cover" : "min-h-72 [&_video]:min-h-72 [&_video]:object-cover")} />
         <div
-          className={`pointer-events-none absolute inset-0 grid place-items-center transition ${feedback === "success" ? "bg-emerald-500/30 opacity-100" : feedback === "error" ? "bg-destructive/25 opacity-100" : "opacity-0"}`}
+          className={`pointer-events-none absolute inset-0 grid place-items-center transition ${feedback === "success" ? "bg-primary/30 opacity-100" : feedback === "error" ? "bg-destructive/25 opacity-100" : "opacity-0"}`}
           aria-live="polite"
         >
-          <span className={`grid h-20 w-20 place-items-center rounded-full text-white shadow-2xl ${feedback === "error" ? "bg-destructive" : "bg-emerald-500"}`}>
+          <span className={`grid h-20 w-20 place-items-center rounded-full text-white shadow-2xl ${feedback === "error" ? "bg-destructive" : "bg-primary"}`}>
             {feedback === "error" ? <ShieldAlert className="h-10 w-10" /> : <CheckCircle2 className="h-10 w-10" />}
           </span>
         </div>

@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { KeyRound, Loader2 } from "lucide-react";
+import { KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCsrfToken } from "@/hooks/useCsrfToken";
@@ -52,10 +52,7 @@ export function ChangePasswordForm() {
       <label className="grid gap-2 text-sm font-semibold">Confirm new password<Input name="confirmPassword" type="password" autoComplete="new-password" placeholder="Repeat new password" minLength={12} required /></label>
       <p className="text-xs leading-5 text-muted-foreground">Use at least 12 characters with uppercase, lowercase, a number, and a symbol.</p>
       {csrf.error || error ? <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive" role="alert">{csrf.error || error}</p> : null}
-      <Button className="mt-2 h-12" type="submit" disabled={saving || !csrf.token}>
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
-        Set new password
-      </Button>
+      <Button className="mt-2 h-12" type="submit" disabled={!csrf.token} loading={saving} loadingLabel="Saving password…"><KeyRound className="h-4 w-4" /> Set new password</Button>
     </form>
   );
 }

@@ -5,7 +5,7 @@ import { SettingsManager } from "@/components/dashboard/settings-manager";
 export default function SettingsPage() {
   return (
     <AppShell active="Settings">
-      <PageTitle eyebrow="Administration" title="Settings" />
+      <PageTitle title="Settings" />
       <SettingsManager />
     </AppShell>
   );

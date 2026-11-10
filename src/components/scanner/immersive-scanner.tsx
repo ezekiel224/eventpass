@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
 import { Button } from "@/components/ui/button";
 import type { CheckInResult } from "@/types/domain";
+import { queueCheckIn, readQueuedCheckIns, removeQueuedCheckIn, scannerDeviceKey } from "@/lib/offline-checkin";
 
 type EventOption = { id: string; name: string; startsAt: string };
 type Prize = { id: string; name: string; value: string | null };
@@ -36,6 +37,9 @@ export function ImmersiveScanner() {
   const [allocations, setAllocations] = useState<Record<string, number>>({});
   const [selectedPrizeId, setSelectedPrizeId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [stationId, setStationId] = useState("");
+  const [stationName, setStationName] = useState("Front entrance");
+  const [queuedCount, setQueuedCount] = useState(0);
 
   const usedTickets = useMemo(() => Object.values(allocations).reduce((sum, count) => sum + count, 0), [allocations]);
   const remainingTickets = Math.max(0, (raffleAttendee?.raffleTickets ?? 0) - usedTickets);
@@ -56,6 +60,32 @@ export function ImmersiveScanner() {
     if (resolvedEventId) localStorage.setItem("eventpass-scanner-event", resolvedEventId);
   }
 
+  async function ensureStation(nextEventId = eventId, nextName = stationName) {
+    if (!nextEventId || !navigator.onLine) return "";
+    const deviceKey = scannerDeviceKey();
+    const savedName = localStorage.getItem("eventpass-scanner-station-name") || nextName;
+    const response = await fetch("/api/check-in/stations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ eventId: nextEventId, deviceKey, name: savedName }) });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error ?? "Station could not be registered.");
+    setStationId(data.station.id);
+    setStationName(data.station.name);
+    return data.station.id as string;
+  }
+
+  async function flushQueued(nextStationId = stationId) {
+    if (!navigator.onLine) return;
+    const queued = readQueuedCheckIns();
+    for (const item of queued) {
+      const response = await fetch("/api/check-in", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...item, stationId: item.stationId || nextStationId }) });
+      if (response.ok || (response.status >= 400 && response.status < 500)) removeQueuedCheckIn(item.clientScanId);
+      if (!response.ok && response.status < 500) {
+        const data = await response.json().catch(() => ({}));
+        setFeedback({ tone: "error", title: "Queued pass rejected", detail: data.error ?? "Review the reconciliation log." });
+      }
+    }
+    setQueuedCount(readQueuedCheckIns().length);
+  }
+
   async function searchAttendees(search: string) {
     const parameters = new URLSearchParams({ eventId, q: search.trim() });
     const response = await fetch(`/api/scan?${parameters}`, { cache: "no-store" });
@@ -69,10 +99,17 @@ export function ImmersiveScanner() {
     const setupTimer = window.setTimeout(() => {
       void loadContext(preferred).catch((error) => setFeedback({ tone: "error", title: "Scanner unavailable", detail: error instanceof Error ? error.message : "Reload and try again." }));
     }, 0);
-    const updateOnline = () => setOnline(navigator.onLine);
+    const updateOnline = () => {
+      setOnline(navigator.onLine);
+      if (navigator.onLine) void ensureStation(localStorage.getItem("eventpass-scanner-event") || "").then((id) => flushQueued(id)).catch(() => undefined);
+    };
     const connectionInfo = (navigator as Navigator & { connection?: { effectiveType?: string; addEventListener?: (name: string, listener: () => void) => void; removeEventListener?: (name: string, listener: () => void) => void } }).connection;
     const updateConnection = () => setConnection(connectionInfo?.effectiveType?.toUpperCase() ?? "");
     updateOnline();
+    const localStateTimer = window.setTimeout(() => {
+      setQueuedCount(readQueuedCheckIns().length);
+      setStationName(localStorage.getItem("eventpass-scanner-station-name") || "Front entrance");
+    }, 0);
     updateConnection();
     window.addEventListener("online", updateOnline);
     window.addEventListener("offline", updateOnline);
@@ -92,6 +129,7 @@ export function ImmersiveScanner() {
     });
     return () => {
       window.clearTimeout(setupTimer);
+      window.clearTimeout(localStateTimer);
       window.removeEventListener("online", updateOnline);
       window.removeEventListener("offline", updateOnline);
       connectionInfo?.removeEventListener?.("change", updateConnection);
@@ -102,6 +140,13 @@ export function ImmersiveScanner() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!eventId || !online) return;
+    const timer = window.setTimeout(() => void ensureStation(eventId).then((id) => flushQueued(id)).catch((error) => setFeedback({ tone: "error", title: "Station unavailable", detail: error instanceof Error ? error.message : "Try again." })), 0);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, online]);
 
   useEffect(() => {
     if (!manualOpen || query.trim().length < 2) return;
@@ -123,10 +168,23 @@ export function ImmersiveScanner() {
 
   async function checkIn(payload: { qrPayload?: string; fallbackCode?: string; attendeeId?: string }) {
     if (!online) {
-      setFeedback({ tone: "error", title: "You’re offline", detail: "Reconnect before scanning so duplicates and admissions stay accurate." });
-      return false;
+      if (!payload.qrPayload) {
+        setFeedback({ tone: "error", title: "Live lookup required", detail: "Offline mode accepts signed QR payloads only. Manual lookup and fallback codes require a connection." });
+        return false;
+      }
+      try {
+        const decoded = JSON.parse(payload.qrPayload) as { eventId?: string };
+        if (decoded.eventId !== eventId) throw new Error("This pass appears to belong to another event.");
+        const count = queueCheckIn({ clientScanId: crypto.randomUUID(), eventId, qrPayload: payload.qrPayload, recordedAt: new Date().toISOString(), stationId: stationId || undefined });
+        setQueuedCount(count);
+        setFeedback({ tone: "warning", title: "Queued for verification", detail: "Not yet validated or admitted. Keep the guest with venue staff until this station reconnects." });
+        return true;
+      } catch (error) {
+        setFeedback({ tone: "error", title: "Pass not queued", detail: error instanceof Error ? error.message : "The QR payload was not readable." });
+        return false;
+      }
     }
-    const response = await fetch("/api/check-in", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, eventId, testMode }) });
+    const response = await fetch("/api/check-in", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, eventId, testMode, stationId: stationId || undefined }) });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       setFeedback({ tone: "error", title: "Pass not accepted", detail: typeof data.error === "string" ? data.error : "Try the fallback code or attendee search." });
@@ -197,8 +255,8 @@ export function ImmersiveScanner() {
   const selectedCount = selectedPrizeId ? allocations[selectedPrizeId] ?? 0 : 0;
 
   return (
-    <main className="fixed inset-0 z-[300] overflow-hidden bg-[#100d0b] text-white [font-synthesis:none]">
-      <QrCameraScanner immersive onScan={handleScan} disabled={!eventId || !online} onStartRequest={enterFullscreen} onActiveChange={() => undefined} />
+    <main className="fixed inset-0 z-[300] overflow-hidden bg-[#06110c] text-white [font-synthesis:none]">
+      <QrCameraScanner immersive onScan={handleScan} disabled={!eventId || (mode === "raffle" && !online)} onStartRequest={enterFullscreen} onActiveChange={() => undefined} />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-black/55" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-52 bg-black/65" />
 
@@ -209,7 +267,7 @@ export function ImmersiveScanner() {
           </select>
           <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4" />
         </label>
-        <button type="button" onClick={() => setStatusOpen(true)} className={`pointer-events-auto focus-ring grid h-11 min-w-11 place-items-center rounded-xl border backdrop-blur-md ${online ? "border-white/20 bg-black/65" : "border-red-400/40 bg-red-950/80"}`} aria-label="Device and connection status">{online ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}</button>
+        <button type="button" onClick={() => setStatusOpen(true)} className={`pointer-events-auto focus-ring grid h-11 min-w-11 place-items-center rounded-xl border backdrop-blur-md ${online ? "border-white/20 bg-black/65" : "border-primary/45 bg-primary/25"}`} aria-label="Device and connection status">{online ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}</button>
         {!fullscreen ? <button type="button" onClick={enterFullscreen} className="pointer-events-auto focus-ring grid h-11 w-11 place-items-center rounded-xl border border-white/20 bg-black/65 backdrop-blur-md" aria-label="Enter full screen"><Expand className="h-4 w-4" /></button> : null}
       </header>
 
@@ -219,16 +277,16 @@ export function ImmersiveScanner() {
       </nav>
 
       <div className="pointer-events-none absolute inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+.75rem)] z-50 grid gap-2">
-        {feedback ? <section className={`pointer-events-auto flex items-start gap-3 rounded-2xl border p-4 shadow-[0_16px_46px_rgb(0_0_0/.42)] backdrop-blur-xl ${feedback.tone === "success" ? "border-emerald-300/45 bg-emerald-950/88" : feedback.tone === "warning" ? "border-amber-300/55 bg-amber-950/90" : "border-red-300/50 bg-red-950/90"}`} aria-live="assertive"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/12">{feedback.tone === "success" ? <Check className="h-6 w-6" /> : <ShieldAlert className="h-6 w-6" />}</span><div className="min-w-0 flex-1"><p className="font-black uppercase tracking-[.06em]">{feedback.title}</p><p className="mt-1 truncate text-sm text-white/80">{feedback.detail}</p></div><button onClick={() => setFeedback(null)} className="focus-ring grid h-9 w-9 place-items-center rounded-lg" aria-label="Dismiss result"><X className="h-4 w-4" /></button></section> : null}
+        {feedback ? <section className={`pointer-events-auto flex items-start gap-3 rounded-2xl border p-4 shadow-[0_16px_46px_rgb(0_0_0/.42)] backdrop-blur-xl ${feedback.tone === "success" ? "border-primary/45 bg-primary/25" : feedback.tone === "warning" ? "border-primary/55 bg-primary/25" : "border-destructive/50 bg-destructive/25"}`} aria-live="assertive"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-white/12">{feedback.tone === "success" ? <Check className="h-6 w-6" /> : <ShieldAlert className="h-6 w-6" />}</span><div className="min-w-0 flex-1"><p className="font-black uppercase tracking-[.06em]">{feedback.title}</p><p className="mt-1 truncate text-sm text-white/80">{feedback.detail}</p></div><button onClick={() => setFeedback(null)} className="focus-ring grid h-9 w-9 place-items-center rounded-lg" aria-label="Dismiss result"><X className="h-4 w-4" /></button></section> : null}
 
         {mode === "raffle" && raffleAttendee ? <section className="pointer-events-auto rounded-2xl border border-white/20 bg-black/82 p-3 shadow-[0_16px_46px_rgb(0_0_0/.42)] backdrop-blur-xl"><div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="truncate font-bold">{raffleAttendee.name}</p><p className="text-xs text-white/65">{usedTickets} selected · {remainingTickets} remaining</p></div><button type="button" onClick={() => { setRaffleAttendee(null); setFeedback(null); }} className="focus-ring rounded-lg px-3 py-2 text-xs font-bold text-white/70">Next guest</button></div><div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2"><select value={selectedPrizeId} onChange={(event) => setSelectedPrizeId(event.target.value)} className="focus-ring min-w-0 rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-semibold text-white">{prizes.map((prize) => <option key={prize.id} value={prize.id}>{prize.name}</option>)}</select><button type="button" onClick={() => selectedPrizeId && setAllocations((current) => ({ ...current, [selectedPrizeId]: Math.max(0, selectedCount - 1) }))} className="focus-ring grid h-11 w-11 place-items-center rounded-xl border border-white/20 bg-white/10" aria-label={`Remove ticket from ${selectedPrize?.name ?? "prize"}`}><Minus className="h-4 w-4" /></button><button type="button" onClick={() => selectedPrizeId && remainingTickets > 0 && setAllocations((current) => ({ ...current, [selectedPrizeId]: selectedCount + 1 }))} className="focus-ring grid h-11 w-11 place-items-center rounded-xl bg-primary" aria-label={`Add ticket to ${selectedPrize?.name ?? "prize"}`}><Plus className="h-4 w-4" /></button></div><div className="mt-2 flex items-center justify-between"><p className="text-xs text-white/60">{selectedPrize?.value ?? "Selected prize"} · {selectedCount} ticket{selectedCount === 1 ? "" : "s"}</p><Button type="button" onClick={() => void saveRaffle()} disabled={saving || testMode || usedTickets > raffleAttendee.raffleTickets} className="h-10"><Ticket className="h-4 w-4" />{testMode ? "Test mode" : saving ? "Saving…" : "Save tickets"}</Button></div></section> : null}
 
-        <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-2xl border border-white/15 bg-black/72 p-2 backdrop-blur-xl"><button type="button" onClick={() => { setQuery(""); setSearchResults([]); setManualOpen(true); }} className="focus-ring flex h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold"><Search className="h-4 w-4" />Find guest</button><span className="text-xs font-semibold text-white/60">{scanCount} scanned{testMode ? " · TEST" : ""}</span><label className="focus-ring flex h-11 cursor-pointer items-center gap-2 rounded-xl px-3 text-xs font-bold"><FlaskConical className="h-4 w-4" /><span className="hidden min-[390px]:inline">Test</span><input type="checkbox" checked={testMode} onChange={(event) => setTestMode(event.target.checked)} className="h-4 w-4 accent-primary" /></label></div>
+        <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-2xl border border-white/15 bg-black/72 p-2 backdrop-blur-xl"><button type="button" onClick={() => { setQuery(""); setSearchResults([]); setManualOpen(true); }} disabled={!online} className="focus-ring flex h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold disabled:opacity-40"><Search className="h-4 w-4" />Find guest</button><span className="text-xs font-semibold text-white/60">{scanCount} scanned{queuedCount ? ` · ${queuedCount} queued` : ""}{testMode ? " · TEST" : ""}</span><label className="focus-ring flex h-11 cursor-pointer items-center gap-2 rounded-xl px-3 text-xs font-bold"><FlaskConical className="h-4 w-4" /><span className="hidden min-[390px]:inline">Test</span><input type="checkbox" checked={testMode} onChange={(event) => setTestMode(event.target.checked)} className="h-4 w-4 accent-primary" /></label></div>
       </div>
 
-      {manualOpen ? <div className="absolute inset-0 z-[80] grid place-items-center bg-black/70 p-4 backdrop-blur-md"><section className="w-full max-w-md rounded-2xl border border-white/20 bg-[#1b1714] p-4 shadow-2xl"><div className="flex items-center justify-between"><div><h2 className="text-lg font-bold">Find a guest</h2><p className="text-xs text-white/60">Name, location, email, or fallback code</p></div><button onClick={() => { setManualOpen(false); setQuery(""); setSearchResults([]); }} className="focus-ring grid h-10 w-10 place-items-center rounded-xl" aria-label="Close lookup"><X className="h-5 w-5" /></button></div><form className="mt-4 flex gap-2" onSubmit={(event: FormEvent) => { event.preventDefault(); void chooseManual(); }}><input autoFocus value={query} onChange={(event) => { setQuery(event.target.value); if (event.target.value.trim().length < 2) setSearchResults([]); }} placeholder="Search or enter EP-code" className="focus-ring h-12 min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 px-3 text-white placeholder:text-white/45" /><Button type="submit" className="h-12">Use code</Button></form><div className="mt-3 grid gap-2">{searching ? <p className="p-3 text-sm text-white/60">Searching…</p> : null}{searchResults.slice(0, 5).map((attendee) => <button key={attendee.id} type="button" onClick={() => void chooseManual(attendee.id)} className="focus-ring flex items-center justify-between rounded-xl border border-white/15 bg-white/[.06] p-3 text-left"><span><b className="block text-sm">{attendee.name}</b><span className="text-xs text-white/55">{attendee.location ?? "No location"} · {attendee.fallbackCode ?? "No pass"}</span></span><Plus className="h-4 w-4 text-primary" /></button>)}{query.length >= 2 && !searching && searchResults.length === 0 ? <p className="p-3 text-sm text-white/60">No matching guests. Check the spelling or use the fallback code.</p> : null}</div></section></div> : null}
+      {manualOpen ? <div className="absolute inset-0 z-[80] grid place-items-center bg-black/70 p-4 backdrop-blur-md"><section className="w-full max-w-md rounded-2xl border border-white/20 bg-[#0d1b14] p-4 shadow-2xl"><div className="flex items-center justify-between"><div><h2 className="text-lg font-bold">Find a guest</h2><p className="text-xs text-white/60">Name, location, email, or fallback code</p></div><button onClick={() => { setManualOpen(false); setQuery(""); setSearchResults([]); }} className="focus-ring grid h-10 w-10 place-items-center rounded-xl" aria-label="Close lookup"><X className="h-5 w-5" /></button></div><form className="mt-4 flex gap-2" onSubmit={(event: FormEvent) => { event.preventDefault(); void chooseManual(); }}><input autoFocus value={query} onChange={(event) => { setQuery(event.target.value); if (event.target.value.trim().length < 2) setSearchResults([]); }} placeholder="Search or enter EP-code" className="focus-ring h-12 min-w-0 flex-1 rounded-xl border border-white/20 bg-white/10 px-3 text-white placeholder:text-white/45" /><Button type="submit" className="h-12">Use code</Button></form><div className="mt-3 grid gap-2">{searching ? <p className="p-3 text-sm text-white/60">Searching…</p> : null}{searchResults.slice(0, 5).map((attendee) => <button key={attendee.id} type="button" onClick={() => void chooseManual(attendee.id)} className="focus-ring flex items-center justify-between rounded-xl border border-white/15 bg-white/[.06] p-3 text-left"><span><b className="block text-sm">{attendee.name}</b><span className="text-xs text-white/55">{attendee.location ?? "No location"} · {attendee.fallbackCode ?? "No pass"}</span></span><Plus className="h-4 w-4 text-primary" /></button>)}{query.length >= 2 && !searching && searchResults.length === 0 ? <p className="p-3 text-sm text-white/60">No matching guests. Check the spelling or use the fallback code.</p> : null}</div></section></div> : null}
 
-      {statusOpen ? <div className="absolute inset-0 z-[80] grid place-items-center bg-black/70 p-4 backdrop-blur-md"><section className="w-full max-w-sm rounded-2xl border border-white/20 bg-[#1b1714] p-5"><div className="flex items-center justify-between"><h2 className="text-lg font-bold">Device readiness</h2><button onClick={() => setStatusOpen(false)} className="focus-ring grid h-10 w-10 place-items-center rounded-xl" aria-label="Close status"><X className="h-5 w-5" /></button></div><div className="mt-4 grid gap-2 text-sm"><p className="flex items-center justify-between rounded-xl bg-white/[.06] p-3"><span className="flex items-center gap-2">{online ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}Connection</span><b>{online ? connection || "Online" : "Offline"}</b></p>{battery ? <p className="flex items-center justify-between rounded-xl bg-white/[.06] p-3"><span className="flex items-center gap-2"><BatteryMedium className="h-4 w-4" />Battery</span><b>{battery.level}%{battery.charging ? " · charging" : ""}</b></p> : null}<p className="rounded-xl bg-white/[.06] p-3 text-xs leading-5 text-white/65">Use the rear wide camera, wipe the lens, keep the pass evenly lit, and stay within reliable venue Wi-Fi. Duplicate protection and raffle balances require a live connection.</p></div>{installPrompt ? <Button className="mt-4 w-full" onClick={() => { void installPrompt.prompt(); setInstallPrompt(null); }}>Install scanner app</Button> : null}</section></div> : null}
+      {statusOpen ? <div className="absolute inset-0 z-[80] grid place-items-center bg-black/70 p-4 backdrop-blur-md"><section className="w-full max-w-sm rounded-2xl border border-white/20 bg-[#0d1b14] p-5"><div className="flex items-center justify-between"><h2 className="text-lg font-bold">Device readiness</h2><button onClick={() => setStatusOpen(false)} className="focus-ring grid h-10 w-10 place-items-center rounded-xl" aria-label="Close status"><X className="h-5 w-5" /></button></div><div className="mt-4 grid gap-2 text-sm"><p className="flex items-center justify-between rounded-xl bg-white/[.06] p-3"><span className="flex items-center gap-2">{online ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}Connection</span><b>{online ? connection || "Online" : "Offline"}</b></p>{battery ? <p className="flex items-center justify-between rounded-xl bg-white/[.06] p-3"><span className="flex items-center gap-2"><BatteryMedium className="h-4 w-4" />Battery</span><b>{battery.level}%{battery.charging ? " · charging" : ""}</b></p> : null}<label className="grid gap-2 rounded-xl bg-white/[.06] p-3"><span className="text-xs font-bold uppercase tracking-wide text-white/55">Station name</span><input value={stationName} onChange={(event) => setStationName(event.target.value)} onBlur={() => { localStorage.setItem("eventpass-scanner-station-name", stationName); if (online) void ensureStation(eventId, stationName); }} className="focus-ring h-10 rounded-lg border border-white/15 bg-white/10 px-3" /></label><p className="flex items-center justify-between rounded-xl bg-white/[.06] p-3"><span>Pending sync</span><b>{queuedCount}</b></p><p className="rounded-xl bg-white/[.06] p-3 text-xs leading-5 text-white/65">Offline QR scans are queued, not accepted. Duplicate and signature checks run after reconnection; keep the guest with venue staff until verification completes.</p></div>{installPrompt ? <Button className="mt-4 w-full" onClick={() => { void installPrompt.prompt(); setInstallPrompt(null); }}>Install scanner app</Button> : null}</section></div> : null}
     </main>
   );
 }

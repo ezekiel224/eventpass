@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Award, Expand, Gift, MonitorUp, Pause, Play, Radio, Ticket, Trophy, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RaffleDisplayMode } from "@/lib/raffle-display";
+import { markdownToPlainText } from "@/lib/markdown";
 
 type Prize = {
   id: string;
@@ -100,7 +101,7 @@ function SpotlightScene({ prize, position, total }: { prize?: Prize; position: n
         <div>
           <p className="raffle-tv-kicker">Prize spotlight · {position} of {total}</p>
           <h2 className="mt-[1.8vmin] text-[clamp(2.4rem,7.6vmin,8.4rem)] font-semibold leading-[0.88] tracking-[-0.06em]">{prize.name}</h2>
-          {prize.description ? <p className="mt-[2.2vmin] line-clamp-3 max-w-[62ch] text-[clamp(1rem,2.2vmin,2.1rem)] leading-[1.35] text-muted-foreground">{prize.description}</p> : null}
+          {prize.description ? <p className="mt-[2.2vmin] line-clamp-3 max-w-[62ch] text-[clamp(1rem,2.2vmin,2.1rem)] leading-[1.35] text-muted-foreground">{markdownToPlainText(prize.description)}</p> : null}
         </div>
         <div className="flex items-end justify-between gap-[3vmin] border-t border-foreground/10 pt-[2.5vmin]">
           <div>
@@ -333,7 +334,7 @@ export function RaffleTvDisplay() {
     <main className="raffle-tv-shell flex h-dvh min-h-0 flex-col overflow-hidden p-[clamp(.75rem,2vmin,2rem)] text-foreground">
       <header className="mb-[clamp(.65rem,1.5vmin,1.5rem)] flex shrink-0 items-end justify-between gap-5 px-[0.6vmin]">
         <div className="min-w-0">
-          <p className="raffle-tv-kicker"><span className={`h-2 w-2 rounded-full ${online ? "bg-emerald-500" : "bg-amber-500"}`} /> {online ? "Live raffle" : "Reconnecting"}</p>
+          <p className="raffle-tv-kicker"><span className={`h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-primary"}`} /> {online ? "Live raffle" : "Reconnecting"}</p>
           <h1 className="mt-[0.5vmin] truncate text-[clamp(1.4rem,3.2vmin,3.5rem)] font-semibold leading-none tracking-[-0.045em]">{session.content.event.name}</h1>
           <p className="mt-[0.7vmin] truncate text-[clamp(.75rem,1.25vmin,1.1rem)] text-muted-foreground">{session.content.event.venue} · {session.content.stats.prizeCount} active prizes · {session.content.stats.totalPrizeTickets} tickets entered</p>
         </div>
@@ -362,7 +363,7 @@ export function RaffleTvDisplay() {
         </footer>
       ) : null}
 
-      {!online ? <div className="pointer-events-none absolute right-[2vmin] top-[2vmin] flex items-center gap-2 rounded-full border border-amber-500/30 bg-background/90 px-4 py-2 text-sm font-semibold text-amber-600"><WifiOff className="h-4 w-4" /> Last live data retained</div> : null}
+      {!online ? <div className="pointer-events-none absolute right-[2vmin] top-[2vmin] flex items-center gap-2 rounded-full border border-primary/30 bg-background/90 px-4 py-2 text-sm font-semibold text-primary"><WifiOff className="h-4 w-4" /> Last live data retained</div> : null}
       <AnimatePresence>{winnerReveal ? <motion.div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-background/95 p-[5vmin] text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><motion.div initial={{ y: "6vmin", scale: 0.9 }} animate={{ y: 0, scale: 1 }} transition={sceneTransition}><Trophy className="mx-auto h-[clamp(5rem,16vmin,15rem)] w-[clamp(5rem,16vmin,15rem)] text-primary" /><p className="raffle-tv-kicker mt-[3vmin] justify-center">Winner</p><h2 className="mt-[1.5vmin] text-[clamp(4rem,15vmin,15rem)] font-semibold leading-[0.8] tracking-[-0.07em]">{winnerReveal.winnerName}</h2><p className="mt-[3vmin] text-[clamp(1.4rem,4vmin,4rem)] text-muted-foreground">wins <span className="font-semibold text-foreground">{winnerReveal.prizeName}</span></p></motion.div></motion.div> : null}</AnimatePresence>
     </main>
   );

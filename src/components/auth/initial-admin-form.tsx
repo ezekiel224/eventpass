@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useCsrfToken } from "@/hooks/useCsrfToken";
@@ -82,10 +82,7 @@ export function InitialAdminForm() {
           {csrf.error || error}
         </p>
       ) : null}
-      <Button className="mt-2 h-12" type="submit" disabled={saving || !csrf.token}>
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-        Create administrator
-      </Button>
+      <Button className="mt-2 h-12" type="submit" disabled={!csrf.token} loading={saving} loadingLabel="Creating administrator…"><ShieldCheck className="h-4 w-4" /> Create administrator</Button>
     </form>
   );
 }

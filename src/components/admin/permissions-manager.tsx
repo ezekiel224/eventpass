@@ -3,19 +3,17 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { KeyRound, Loader2, Plus, Save, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useCsrfToken } from "@/hooks/useCsrfToken";
+import "./admin-workspaces.css";
 
 type Permission = { id: string; name: string; slug: string; description: string; system: boolean; roleCount: number; overrideCount: number };
 type Role = { id: string; name: string; slug: string; description: string; system: boolean; assignable: boolean; userCount: number; permissionIds: string[] };
-type AuditLog = { id: string; action: string; targetType: string; targetId: string | null; ipAddress: string | null; createdAt: string; actor: { email: string; name: string | null } | null };
 
 export function PermissionsManager() {
   const csrf = useCsrfToken();
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [draftPermissions, setDraftPermissions] = useState<Record<string, string[]>>({});
   const [savingId, setSavingId] = useState("");
   const [message, setMessage] = useState("");
@@ -23,10 +21,9 @@ export function PermissionsManager() {
 
   const load = useCallback(async () => {
     setError("");
-    const [roleResponse, permissionResponse, auditResponse] = await Promise.all([
+    const [roleResponse, permissionResponse] = await Promise.all([
       fetch("/api/admin/roles", { cache: "no-store" }),
-      fetch("/api/admin/permissions", { cache: "no-store" }),
-      fetch("/api/admin/audit", { cache: "no-store" })
+      fetch("/api/admin/permissions", { cache: "no-store" })
     ]);
     if (!roleResponse.ok || !permissionResponse.ok) {
       setError("Could not load permission administration data.");
@@ -36,10 +33,6 @@ export function PermissionsManager() {
     setRoles(roleData.roles);
     setPermissions(permissionData.permissions);
     setDraftPermissions(Object.fromEntries(roleData.roles.map((role: Role) => [role.id, role.permissionIds])));
-    if (auditResponse.ok) {
-      const auditData = await auditResponse.json();
-      setAuditLogs(auditData.logs);
-    }
   }, []);
 
   useEffect(() => {
@@ -136,65 +129,63 @@ export function PermissionsManager() {
     await load();
   }
 
-  return (
-    <div className="mt-6 grid gap-5">
-      {(csrf.error || error || message) ? <p className={`rounded-xl border p-3 text-sm ${csrf.error || error ? "border-destructive/20 bg-destructive/10 text-destructive" : "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"}`}>{csrf.error || error || message}</p> : null}
+  const customRoleCount = roles.filter((role) => !role.system).length;
 
-      <Card className="p-5">
-        <div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary" /><div><h2 className="text-lg font-semibold">Role Permissions</h2><p className="mt-1 text-sm text-muted-foreground">System roles are visible but locked. Custom roles can be changed independently.</p></div></div>
-        <div className="mt-5 overflow-x-auto">
-          <table className="data-table w-full min-w-[900px] border-separate border-spacing-0 text-sm">
-            <thead><tr><th className="sticky left-0 z-10 border-b border-border bg-card p-3 text-left">Permission</th>{roles.map((role) => <th key={role.id} className="min-w-32 border-b border-border p-3 text-center"><span className="block">{role.name}</span><span className="mt-1 block text-[10px] font-normal uppercase tracking-wider text-muted-foreground">{role.system ? "System" : `${role.userCount} users`}</span></th>)}</tr></thead>
+  return (
+    <div className="ep-admin-workspace ep-permissions-workspace">
+      {(csrf.error || error || message) ? <p className="ep-admin-notice" data-tone={csrf.error || error ? "error" : "success"}>{csrf.error || error || message}</p> : null}
+
+      <section className="ep-admin-overview">
+        <header><div className="ep-admin-heading"><h2>Roles and permissions</h2></div><ShieldCheck aria-hidden="true" /></header>
+        <dl className="ep-admin-metrics">
+          <div><dt>Roles</dt><dd>{roles.length}</dd></div>
+          <div><dt>Custom roles</dt><dd>{customRoleCount}</dd></div>
+          <div><dt>Permissions</dt><dd>{permissions.length}</dd></div>
+          <div><dt>Assigned users</dt><dd>{roles.reduce((total, role) => total + role.userCount, 0)}</dd></div>
+        </dl>
+      </section>
+
+      <section className="ep-admin-panel">
+        <header className="ep-admin-panel-header"><div className="ep-admin-heading"><h2>Permission matrix</h2><p>System roles are locked.</p></div><ShieldCheck aria-hidden="true" /></header>
+        <div className="ep-admin-table-wrap">
+          <table className="ep-admin-table ep-permission-table">
+            <thead><tr><th>Permission</th>{roles.map((role) => <th key={role.id}><span>{role.name}</span><small>{role.system ? "System" : `${role.userCount} users`}</small></th>)}</tr></thead>
             <tbody>
               {permissions.map((permission) => (
                 <tr key={permission.id}>
-                  <td className="sticky left-0 z-10 border-b border-border bg-card p-3"><code className="text-xs font-bold">{permission.slug}</code><span className="mt-1 block max-w-sm text-xs leading-5 text-muted-foreground">{permission.description}</span></td>
+                  <td><code>{permission.slug}</code><span>{permission.description}</span></td>
                   {roles.map((role) => {
                     const checked = (draftPermissions[role.id] ?? []).includes(permission.id);
-                    return <td key={role.id} className="border-b border-border p-3 text-center"><input aria-label={`${permission.slug} for ${role.name}`} type="checkbox" checked={checked} disabled={role.system} onChange={() => togglePermission(role.id, permission.id)} className="h-5 w-5 accent-primary disabled:opacity-50" /></td>;
+                    return <td key={role.id}><input aria-label={`${permission.slug} for ${role.name}`} type="checkbox" checked={checked} disabled={role.system} onChange={() => togglePermission(role.id, permission.id)} /></td>;
                   })}
                 </tr>
               ))}
             </tbody>
-            <tfoot><tr><td className="sticky left-0 bg-card p-3 text-xs text-muted-foreground">Save each custom role independently.</td>{roles.map((role) => <td key={role.id} className="p-3 text-center">{role.system ? <span className="text-xs text-muted-foreground">Locked</span> : <Button type="button" className="h-9 px-3" disabled={savingId === role.id || !csrf.token} onClick={() => void saveRole(role)}>{savingId === role.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save</Button>}</td>)}</tr></tfoot>
+            <tfoot><tr><td>Save each custom role independently.</td>{roles.map((role) => <td key={role.id}>{role.system ? <span>Locked</span> : <Button type="button" disabled={savingId === role.id || !csrf.token} onClick={() => void saveRole(role)}>{savingId === role.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Save</Button>}</td>)}</tr></tfoot>
           </table>
         </div>
-      </Card>
+      </section>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Card className="p-5">
-          <h2 className="text-lg font-semibold">New Role</h2>
-          <p className="mt-1 text-sm text-muted-foreground">New roles start with no permissions.</p>
-          <form className="mt-4 grid gap-3" onSubmit={createRole}>
-            <Input name="name" placeholder="Role name" required />
-            <Input name="slug" placeholder="role-slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required />
-            <Input name="description" placeholder="Role description" required />
-            <Button className="justify-self-end" disabled={savingId === "new-role" || !csrf.token}>{savingId === "new-role" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Create role</Button>
+      <div className="ep-admin-form-pair">
+        <section className="ep-admin-panel">
+          <header className="ep-admin-panel-header"><div className="ep-admin-heading"><h2>New role</h2><p>New roles begin with no permissions.</p></div><Plus aria-hidden="true" /></header>
+          <form className="ep-admin-compact-form" onSubmit={createRole}>
+            <label>Name<Input name="name" placeholder="Event coordinator" required /></label>
+            <label>Slug<Input name="slug" placeholder="event-coordinator" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required /></label>
+            <label>Description<Input name="description" placeholder="What this role is responsible for" required /></label>
+            <footer><Button disabled={savingId === "new-role" || !csrf.token}>{savingId === "new-role" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Create role</Button></footer>
           </form>
-        </Card>
-        <Card className="p-5">
-          <h2 className="text-lg font-semibold">New Permission</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Use a scoped slug such as <code>reports:export</code>.</p>
-          <form className="mt-4 grid gap-3" onSubmit={createPermission}>
-            <Input name="name" placeholder="Permission name" required />
-            <Input name="slug" placeholder="resource:action" pattern="[a-z][a-z0-9-]*:[a-z][a-z0-9-]*" required />
-            <Input name="description" placeholder="Permission description" required />
-            <Button className="justify-self-end" disabled={savingId === "new-permission" || !csrf.token}>{savingId === "new-permission" ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Create permission</Button>
+        </section>
+        <section className="ep-admin-panel">
+          <header className="ep-admin-panel-header"><div className="ep-admin-heading"><h2>New permission</h2><p>Use a scoped slug such as <code>reports:export</code>.</p></div><KeyRound aria-hidden="true" /></header>
+          <form className="ep-admin-compact-form" onSubmit={createPermission}>
+            <label>Name<Input name="name" placeholder="Export reports" required /></label>
+            <label>Slug<Input name="slug" placeholder="reports:export" pattern="[a-z][a-z0-9-]*:[a-z][a-z0-9-]*" required /></label>
+            <label>Description<Input name="description" placeholder="What this permission allows" required /></label>
+            <footer><Button disabled={savingId === "new-permission" || !csrf.token}>{savingId === "new-permission" ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Create permission</Button></footer>
           </form>
-        </Card>
+        </section>
       </div>
-
-      <Card className="p-5">
-        <h2 className="text-lg font-semibold">Audit Log</h2>
-        <div className="mt-4 divide-y divide-border">
-          {auditLogs.length === 0 ? <p className="py-4 text-sm text-muted-foreground">No audited administrative actions yet.</p> : auditLogs.slice(0, 20).map((log) => (
-            <div key={log.id} className="grid gap-1 py-3 text-sm sm:grid-cols-[1fr_auto]">
-              <div><b>{log.action}</b><span className="ml-2 text-muted-foreground">{log.targetType}{log.targetId ? ` · ${log.targetId}` : ""}</span><span className="mt-1 block text-xs text-muted-foreground">{log.actor?.name ?? log.actor?.email ?? "Deleted account"} · {log.ipAddress ?? "IP unavailable"}</span></div>
-              <time className="text-xs text-muted-foreground" dateTime={log.createdAt}>{new Date(log.createdAt).toLocaleString()}</time>
-            </div>
-          ))}
-        </div>
-      </Card>
     </div>
   );
 }

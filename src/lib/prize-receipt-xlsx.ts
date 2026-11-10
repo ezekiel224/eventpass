@@ -1,5 +1,6 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { prizeReceiptTemplateBase64 } from "@/lib/prize-receipt-template";
+import { dateTimePartsInTimeZone } from "@/lib/utils";
 
 type ReceiptEvent = {
   name: string;
@@ -43,8 +44,10 @@ function numericCell(sheet: string, reference: string, value: number, formula?: 
   return replaceCell(sheet, reference, `${formula ? `<f>${xml(formula)}</f>` : ""}<v>${value}</v>`);
 }
 
-function excelDate(date: Date) {
-  return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000) + 25569;
+function excelDate(date: Date, timeZone: string) {
+  const { date: localDate } = dateTimePartsInTimeZone(date, timeZone);
+  const [year, month, day] = localDate.split("-").map(Number);
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000) + 25569;
 }
 
 function amount(value: string | null) {
@@ -59,11 +62,11 @@ function fundingText(source: string | null) {
   return "[ ] A supplier paid for the prize(s) listed     [X] Insight paid for the prize(s) listed     [ ] Pay amount to PayCard";
 }
 
-function fillSheet(templateSheet: string, event: ReceiptEvent, prizes: SignedPrize[], pageIndex: number, useFormControls: boolean) {
+function fillSheet(templateSheet: string, event: ReceiptEvent, prizes: SignedPrize[], pageIndex: number, useFormControls: boolean, timeZone: string) {
   let sheet = templateSheet;
   sheet = textCell(sheet, "B3", event.prizeReceiptSubmitter || "");
   sheet = textCell(sheet, "F3", event.prizeReceiptExtension || "");
-  sheet = numericCell(sheet, "B4", excelDate(new Date()));
+  sheet = numericCell(sheet, "B4", excelDate(new Date(), timeZone));
   if (!useFormControls) sheet = textCell(sheet, "A8", fundingText(event.prizeFundingSource));
 
   const pagePrizes = prizes.slice(pageIndex * 20, pageIndex * 20 + 20);
@@ -81,7 +84,7 @@ function fillSheet(templateSheet: string, event: ReceiptEvent, prizes: SignedPri
     const fairMarketValue = amount(prize.value);
     sheet = fairMarketValue === null ? textCell(sheet, `E${row}`, prize.value || "") : numericCell(sheet, `E${row}`, fairMarketValue);
     sheet = textCell(sheet, `F${row}`, "");
-    sheet = prize.acceptedAt ? numericCell(sheet, `G${row}`, excelDate(prize.acceptedAt)) : textCell(sheet, `G${row}`, "");
+    sheet = prize.acceptedAt ? numericCell(sheet, `G${row}`, excelDate(prize.acceptedAt, timeZone)) : textCell(sheet, `G${row}`, "");
   }
   sheet = numericCell(sheet, "E30", 0, "SUM(E10:E29)");
   return sheet;
@@ -123,13 +126,13 @@ function additionalSheet(templateSheet: string) {
     .replace(/<mc:AlternateContent[^>]*>[\s\S]*?<controls>[\s\S]*?<\/controls>[\s\S]*?<\/mc:AlternateContent>\s*<\/worksheet>/, "</worksheet>");
 }
 
-export function createPrizeReceiptWorkbook(event: ReceiptEvent, prizes: SignedPrize[]) {
+export function createPrizeReceiptWorkbook(event: ReceiptEvent, prizes: SignedPrize[], timeZone: string) {
   const files = unzipSync(new Uint8Array(Buffer.from(prizeReceiptTemplateBase64, "base64")));
   const templateSheet = strFromU8(files["xl/worksheets/sheet1.xml"]);
   const originalDrawing = strFromU8(files["xl/drawings/drawing1.xml"]);
   const sheetCount = Math.max(1, Math.ceil(prizes.length / 20));
 
-  files["xl/worksheets/sheet1.xml"] = strToU8(fillSheet(templateSheet, event, prizes, 0, true));
+  files["xl/worksheets/sheet1.xml"] = strToU8(fillSheet(templateSheet, event, prizes, 0, true, timeZone));
   files["xl/ctrlProps/ctrlProp1.xml"] = strToU8(setCheckbox(strFromU8(files["xl/ctrlProps/ctrlProp1.xml"]), event.prizeFundingSource === "SUPPLIER"));
   files["xl/ctrlProps/ctrlProp2.xml"] = strToU8(setCheckbox(strFromU8(files["xl/ctrlProps/ctrlProp2.xml"]), event.prizeFundingSource === "INSIGHT"));
   files["xl/ctrlProps/ctrlProp3.xml"] = strToU8(setCheckbox(strFromU8(files["xl/ctrlProps/ctrlProp3.xml"]), event.prizeFundingSource === "PAYCARD"));
@@ -148,7 +151,7 @@ export function createPrizeReceiptWorkbook(event: ReceiptEvent, prizes: SignedPr
     const sheetNumber = pageIndex + 1;
     const relationshipId = `rId${5 + pageIndex}`;
     const strippedSheet = additionalSheet(templateSheet);
-    files[`xl/worksheets/sheet${sheetNumber}.xml`] = strToU8(fillSheet(strippedSheet, event, prizes, pageIndex, false));
+    files[`xl/worksheets/sheet${sheetNumber}.xml`] = strToU8(fillSheet(strippedSheet, event, prizes, pageIndex, false, timeZone));
     files[`xl/worksheets/_rels/sheet${sheetNumber}.xml.rels`] = strToU8(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/printerSettings" Target="../printerSettings/printerSettings1.bin"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing${sheetNumber}.xml"/></Relationships>`);
     const drawing = signatureDrawing(prizes, pageIndex);
     files[`xl/drawings/drawing${sheetNumber}.xml`] = strToU8(drawing.drawing);

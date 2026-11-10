@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { AttendeeSummary, EventSummary } from "@/types/domain";
+import { parseRegistrationFields } from "@/lib/registration-fields";
 
 const eventInclude = {
   attendees: {
@@ -44,7 +45,7 @@ export function stringifyStringArray(values: string[] | undefined) {
 
 export function serializeEvent(event: Prisma.EventGetPayload<{ include: typeof eventInclude }>): EventSummary {
   const attendeeCount = event.attendees.length;
-  const checkedInCount = event.attendees.filter((attendee) => attendee.checkIns.some((checkIn) => !checkIn.duplicate)).length;
+  const checkedInCount = event.attendees.filter((attendee) => attendee.checkIns.some((checkIn) => !checkIn.duplicate && !checkIn.reversedAt)).length;
 
   return {
     id: event.id,
@@ -68,6 +69,7 @@ export function serializeEvent(event: Prisma.EventGetPayload<{ include: typeof e
     emailConfirmationsEnabled: event.emailConfirmationsEnabled,
     waitlistEnabled: event.waitlistEnabled,
     registrationDeadline: event.registrationDeadline?.toISOString() ?? null,
+    registrationFields: parseRegistrationFields(event.registrationFields),
     prizeReceiptSubmitter: event.prizeReceiptSubmitter,
     prizeReceiptExtension: event.prizeReceiptExtension,
     prizeFundingSource: event.prizeFundingSource,
@@ -91,7 +93,14 @@ export const attendeeInclude = {
 } satisfies Prisma.AttendeeInclude;
 
 export function serializeAttendee(attendee: Prisma.AttendeeGetPayload<{ include: typeof attendeeInclude }>): AttendeeSummary {
-  const successfulCheckIn = attendee.checkIns.find((checkIn) => !checkIn.duplicate);
+  const successfulCheckIn = attendee.checkIns.find((checkIn) => !checkIn.duplicate && !checkIn.reversedAt);
+  let customAnswers: Record<string, string | string[] | boolean> = {};
+  try {
+    const parsed = attendee.customAnswers ? JSON.parse(attendee.customAnswers) : {};
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) customAnswers = parsed;
+  } catch {
+    customAnswers = {};
+  }
 
   return {
     id: attendee.id,
@@ -121,6 +130,7 @@ export function serializeAttendee(attendee: Prisma.AttendeeGetPayload<{ include:
     raffleTickets: attendee.raffleTickets,
     notes: attendee.notes,
     status: attendee.status,
+    customAnswers,
     checkedIn: Boolean(successfulCheckIn),
     checkedInAt: successfulCheckIn?.scannedAt.toISOString() ?? null,
     passId: attendee.pass?.id ?? null,

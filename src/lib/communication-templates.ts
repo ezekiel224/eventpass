@@ -1,14 +1,17 @@
 import { prisma } from "@/lib/db";
+import { markdownToHtml } from "@/lib/markdown";
 
 export const communicationTemplateDefinitions = {
   PASS_CONFIRMATION: {
-    name: "Registration confirmation",
+    name: "Thank you for registering",
     description: "Sent after registration and when an operator resends a guest's pass.",
-    subject: "Your pass for {{eventName}}",
-    body: "Hi {{name}},\n\nThank you for registering for {{eventName}}. Your digital event pass is ready. Keep this email handy and present the QR code at check-in.\n\n{{eventDescription}}",
+    subject: "Thank you for registering for {{eventName}}",
+    body: "Hi **{{firstName}}**,\n\nThank you for registering for **{{eventName}}**. Your digital event pass is ready. Keep this email handy and present the QR code at check-in.\n\n{{eventDescription}}",
     actionLabel: "Open digital pass",
     variables: [
-      ["name", "Guest name", "Jordan Lee"],
+      ["name", "Full name", "Jordan Lee"],
+      ["firstName", "First name", "Jordan"],
+      ["lastName", "Last name", "Lee"],
       ["eventName", "Event name", "Annual Celebration"],
       ["eventDescription", "Event description", "An evening celebrating our team and community."],
       ["eventDate", "Event date", "Friday, October 16, 2026"],
@@ -43,6 +46,10 @@ export const communicationTemplateDefinitions = {
 export type CommunicationTemplateKey = keyof typeof communicationTemplateDefinitions;
 export type TemplateVariable = readonly [key: string, label: string, sample: string];
 
+export function eventCommunicationTemplateKey(key: CommunicationTemplateKey, eventId: string) {
+  return `${key}:${eventId}`;
+}
+
 export function isCommunicationTemplateKey(value: string): value is CommunicationTemplateKey {
   return value in communicationTemplateDefinitions;
 }
@@ -53,33 +60,24 @@ export function unsupportedTemplateVariables(key: CommunicationTemplateKey, ...v
   return [...new Set(used.filter((variable) => !supported.has(variable)))];
 }
 
-export async function getCommunicationTemplate(organizationId: string, key: CommunicationTemplateKey) {
-  const saved = await prisma.communicationTemplate.findUnique({
-    where: { organizationId_key: { organizationId, key } }
-  });
+export async function getCommunicationTemplate(organizationId: string, key: CommunicationTemplateKey, eventId?: string) {
+  const scopedKey = eventId ? eventCommunicationTemplateKey(key, eventId) : key;
+  const saved = await prisma.communicationTemplate.findUnique({ where: { organizationId_key: { organizationId, key: scopedKey } } });
+  const fallback = eventId && !saved ? await prisma.communicationTemplate.findUnique({ where: { organizationId_key: { organizationId, key } } }) : null;
   const definition = communicationTemplateDefinitions[key];
 
   return {
     key,
     name: definition.name,
     description: definition.description,
-    subject: saved?.subject ?? definition.subject,
-    body: saved?.body ?? definition.body,
-    actionLabel: saved?.actionLabel ?? definition.actionLabel,
+    subject: saved?.subject ?? fallback?.subject ?? definition.subject,
+    body: saved?.body ?? fallback?.body ?? definition.body,
+    actionLabel: saved?.actionLabel ?? fallback?.actionLabel ?? definition.actionLabel,
     variables: definition.variables
   };
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function interpolate(template: string, variables: Record<string, string>, html: boolean) {
+function interpolate(template: string, variables: Record<string, string>) {
   let result = "";
   let cursor = 0;
   const matches = template.matchAll(/{{\s*([a-zA-Z][a-zA-Z0-9]*)\s*}}/g);
@@ -87,11 +85,10 @@ function interpolate(template: string, variables: Record<string, string>, html: 
     const index = match.index ?? 0;
     const literal = template.slice(cursor, index);
     const value = variables[match[1]] ?? "";
-    result += html ? escapeHtml(literal) + escapeHtml(value) : literal + value;
+    result += literal + value;
     cursor = index + match[0].length;
   }
-  result += html ? escapeHtml(template.slice(cursor)) : template.slice(cursor);
-  return html ? result.replace(/\r?\n/g, "<br>") : result.replace(/[\r\n]+/g, " ").trim();
+  return result + template.slice(cursor);
 }
 
 export function renderCommunicationTemplate(
@@ -99,8 +96,8 @@ export function renderCommunicationTemplate(
   variables: Record<string, string>
 ) {
   return {
-    subject: interpolate(template.subject, variables, false),
-    bodyHtml: interpolate(template.body, variables, true),
-    actionLabel: interpolate(template.actionLabel, variables, false)
+    subject: interpolate(template.subject, variables).replace(/[\r\n]+/g, " ").trim(),
+    bodyHtml: markdownToHtml(interpolate(template.body, variables)),
+    actionLabel: interpolate(template.actionLabel, variables).replace(/[\r\n]+/g, " ").trim()
   };
 }

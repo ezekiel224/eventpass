@@ -1,12 +1,14 @@
 "use client";
 
-import { CheckCircle2, Minus, Plus, RotateCcw, Search, Star, Ticket, Trash2, UserCheck } from "lucide-react";
+import { CheckCircle2, Minus, Plus, RotateCcw, Search, Ticket, Trash2, UserCheck } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
 import { Button } from "@/components/ui/button";
-import { Card, GlassCard } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { EventSummary } from "@/types/domain";
+import { MarkdownContent } from "@/components/ui/markdown-content";
+import { RollingNumber } from "@/components/ui/rolling-number";
+import type { EventSummary } from "@/types/domain";
+import "./raffle-live-operations.css";
 
 type Prize = { id: string; name: string; description: string | null; value: string | null; imageUrl: string | null };
 type RaffleAttendee = {
@@ -20,40 +22,44 @@ type RaffleAttendee = {
   entries: { prizeId: string; ticketCount: number }[];
 };
 
-export function RaffleTicketStation() {
+export function RaffleTicketStation({ eventId }: { eventId: string }) {
   const [events, setEvents] = useState<EventSummary[]>([]);
-  const [eventId, setEventId] = useState("");
   const [prizes, setPrizes] = useState<Prize[]>([]);
   const [attendee, setAttendee] = useState<RaffleAttendee | null>(null);
   const [lookup, setLookup] = useState("");
   const [allocations, setAllocations] = useState<Record<string, number>>({});
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loadingPrizes, setLoadingPrizes] = useState(Boolean(eventId));
 
+  const currentEvent = events.find((event) => event.id === eventId);
   const usedTickets = useMemo(() => Object.values(allocations).reduce((sum, value) => sum + (Number(value) || 0), 0), [allocations]);
   const remainingTickets = Math.max(0, (attendee?.raffleTickets ?? 0) - usedTickets);
 
   useEffect(() => {
-    void fetch("/api/events", { cache: "no-store" }).then((response) => response.json()).then((data) => {
-      const nextEvents = data.events ?? [];
-      setEvents(nextEvents);
-      setEventId(nextEvents[0]?.id ?? "");
-    });
+    void fetch("/api/events", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data) => setEvents(data.events ?? []));
   }, []);
 
   useEffect(() => {
-    if (!eventId) return;
-    void fetch(`/api/events/${eventId}/raffle?limit=1`, { cache: "no-store" })
-      .then((response) => response.json())
-      .then((data) => setPrizes(data.raffle?.prizes ?? []));
+    const timeout = window.setTimeout(() => {
+      setAttendee(null);
+      setAllocations({});
+      setMessage("");
+      setPrizes([]);
+      if (!eventId) {
+        setLoadingPrizes(false);
+        return;
+      }
+      setLoadingPrizes(true);
+      void fetch(`/api/events/${eventId}/raffle?limit=1`, { cache: "no-store" })
+        .then((response) => response.json())
+        .then((data) => setPrizes(data.raffle?.prizes ?? []))
+        .finally(() => setLoadingPrizes(false));
+    }, 0);
+    return () => window.clearTimeout(timeout);
   }, [eventId]);
-
-  function chooseEvent(nextEventId: string) {
-    setAttendee(null);
-    setAllocations({});
-    setMessage("");
-    setEventId(nextEventId);
-  }
 
   function loadAttendee(nextAttendee: RaffleAttendee) {
     setAttendee(nextAttendee);
@@ -68,7 +74,7 @@ export function RaffleTicketStation() {
     const response = await fetch(`/api/events/${eventId}/raffle/scan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
     const data = await response.json();
     if (!response.ok) {
@@ -82,6 +88,12 @@ export function RaffleTicketStation() {
   async function submitLookup(event: FormEvent) {
     event.preventDefault();
     await findPass({ fallbackCode: lookup.trim() });
+  }
+
+  function clearGuest() {
+    setAttendee(null);
+    setAllocations({});
+    setMessage("");
   }
 
   function setTicketCount(prizeId: string, count: number) {
@@ -103,8 +115,8 @@ export function RaffleTicketStation() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         attendeeId: attendee.id,
-        entries: prizes.map((prize) => ({ prizeId: prize.id, ticketCount: nextAllocations[prize.id] ?? 0 }))
-      })
+        entries: prizes.map((prize) => ({ prizeId: prize.id, ticketCount: nextAllocations[prize.id] ?? 0 })),
+      }),
     });
     const data = await response.json();
     setSaving(false);
@@ -126,71 +138,81 @@ export function RaffleTicketStation() {
   }
 
   return (
-    <div className="mt-7 grid gap-5">
-      <GlassCard className="p-5">
-        <div className="grid gap-4 lg:grid-cols-[1fr_1.25fr] lg:items-end">
-          <label className="grid gap-2 text-sm text-muted-foreground">Event
-            <select value={eventId} onChange={(event) => chooseEvent(event.target.value)} className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm text-foreground">
-              {events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}
-            </select>
-          </label>
-          <div className="control-panel border-primary/20 bg-primary/[0.05] p-3 text-sm text-muted-foreground">Scan a guest, distribute their tickets, save, then scan the next pass. The camera stays open throughout.</div>
+    <div className="ep-ticket-station-workspace">
+      <section className="ep-station-control">
+        <div className="ep-station-control-header">
+          <div className="ep-section-heading"><h2>{currentEvent?.name ?? (eventId ? "Ticket station" : "Choose an event")}</h2></div>
+          <span className="ep-station-state" data-ready={Boolean(attendee)}>{attendee ? "Guest loaded" : "Ready to scan"}</span>
         </div>
-      </GlassCard>
+        <dl className="ep-station-metric-strip">
+          <div><dt>Available prizes</dt><dd>{prizes.length}</dd></div>
+          <div><dt>Allotted</dt><dd>{attendee ? <RollingNumber value={attendee.raffleTickets} /> : "—"}</dd></div>
+          <div><dt>Selected</dt><dd>{attendee ? usedTickets : "—"}</dd></div>
+          <div data-alert={Boolean(attendee && usedTickets > attendee.raffleTickets)}><dt>Remaining</dt><dd>{attendee ? <RollingNumber value={remainingTickets} /> : "—"}</dd></div>
+        </dl>
+      </section>
 
-      <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
-        <Card className="p-5 sm:p-6">
-          <p className="panel-label">Step 01</p><h2 className="mt-2 flex items-center gap-2 text-lg font-semibold"><UserCheck className="h-5 w-5 text-primary" /> Verify attendee</h2>
-          <div className="mt-5 grid gap-3">
+      {!eventId ? <p className="ep-operation-notice">Choose an event from the shared dashboard navigation to start the ticket station.</p> : null}
+
+      <div className="ep-station-layout">
+        <section className="ep-station-scan">
+          <header className="ep-operation-panel-header">
+            <div className="ep-station-step">1</div>
+            <div className="ep-section-heading"><h2>Verify attendee</h2><p>Scan the pass QR code or use the fallback code printed beneath it.</p></div>
+            <UserCheck aria-hidden="true" />
+          </header>
+          <div className="ep-station-scan-form">
             <QrCameraScanner onScan={(decodedText) => findPass({ qrPayload: decodedText })} disabled={!eventId} startLabel="Start pass scanner" />
-            <form className="flex gap-2" onSubmit={submitLookup}>
-              <Input value={lookup} onChange={(event) => setLookup(event.target.value)} placeholder="Fallback code or pass ID" aria-label="Fallback code" />
-              <Button type="submit" variant="secondary"><Search className="h-4 w-4" /> Find</Button>
+            <div className="ep-form-divider">Fallback lookup</div>
+            <form onSubmit={submitLookup}>
+              <Input value={lookup} onChange={(event) => setLookup(event.target.value)} placeholder="Fallback code or pass ID" aria-label="Fallback code" disabled={!eventId} />
+              <Button type="submit" variant="secondary" disabled={!eventId || !lookup.trim()}><Search className="h-4 w-4" /> Find guest</Button>
             </form>
           </div>
 
           {attendee ? (
-            <div className="form-section mt-5 border-primary/25 bg-primary/[0.045] p-5">
-              <div className="flex items-start justify-between gap-4">
-                <div><p className="text-xl font-semibold">{attendee.name}</p><p className="text-sm text-muted-foreground">{attendee.email}</p></div>
-                <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+            <div className="ep-station-guest">
+              <div className="ep-station-guest-header">
+                <div><strong>{attendee.name}</strong><span>{attendee.email}{attendee.company ? ` · ${attendee.company}` : ""}</span></div>
+                <CheckCircle2 aria-hidden="true" />
               </div>
-              <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-                <div className="control-panel p-3"><p className="panel-label">Allotted</p><p className="mt-2 text-xl font-semibold">{attendee.raffleTickets}</p></div>
-                <div className="control-panel p-3"><p className="panel-label">Selected</p><p className="mt-2 text-xl font-semibold">{usedTickets}</p></div>
-                <div className={`rounded-xl p-3 ${usedTickets > attendee.raffleTickets ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-500"}`}><p className="text-xs">Remaining</p><p className="text-xl font-semibold">{remainingTickets}</p></div>
-              </div>
-              <Button type="button" variant="ghost" className="mt-4" onClick={() => { setAttendee(null); setAllocations({}); setMessage(""); }}><RotateCcw className="h-4 w-4" /> Clear guest</Button>
+              <Button type="button" variant="ghost" onClick={clearGuest}><RotateCcw className="h-4 w-4" /> Clear guest</Button>
             </div>
-          ) : <p className="mt-5 rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">No attendee loaded.</p>}
-          {message ? <p className="mt-4 rounded-xl bg-muted p-3 text-sm text-muted-foreground" role="status">{message}</p> : null}
-        </Card>
+          ) : <div className="ep-operation-empty ep-station-empty"><UserCheck /><strong>No attendee loaded</strong><span>Start the scanner or enter a fallback code to begin.</span></div>}
 
-        <Card className="p-5 sm:p-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div><p className="panel-label">Step 02</p><h2 className="mt-2 flex items-center gap-2 text-lg font-semibold"><Ticket className="h-5 w-5 text-primary" /> Choose prizes</h2><p className="mt-1 text-sm text-muted-foreground">Enter the exact number of tickets for each prize.</p></div>
-            <Button type="button" onClick={() => void saveAllocations()} disabled={!attendee || saving || usedTickets > (attendee?.raffleTickets ?? 0)}><CheckCircle2 className="h-4 w-4" /> {saving ? "Saving…" : "Confirm selections"}</Button>
-          </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          {message ? <p className="ep-station-message" data-error={message.startsWith("Could not") || message.startsWith("Remove ")} role="status">{message}</p> : null}
+        </section>
+
+        <section className="ep-station-prizes">
+          <header className="ep-operation-panel-header">
+            <div className="ep-station-step">2</div>
+            <div className="ep-section-heading"><h2>Tickets by prize</h2></div>
+            <Button type="button" onClick={() => void saveAllocations()} disabled={!attendee || usedTickets > (attendee?.raffleTickets ?? 0)} loading={saving} loadingLabel="Saving selections…"><CheckCircle2 className="h-4 w-4" /> Confirm selections</Button>
+          </header>
+
+          <div className="ep-station-prize-list">
             {prizes.map((prize) => {
               const count = allocations[prize.id] ?? 0;
               return (
-                <article key={prize.id} className={`overflow-hidden rounded-2xl border p-4 transition duration-300 ease-luxury ${count > 0 ? "border-primary/50 bg-primary/[0.055] shadow-[0_14px_36px_hsl(var(--primary)/0.10)]" : "border-border/70 bg-background/35 hover:-translate-y-0.5 hover:border-primary/30"}`}>
-                  {prize.imageUrl ? <div className="mb-4 aspect-[16/8] rounded-xl bg-cover bg-center" style={{ backgroundImage: `url(${prize.imageUrl})` }} /> : null}
-                  <div className="flex items-start justify-between gap-3"><div><h3 className="font-semibold">{prize.name}</h3>{prize.value ? <p className="text-xs font-medium text-primary">{prize.value}</p> : null}</div>{count > 0 ? <Star className="h-5 w-5 fill-primary text-primary" /> : null}</div>
-                  {prize.description ? <p className="mt-2 text-sm text-muted-foreground">{prize.description}</p> : null}
-                  <div className="mt-4 flex items-center gap-2">
-                    <Button type="button" variant="secondary" className="h-10 w-10 px-0" onClick={() => setTicketCount(prize.id, count - 1)} disabled={!attendee || count === 0} aria-label={`Remove one ticket from ${prize.name}`}><Minus className="h-4 w-4" /></Button>
-                    <Input type="number" min="0" max={attendee?.raffleTickets ?? 0} value={count} onChange={(event) => setTicketCount(prize.id, Number(event.target.value))} disabled={!attendee} className="text-center" aria-label={`Tickets for ${prize.name}`} />
-                    <Button type="button" variant="secondary" className="h-10 w-10 px-0" onClick={() => setTicketCount(prize.id, count + 1)} disabled={!attendee || usedTickets >= (attendee?.raffleTickets ?? 0)} aria-label={`Add one ticket to ${prize.name}`}><Plus className="h-4 w-4" /></Button>
-                    {count > 0 ? <Button type="button" variant="ghost" className="h-10 w-10 px-0 text-destructive" onClick={() => void removeSelection(prize.id)} aria-label={`Delete ${prize.name} selection`} title="Delete selection"><Trash2 className="h-4 w-4" /></Button> : null}
+                <article key={prize.id} className="ep-station-prize-row" data-selected={count > 0}>
+                  <div className="ep-station-prize-image" style={prize.imageUrl ? { backgroundImage: `url(${prize.imageUrl})` } : undefined}><Ticket aria-hidden="true" /></div>
+                  <div className="ep-station-prize-copy">
+                    <div><strong>{prize.name}</strong>{prize.value ? <span>{prize.value}</span> : null}</div>
+                    {prize.description ? <MarkdownContent value={prize.description} className="ep-station-prize-description" /> : null}
+                  </div>
+                  <div className="ep-station-ticket-control">
+                    <Button type="button" variant="secondary" onClick={() => setTicketCount(prize.id, count - 1)} disabled={!attendee || count === 0} aria-label={`Remove one ticket from ${prize.name}`}><Minus className="h-4 w-4" /></Button>
+                    <Input type="number" min="0" max={attendee?.raffleTickets ?? 0} value={count} onChange={(event) => setTicketCount(prize.id, Number(event.target.value))} disabled={!attendee} aria-label={`Tickets for ${prize.name}`} />
+                    <Button type="button" variant="secondary" onClick={() => setTicketCount(prize.id, count + 1)} disabled={!attendee || usedTickets >= (attendee?.raffleTickets ?? 0)} aria-label={`Add one ticket to ${prize.name}`}><Plus className="h-4 w-4" /></Button>
+                    {count > 0 ? <Button type="button" variant="ghost" className="ep-station-remove-ticket" onClick={() => void removeSelection(prize.id)} aria-label={`Clear ${prize.name} selection`} title="Clear selection"><Trash2 className="h-4 w-4" /></Button> : null}
                   </div>
                 </article>
               );
             })}
+            {loadingPrizes ? <div className="ep-operation-empty"><Ticket /><strong>Loading prizes…</strong></div> : null}
+            {!loadingPrizes && prizes.length === 0 ? <div className="ep-operation-empty"><Ticket /><strong>No active prizes</strong><span>Add a raffle prize before opening the ticket station.</span></div> : null}
           </div>
-          {prizes.length === 0 ? <p className="mt-5 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">No active prizes are available for this event.</p> : null}
-        </Card>
+        </section>
       </div>
     </div>
   );

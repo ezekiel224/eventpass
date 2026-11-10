@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createPrizeReceiptWorkbook } from "@/lib/prize-receipt-xlsx";
+import { getBranding } from "@/lib/branding";
 
 type Params = { params: Promise<{ eventId: string }> };
 
@@ -29,7 +30,8 @@ export async function GET(_request: Request, { params }: Params) {
     return NextResponse.json({ error: `${unsigned.length} winner${unsigned.length === 1 ? " has" : "s have"} not signed yet. The payroll workbook is available after every winner signs.` }, { status: 409 });
   }
 
-  const workbook = createPrizeReceiptWorkbook(event, event.rafflePrizes);
+  const branding = await getBranding();
+  const workbook = createPrizeReceiptWorkbook(event, event.rafflePrizes, branding.timezone);
   const slug = event.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "event";
   return new Response(Buffer.from(workbook), {
     headers: {

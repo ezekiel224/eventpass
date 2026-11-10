@@ -9,7 +9,7 @@ Authorization is database-backed and evaluated on every protected request.
 - `Permission` uses scoped slugs such as `users:create`.
 - `UserRole` and `RolePermission` are explicit many-to-many join tables.
 - `UserPermissionOverride` stores direct allow or deny decisions.
-- `AuditLog` records privileged mutations with actor, target, timestamp, IP address, user agent, and JSON metadata.
+- `AuditLog` records authenticated page views and API requests plus privileged mutations, with actor snapshots, target, timestamp, IP address, user agent, and JSON metadata. Actor snapshots preserve attribution after an account is deleted.
 
 Effective access is calculated as:
 
@@ -39,6 +39,8 @@ The first administrator is not seeded. When there are no user accounts and no co
 - Sensitive account, role, permission, and password APIs additionally require a double-submit CSRF token.
 - Zod strict schemas reject unknown or malformed fields.
 - Users cannot edit their own role assignments, overrides, or active state.
+- Only administrators can permanently delete accounts. They cannot delete themselves or the final active administrator, and every deletion retains historical audit attribution.
+- The forensic audit view and export require both the Admin role and `audit:view`; granting `audit:view` to a non-admin role does not expose the ledger.
 - System roles and system permissions cannot be modified.
 - API authorization failures return `401` for missing authentication and `403` for missing permission.
 - Page authorization produces a real `403` using Next.js authorization interrupts.
@@ -50,6 +52,7 @@ The first administrator is not seeded. When there are no user accounts and no co
 
 - `/admin/settings/accounts`
 - `/admin/settings/permissions`
+- `/admin/audit` — administrator-only forensic activity ledger
 - `/change-password`
 - `/signup` — available only before the first administrator is created
 
@@ -58,6 +61,7 @@ The first administrator is not seeded. When there are no user accounts and no co
 - `GET /api/admin/users`
 - `POST /api/admin/users`
 - `PUT /api/admin/users`
+- `DELETE /api/admin/users`
 - `GET /api/admin/roles`
 - `PUT /api/admin/roles`
 - `GET /api/admin/permissions`
@@ -93,6 +97,7 @@ Use a long random `AUTH_SECRET`, HTTPS, and secure production cookies. Back up t
 4. A newly created account is redirected to `/change-password`.
 5. The temporary password is never stored in plaintext or returned again.
 6. Role and override changes take effect on the next request.
-7. Account, role, permission, and password changes create audit records.
-8. The final active full-access administrator cannot accidentally alter their own access.
-9. A second initial-setup request returns `409` and `/signup` redirects to `/login`.
+7. Page views, API access, authentication events, and committed administrative changes create audit records.
+8. Deleted accounts retain actor email and display-name snapshots in historical audit records.
+9. Administrators cannot delete themselves or the final active administrator.
+10. A second initial-setup request returns `409` and `/signup` redirects to `/login`.

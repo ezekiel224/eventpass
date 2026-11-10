@@ -4,6 +4,7 @@ import { attendeeInclude, serializeAttendee } from "@/lib/prisma-helpers";
 import { checkInSchema, qrValidationSchema } from "@/lib/validation";
 import { verifyQrPayload } from "@/services/qr";
 import { rateLimit } from "@/services/rate-limit";
+import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export async function GET() {
     orderBy: { scannedAt: "desc" },
     take: 20,
     include: {
+      station: true,
       attendee: {
         include: attendeeInclude
       }
@@ -23,6 +25,8 @@ export async function GET() {
     checkIns: checkIns.map((checkIn) => ({
       id: checkIn.id,
       duplicate: checkIn.duplicate,
+      reversedAt: checkIn.reversedAt?.toISOString() ?? null,
+      stationName: checkIn.station?.name ?? null,
       scannedAt: checkIn.scannedAt.toISOString(),
       attendee: serializeAttendee(checkIn.attendee)
     }))
@@ -38,6 +42,11 @@ export async function POST(request: NextRequest) {
   const parsed = checkInSchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  if (parsed.data.clientScanId) {
+    const existing = await prisma.checkIn.findUnique({ where: { clientScanId: parsed.data.clientScanId }, include: { attendee: { include: attendeeInclude } } });
+    if (existing) return NextResponse.json({ valid: true, duplicate: existing.duplicate, under21Alert: existing.attendee.under21 || existing.attendee.plusOneUnder21, under21Message: null, checkedInAt: existing.scannedAt.toISOString(), attendee: serializeAttendee(existing.attendee), reconciled: true });
   }
 
   let attendeeId = parsed.data.attendeeId;
@@ -87,7 +96,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ valid: false, error: "This event is archived and no longer accepts check-ins" }, { status: 400 });
   }
 
-  const duplicate = attendee.checkIns.some((checkIn) => !checkIn.duplicate);
+  const duplicate = attendee.checkIns.some((checkIn) => !checkIn.duplicate && !checkIn.reversedAt);
   if (parsed.data.testMode) {
     return NextResponse.json({
       valid: true,
@@ -99,11 +108,21 @@ export async function POST(request: NextRequest) {
       attendee: serializeAttendee(attendee)
     });
   }
+  if (parsed.data.stationId) {
+    const station = await prisma.checkInStation.findFirst({ where: { id: parsed.data.stationId, eventId: attendee.eventId, active: true }, select: { id: true } });
+    if (!station) return NextResponse.json({ valid: false, error: "This scanner station is not assigned to the event." }, { status: 409 });
+  }
+  const currentUser = await getCurrentUser();
   const checkIn = await prisma.checkIn.create({
     data: {
       attendeeId,
       duplicate,
-      rawPayload
+      rawPayload,
+      stationId: parsed.data.stationId,
+      clientScanId: parsed.data.clientScanId,
+      recordedAt: parsed.data.recordedAt ? new Date(parsed.data.recordedAt) : undefined,
+      syncedAt: parsed.data.clientScanId ? new Date() : undefined,
+      scannedById: currentUser?.id
     }
   });
 
@@ -124,6 +143,7 @@ export async function POST(request: NextRequest) {
           ? "Guest self-identified as under 21."
           : null,
     checkedInAt: checkIn.scannedAt.toISOString(),
+    clientRecordedAt: checkIn.recordedAt?.toISOString() ?? null,
     attendee: serializeAttendee(updated)
   });
 }
