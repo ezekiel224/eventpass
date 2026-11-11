@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Link2, Monitor, Pause, Play, Plus, RefreshCw, Save, Search, Trash2, Wifi, WifiOff } from "lucide-react";
+import { ExternalLink, Link2, Monitor, MonitorUp, Pause, Play, Plus, QrCode, RefreshCw, Save, Search, Trash2, Wifi, WifiOff } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,6 +146,7 @@ export function RaffleDisplayControl() {
   const [message, setMessage] = useState("");
   const [filter, setFilter] = useState<DisplayFilter>("ALL");
   const [query, setQuery] = useState("");
+  const [previewEventId, setPreviewEventId] = useState("");
   const [create, setCreate] = useState({ name: "", eventId: "", mode: "WALL" as RaffleDisplayMode, rotationSeconds: 12 });
 
   const load = useCallback(async () => {
@@ -156,6 +157,7 @@ export function RaffleDisplayControl() {
       const next: ControlData = await response.json();
       setData(next);
       setCreate((current) => ({ ...current, eventId: next.events.some((event) => event.id === current.eventId) ? current.eventId : next.events[0]?.id ?? "" }));
+      setPreviewEventId((current) => next.events.some((event) => event.id === current) ? current : next.events[0]?.id ?? "");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Display status could not be loaded.");
     } finally {
@@ -206,6 +208,17 @@ export function RaffleDisplayControl() {
       </section>
 
       {message ? <p className="text-sm font-medium text-primary">{message}</p> : null}
+
+      <section className="liquid-card overflow-hidden p-0">
+        <div className="flex flex-col justify-between gap-4 border-b border-border/70 p-5 md:flex-row md:items-end">
+          <div><h2 className="text-lg font-semibold">Legacy preview displays</h2><p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">Open the original live views on a venue screen. These launch-only previews do not report pairing or heartbeat status.</p></div>
+          <label className="text-sm font-medium">Preview event<select className={`${selectClass} mt-2 min-w-64`} value={previewEventId} onChange={(event) => setPreviewEventId(event.target.value)} disabled={!data.events.length}>{data.events.length ? data.events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>) : <option value="">No active events</option>}</select></label>
+        </div>
+        <div className="divide-y divide-border/70">
+          <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><QrCode className="h-4 w-4" /></span><div><h3 className="font-semibold">Check-in arrivals</h3><p className="mt-1 text-sm text-muted-foreground">A full-screen feed of the latest scans, guest details, and entry warnings.</p></div></div><a href={`/dashboard/check-in/display${previewEventId ? `?eventId=${encodeURIComponent(previewEventId)}` : ""}`} target="_blank" rel="noreferrer" aria-disabled={!previewEventId} className={`focus-ring inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary/50 ${previewEventId ? "" : "pointer-events-none opacity-50"}`}><MonitorUp className="h-4 w-4" /> Open check-in display</a></div>
+          <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Monitor className="h-4 w-4" /></span><div><h3 className="font-semibold">Raffle preview</h3><p className="mt-1 text-sm text-muted-foreground">The original event-selected raffle wall with prize activity and winner reveals.</p></div></div><a href={`/dashboard/raffles/display${previewEventId ? `?eventId=${encodeURIComponent(previewEventId)}` : ""}`} target="_blank" rel="noreferrer" aria-disabled={!previewEventId} className={`focus-ring inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary/50 ${previewEventId ? "" : "pointer-events-none opacity-50"}`}><MonitorUp className="h-4 w-4" /> Open raffle preview</a></div>
+        </div>
+      </section>
 
       <section className="liquid-card overflow-hidden p-0">
         <div className="flex flex-col gap-4 border-b border-border/70 p-5 lg:flex-row lg:items-center lg:justify-between">
