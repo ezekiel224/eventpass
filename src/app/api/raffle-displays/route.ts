@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { sortPrizesByName } from "@/lib/prize-order";
 import { RAFFLE_CONFETTI_PRESETS, RAFFLE_DISPLAY_MODES, serializeRaffleDisplay } from "@/lib/raffle-display";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,13 @@ export async function GET() {
       orderBy: { startsAt: "asc" }
     })
   ]);
-  return NextResponse.json({ displays: displays.map(serializeRaffleDisplay), events });
+  return NextResponse.json({
+    displays: displays.map(serializeRaffleDisplay),
+    events: events.map((event) => ({
+      ...event,
+      rafflePrizes: sortPrizesByName(event.rafflePrizes)
+    }))
+  });
 }
 
 export async function POST(request: NextRequest) {

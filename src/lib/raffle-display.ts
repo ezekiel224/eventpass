@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
+import { sortPrizesByName } from "@/lib/prize-order";
 import { isRaffleConfettiPreset, RAFFLE_CONFETTI_PALETTES } from "@/lib/raffle-confetti";
 export { isRaffleConfettiPreset, RAFFLE_CONFETTI_PALETTES, RAFFLE_CONFETTI_PRESETS } from "@/lib/raffle-confetti";
 export type { RaffleConfettiPreset } from "@/lib/raffle-confetti";
@@ -105,7 +106,7 @@ export async function getRaffleDisplayContent(eventId: string) {
 
   if (!event) return null;
 
-  const prizes = event.rafflePrizes.map((prize) => ({
+  const prizes = sortPrizesByName(event.rafflePrizes.map((prize) => ({
     id: prize.id,
     name: prize.name,
     description: prize.description,
@@ -115,7 +116,7 @@ export async function getRaffleDisplayContent(eventId: string) {
     entrantCount: prize.entries.filter((entry) => entry.ticketCount > 0).length,
     winnerName: prize.winnerName,
     drawnAt: prize.drawnAt?.toISOString() ?? null
-  }));
+  })));
   const latestDraw = prizes
     .filter((prize) => prize.drawnAt && prize.winnerName)
     .sort((left, right) => new Date(right.drawnAt!).getTime() - new Date(left.drawnAt!).getTime())[0] ?? null;

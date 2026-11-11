@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { sortPrizesByName } from "@/lib/prize-order";
 import { serializeRaffleAttendee } from "@/lib/raffle-attendee";
 import { qrValidationSchema } from "@/lib/validation";
 import { verifyQrPayload } from "@/services/qr";
@@ -76,7 +77,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     events: events.map((event) => ({ ...event, startsAt: event.startsAt.toISOString() })),
     selectedEventId: selectedEvent?.id ?? null,
-    prizes,
+    prizes: sortPrizesByName(prizes),
     attendees: attendees.map((attendee) => ({
       id: attendee.id,
       name: `${attendee.firstName} ${attendee.lastName}`,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { storedImageSchema } from "@/lib/image-schema";
+import { sortPrizesByName } from "@/lib/prize-order";
 import { serializeRaffleAttendee } from "@/lib/raffle-attendee";
 
 type Params = { params: Promise<{ eventId: string }> };
@@ -90,14 +91,14 @@ async function getPrizes(eventId: string) {
   `;
   const displayData = new Map(displayRows.map((row) => [row.id, row]));
 
-  return prizes.map((prize) => ({
+  return sortPrizesByName(prizes.map((prize) => ({
     ...prize,
     imageUrl: displayData.get(prize.id)?.imageUrl ?? null,
     winnerName: displayData.get(prize.id)?.winnerName ?? null,
     winnerAttendeeId: displayData.get(prize.id)?.winnerAttendeeId ?? null,
     drawnAt: displayData.get(prize.id)?.drawnAt ?? null,
     rerollCount: displayData.get(prize.id)?.rerollCount ?? 0
-  }));
+  })));
 }
 
 function getAttendees(eventId: string, search = "", limit = 100) {
