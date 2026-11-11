@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { RAFFLE_DISPLAY_MODES, serializeRaffleDisplay } from "@/lib/raffle-display";
+import { RAFFLE_CONFETTI_PRESETS, RAFFLE_DISPLAY_MODES, serializeRaffleDisplay } from "@/lib/raffle-display";
 
 type Params = { params: Promise<{ displayId: string }> };
 
@@ -11,7 +11,9 @@ const updateSchema = z.object({
   mode: z.enum(RAFFLE_DISPLAY_MODES).optional(),
   paused: z.boolean().optional(),
   forcedPrizeId: z.string().nullable().optional(),
-  rotationSeconds: z.number().int().min(6).max(60).optional()
+  rotationSeconds: z.number().int().min(6).max(60).optional(),
+  confettiPreset: z.enum(RAFFLE_CONFETTI_PRESETS).optional(),
+  confettiColors: z.array(z.string().regex(/^#[0-9a-f]{6}$/i)).min(2).max(8).nullable().optional()
 });
 
 export async function PATCH(request: NextRequest, { params }: Params) {
@@ -30,7 +32,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
   const display = await prisma.raffleDisplay.update({
     where: { id: displayId },
-    data: parsed.data,
+    data: {
+      ...parsed.data,
+      confettiColors: parsed.data.confettiColors === undefined
+        ? undefined
+        : parsed.data.confettiColors === null ? null : JSON.stringify(parsed.data.confettiColors)
+    },
     include: { event: { select: { name: true } } }
   });
   return NextResponse.json({ display: serializeRaffleDisplay(display) });

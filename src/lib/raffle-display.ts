@@ -1,5 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
 import { prisma } from "@/lib/db";
+import { isRaffleConfettiPreset, RAFFLE_CONFETTI_PALETTES } from "@/lib/raffle-confetti";
+export { isRaffleConfettiPreset, RAFFLE_CONFETTI_PALETTES, RAFFLE_CONFETTI_PRESETS } from "@/lib/raffle-confetti";
+export type { RaffleConfettiPreset } from "@/lib/raffle-confetti";
 
 export const RAFFLE_DISPLAY_MODES = ["WALL", "SPOTLIGHT", "RACE", "STAGE", "WINNERS"] as const;
 export type RaffleDisplayMode = (typeof RAFFLE_DISPLAY_MODES)[number];
@@ -11,6 +14,21 @@ const PAIRING_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
 export function isRaffleDisplayMode(value: unknown): value is RaffleDisplayMode {
   return typeof value === "string" && RAFFLE_DISPLAY_MODES.includes(value as RaffleDisplayMode);
+}
+
+export function parseConfettiColors(value: string | null | undefined, preset: unknown) {
+  if (preset !== "CUSTOM" || !value) {
+    const safePreset = isRaffleConfettiPreset(preset) && preset !== "CUSTOM" ? preset : "BRAND";
+    return RAFFLE_CONFETTI_PALETTES[safePreset];
+  }
+  try {
+    const colors = JSON.parse(value);
+    return Array.isArray(colors) && colors.length >= 2 && colors.length <= 8 && colors.every((color) => /^#[0-9a-f]{6}$/i.test(color))
+      ? colors
+      : RAFFLE_CONFETTI_PALETTES.BRAND;
+  } catch {
+    return RAFFLE_CONFETTI_PALETTES.BRAND;
+  }
 }
 
 export function hashDisplaySecret(value: string) {
@@ -39,6 +57,8 @@ export function serializeRaffleDisplay(display: {
   paused: boolean;
   forcedPrizeId: string | null;
   rotationSeconds: number;
+  confettiPreset: string;
+  confettiColors: string | null;
   createdAt: Date;
   updatedAt: Date;
   event?: { name: string };
@@ -59,6 +79,8 @@ export function serializeRaffleDisplay(display: {
     paused: display.paused,
     forcedPrizeId: display.forcedPrizeId,
     rotationSeconds: display.rotationSeconds,
+    confettiPreset: isRaffleConfettiPreset(display.confettiPreset) ? display.confettiPreset : "BRAND",
+    confettiColors: parseConfettiColors(display.confettiColors, display.confettiPreset),
     createdAt: display.createdAt.toISOString(),
     updatedAt: display.updatedAt.toISOString()
   };

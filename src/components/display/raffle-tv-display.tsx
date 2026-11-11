@@ -28,6 +28,8 @@ type DisplaySession = {
     paused: boolean;
     forcedPrizeId: string | null;
     rotationSeconds: number;
+    confettiPreset: string;
+    confettiColors: string[];
   };
   coordination: { slotIndex: number; displayCount: number };
   content: {
@@ -41,6 +43,9 @@ type DisplaySession = {
 const TOKEN_KEY = "eventpass_raffle_display_token";
 const PAIRING_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 const sceneTransition = { duration: 0.75, ease: [0.16, 1, 0.3, 1] as const };
+const FALLBACK_CELEBRATION_COLORS = ["#F4680A", "#F99D45", "#F0EBE5", "#191614"];
+const WINNER_REVEAL_DURATION_MS = 20_000;
+const CONFETTI_DURATION_MS = 13_000;
 
 function chunk<T>(items: T[], size: number) {
   const pages: T[][] = [];
@@ -250,6 +255,7 @@ export function RaffleTvDisplay() {
   const initializedDraw = useRef(false);
   const [winnerReveal, setWinnerReveal] = useState<DisplaySession["content"]["latestDraw"]>(null);
   const [portrait, setPortrait] = useState(false);
+  const confettiPaletteKey = (session?.profile.confettiColors?.length ? session.profile.confettiColors : FALLBACK_CELEBRATION_COLORS).join(",");
 
   useEffect(() => {
     const measure = () => setPortrait(window.innerHeight > window.innerWidth);
@@ -300,9 +306,51 @@ export function RaffleTvDisplay() {
 
   useEffect(() => {
     if (!winnerReveal) return;
-    const timeout = window.setTimeout(() => setWinnerReveal(null), 10_000);
+    const timeout = window.setTimeout(() => setWinnerReveal(null), WINNER_REVEAL_DURATION_MS);
     return () => window.clearTimeout(timeout);
   }, [winnerReveal]);
+
+  useEffect(() => {
+    if (!winnerReveal || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let cancelled = false;
+    const timers: number[] = [];
+    let resetConfetti: (() => void) | undefined;
+
+    void import("canvas-confetti").then(({ default: confetti }) => {
+      if (cancelled) return;
+      resetConfetti = () => confetti.reset();
+      const colors = confettiPaletteKey.split(",");
+      const fire = (delay: number, origin: { x: number; y: number }, angle: number) => {
+        timers.push(window.setTimeout(() => {
+          if (!cancelled) confetti({ angle, colors, decay: 0.92, disableForReducedMotion: true, drift: angle < 90 ? 0.15 : -0.15, gravity: 0.9, origin, particleCount: 150, scalar: 1.25, spread: 72, startVelocity: 68, ticks: 240, zIndex: 60 });
+        }, delay));
+      };
+      fire(200, { x: 0.03, y: 0.82 }, 58);
+      fire(200, { x: 0.97, y: 0.82 }, 122);
+      fire(1700, { x: 0.12, y: 0.72 }, 66);
+      fire(1700, { x: 0.88, y: 0.72 }, 114);
+      fire(3500, { x: 0.04, y: 0.88 }, 54);
+      fire(3500, { x: 0.96, y: 0.88 }, 126);
+      const showerEndsAt = Date.now() + CONFETTI_DURATION_MS;
+      const shower = window.setInterval(() => {
+        if (cancelled || Date.now() >= showerEndsAt) {
+          window.clearInterval(shower);
+          return;
+        }
+        confetti({ colors, decay: 0.94, disableForReducedMotion: true, gravity: 0.62, origin: { x: Math.random(), y: -0.08 }, particleCount: 12, scalar: 0.95, spread: 50, startVelocity: 12, ticks: 300, zIndex: 60 });
+      }, 180);
+      timers.push(shower);
+    });
+
+    return () => {
+      cancelled = true;
+      timers.forEach((timer) => {
+        window.clearTimeout(timer);
+        window.clearInterval(timer);
+      });
+      resetConfetti?.();
+    };
+  }, [confettiPaletteKey, winnerReveal]);
 
   const cycle = session ? Math.floor((tick + clockOffset) / (session.profile.rotationSeconds * 1000)) : 0;
   if (token === null) return <PairingScreen onPaired={setToken} />;
@@ -364,7 +412,7 @@ export function RaffleTvDisplay() {
       ) : null}
 
       {!online ? <div className="pointer-events-none absolute right-[2vmin] top-[2vmin] flex items-center gap-2 rounded-full border border-primary/30 bg-background/90 px-4 py-2 text-sm font-semibold text-primary"><WifiOff className="h-4 w-4" /> Last live data retained</div> : null}
-      <AnimatePresence>{winnerReveal ? <motion.div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-background/95 p-[5vmin] text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><motion.div initial={{ y: "6vmin", scale: 0.9 }} animate={{ y: 0, scale: 1 }} transition={sceneTransition}><Trophy className="mx-auto h-[clamp(5rem,16vmin,15rem)] w-[clamp(5rem,16vmin,15rem)] text-primary" /><p className="raffle-tv-kicker mt-[3vmin] justify-center">Winner</p><h2 className="mt-[1.5vmin] text-[clamp(4rem,15vmin,15rem)] font-semibold leading-[0.8] tracking-[-0.07em]">{winnerReveal.winnerName}</h2><p className="mt-[3vmin] text-[clamp(1.4rem,4vmin,4rem)] text-muted-foreground">wins <span className="font-semibold text-foreground">{winnerReveal.prizeName}</span></p></motion.div></motion.div> : null}</AnimatePresence>
+      <AnimatePresence>{winnerReveal ? <motion.div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-background/95 p-[5vmin] text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><motion.div initial={{ y: "7vmin", scale: 0.84, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} transition={{ duration: 1.15, ease: [0.16, 1, 0.3, 1] }}><motion.p className="raffle-tv-kicker justify-center" initial={{ letterSpacing: "0.5em", opacity: 0 }} animate={{ letterSpacing: "0.22em", opacity: 1 }} transition={{ delay: 0.25, duration: 0.9 }}>Winner</motion.p><motion.h2 className="mt-[2vmin] text-[clamp(4rem,15vmin,15rem)] font-semibold leading-[0.8] tracking-[-0.07em]" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.35, duration: 1.25, ease: [0.16, 1, 0.3, 1] }}>{winnerReveal.winnerName}</motion.h2><motion.p className="mt-[3vmin] text-[clamp(1.4rem,4vmin,4rem)] text-muted-foreground" initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.9, duration: 0.8 }}>wins <span className="font-semibold text-foreground">{winnerReveal.prizeName}</span></motion.p></motion.div></motion.div> : null}</AnimatePresence>
     </main>
   );
 }

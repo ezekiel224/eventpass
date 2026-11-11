@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Copy, Download, FileSignature, Gift, ImagePlus, Plus, RefreshCcw, Save, Search, Send, Shuffle, Sparkles, Ticket, Trash2, UserCheck } from "lucide-react";
+import { ArrowRight, Copy, Download, FileSignature, Gift, ImagePlus, Plus, RefreshCcw, Save, Search, Send, Shuffle, Sparkles, Ticket, Trash2, UserCheck, UserMinus } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
 import { Button } from "@/components/ui/button";
@@ -116,7 +116,7 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
   const [winner, setWinner] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
-  const [pendingPrizeAction, setPendingPrizeAction] = useState<{ prize: RafflePrize; action: "ARCHIVE" | "DRAW" | "REROLL" | "ACCEPTANCE" } | null>(null);
+  const [pendingPrizeAction, setPendingPrizeAction] = useState<{ prize: RafflePrize; action: "ARCHIVE" | "DRAW" | "REROLL" | "CLEAR" | "ACCEPTANCE" } | null>(null);
   const loadRequestRef = useRef(0);
 
   const selectedPrize = useMemo(() => raffle.prizes.find((prize) => prize.id === assignment.prizeId) ?? null, [assignment.prizeId, raffle.prizes]);
@@ -359,6 +359,23 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
     await loadRaffle();
   }
 
+  async function clearWinner(prize: RafflePrize) {
+    const response = await fetch(`/api/events/${eventId}/raffle/prizes/${prize.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clearWinner" })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setMessage(data.error ?? "Could not clear the winner.");
+      return;
+    }
+    setWinner("");
+    setAcceptanceLink("");
+    setMessage(`${data.clearedWinner} was cleared from ${prize.name} and can win again.`);
+    await loadRaffle();
+  }
+
   async function saveReceiptSettings(event: FormEvent) {
     event.preventDefault();
     const response = await fetch(`/api/events/${eventId}`, {
@@ -515,7 +532,7 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
             <div className="ep-prize-list">
               {raffle.prizes.length === 0 ? <div className="ep-operation-empty"><strong>No prizes yet.</strong><span>Add the first prize to begin collecting entries.</span></div> : raffle.prizes.map((prize) => <article key={prize.id} className="ep-prize-row">
                 <div className="ep-prize-identity"><div className="ep-prize-image" style={prize.imageUrl ? { backgroundImage: `url(${prize.imageUrl})` } : undefined}>{prize.imageUrl ? null : <Gift size={20} />}</div><div><strong>{prize.name}</strong><span>{prize.totalTickets} tickets{prize.value ? ` · $${Number(prize.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</span>{prize.description ? <MarkdownContent value={prize.description} /> : null}{prize.winnerName ? <p><b>Winner: {prize.winnerName}</b><span>{prize.acceptanceStatus === "SIGNED" ? `Signed${prize.acceptanceSignerName ? ` by ${prize.acceptanceSignerName}` : ""}${prize.acceptedAt ? ` · ${formatDate(prize.acceptedAt, timeZone)}` : ""}` : prize.acceptanceStatus === "PENDING" ? "Signing link ready" : "Signature not requested"}</span></p> : null}</div></div>
-                <div className="ep-prize-actions">{prize.winnerName ? <>{prize.acceptanceStatus !== "SIGNED" ? <Button type="button" variant="secondary" onClick={() => setPendingPrizeAction({ prize, action: "ACCEPTANCE" })}><Send size={15} /> Signing link</Button> : null}<Button type="button" variant="danger" onClick={() => setPendingPrizeAction({ prize, action: "REROLL" })} disabled={prize.totalTickets === 0}><RefreshCcw size={15} /> Reroll</Button></> : <Button type="button" onClick={() => setPendingPrizeAction({ prize, action: "DRAW" })} disabled={prize.totalTickets === 0}><Shuffle size={15} /> Draw winner</Button>}<Button type="button" variant="ghost" onClick={() => setPendingPrizeAction({ prize, action: "ARCHIVE" })} aria-label={`Remove ${prize.name}`}><Trash2 size={15} /></Button></div>
+                <div className="ep-prize-actions">{prize.winnerName ? <>{prize.acceptanceStatus !== "SIGNED" ? <Button type="button" variant="secondary" onClick={() => setPendingPrizeAction({ prize, action: "ACCEPTANCE" })}><Send size={15} /> Signing link</Button> : null}<Button type="button" variant="secondary" onClick={() => setPendingPrizeAction({ prize, action: "CLEAR" })} title="Testing: remove this result and restore winner eligibility"><UserMinus size={15} /> Clear winner</Button><Button type="button" variant="danger" onClick={() => setPendingPrizeAction({ prize, action: "REROLL" })} disabled={prize.totalTickets === 0}><RefreshCcw size={15} /> Reroll</Button></> : <Button type="button" onClick={() => setPendingPrizeAction({ prize, action: "DRAW" })} disabled={prize.totalTickets === 0}><Shuffle size={15} /> Draw winner</Button>}<Button type="button" variant="ghost" onClick={() => setPendingPrizeAction({ prize, action: "ARCHIVE" })} aria-label={`Remove ${prize.name}`}><Trash2 size={15} /></Button></div>
                 {prize.entries.length ? <footer>{prize.entries.slice(0, 5).map((entry) => <span key={entry.attendeeId}>{entry.attendeeName} · {entry.ticketCount}</span>)}{prize.entries.length > 5 ? <span>+{prize.entries.length - 5} more</span> : null}</footer> : null}
               </article>)}
             </div>
@@ -532,7 +549,7 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
         </section>
       </section> : null}
 
-      <ConfirmDialog open={pendingPrizeAction !== null} onOpenChange={(open) => { if (!open) setPendingPrizeAction(null); }} title={pendingPrizeAction?.action === "ARCHIVE" ? `Remove ${pendingPrizeAction.prize.name}?` : pendingPrizeAction?.action === "DRAW" ? `Draw a winner for ${pendingPrizeAction.prize.name}?` : pendingPrizeAction?.action === "REROLL" ? `Replace ${pendingPrizeAction.prize.winnerName ?? "the current winner"}?` : `Email ${pendingPrizeAction?.prize.winnerName ?? "the winner"}?`} description={pendingPrizeAction?.action === "ARCHIVE" ? "The prize and its current entries will be removed from this raffle." : pendingPrizeAction?.action === "DRAW" ? "One eligible entry will become the final winner. Confirm the prize pool is ready before continuing." : pendingPrizeAction?.action === "REROLL" ? "The current winner will be overridden and a new final winner will be drawn from eligible entries." : "A new secure signing link will be created and emailed. Only continue after the winner is final."} confirmLabel={pendingPrizeAction?.action === "ARCHIVE" ? "Remove prize" : pendingPrizeAction?.action === "DRAW" ? "Draw winner" : pendingPrizeAction?.action === "REROLL" ? "Override and reroll" : "Email signing link"} destructive={pendingPrizeAction?.action === "ARCHIVE" || pendingPrizeAction?.action === "REROLL"} onConfirm={() => { if (!pendingPrizeAction) return; if (pendingPrizeAction.action === "ARCHIVE") void archivePrize(pendingPrizeAction.prize.id); if (pendingPrizeAction.action === "DRAW") void drawWinner(pendingPrizeAction.prize); if (pendingPrizeAction.action === "REROLL") void drawWinner(pendingPrizeAction.prize, true); if (pendingPrizeAction.action === "ACCEPTANCE") void requestAcceptance(pendingPrizeAction.prize); setPendingPrizeAction(null); }} />
+      <ConfirmDialog open={pendingPrizeAction !== null} onOpenChange={(open) => { if (!open) setPendingPrizeAction(null); }} title={pendingPrizeAction?.action === "ARCHIVE" ? `Remove ${pendingPrizeAction.prize.name}?` : pendingPrizeAction?.action === "DRAW" ? `Draw a winner for ${pendingPrizeAction.prize.name}?` : pendingPrizeAction?.action === "REROLL" ? `Replace ${pendingPrizeAction.prize.winnerName ?? "the current winner"}?` : pendingPrizeAction?.action === "CLEAR" ? `Clear ${pendingPrizeAction.prize.winnerName ?? "the current winner"}?` : `Email ${pendingPrizeAction?.prize.winnerName ?? "the winner"}?`} description={pendingPrizeAction?.action === "ARCHIVE" ? "The prize and its current entries will be removed from this raffle." : pendingPrizeAction?.action === "DRAW" ? "One eligible entry will become the final winner. Confirm the prize pool is ready before continuing." : pendingPrizeAction?.action === "REROLL" ? "The current winner will be overridden and a new final winner will be drawn from eligible entries." : pendingPrizeAction?.action === "CLEAR" ? "This testing action removes the result and any signature data, then makes the attendee eligible to win again." : "A new secure signing link will be created and emailed. Only continue after the winner is final."} confirmLabel={pendingPrizeAction?.action === "ARCHIVE" ? "Remove prize" : pendingPrizeAction?.action === "DRAW" ? "Draw winner" : pendingPrizeAction?.action === "REROLL" ? "Override and reroll" : pendingPrizeAction?.action === "CLEAR" ? "Clear winner" : "Email signing link"} destructive={pendingPrizeAction?.action === "ARCHIVE" || pendingPrizeAction?.action === "REROLL" || pendingPrizeAction?.action === "CLEAR"} onConfirm={() => { if (!pendingPrizeAction) return; if (pendingPrizeAction.action === "ARCHIVE") void archivePrize(pendingPrizeAction.prize.id); if (pendingPrizeAction.action === "DRAW") void drawWinner(pendingPrizeAction.prize); if (pendingPrizeAction.action === "REROLL") void drawWinner(pendingPrizeAction.prize, true); if (pendingPrizeAction.action === "CLEAR") void clearWinner(pendingPrizeAction.prize); if (pendingPrizeAction.action === "ACCEPTANCE") void requestAcceptance(pendingPrizeAction.prize); setPendingPrizeAction(null); }} />
     </div>
   );
 }

@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { OperationSelect } from "@/components/ui/operation-select";
 import { PreviewSheet } from "@/components/ui/preview-sheet";
 import { RollingNumber } from "@/components/ui/rolling-number";
+import { RAFFLE_CONFETTI_PALETTES, RAFFLE_CONFETTI_PRESETS } from "@/lib/raffle-confetti";
+import type { RaffleConfettiPreset } from "@/lib/raffle-confetti";
 import type { RaffleDisplayMode } from "@/lib/raffle-display";
 import { formatTime } from "@/lib/utils";
 import "./raffle-live-operations.css";
@@ -26,6 +28,8 @@ type Display = {
   paused: boolean;
   forcedPrizeId: string | null;
   rotationSeconds: number;
+  confettiPreset: RaffleConfettiPreset;
+  confettiColors: string[];
   updatedAt: string;
 };
 
@@ -39,6 +43,14 @@ const modes: { value: RaffleDisplayMode; label: string; description: string }[] 
   { value: "STAGE", label: "Draw Stage", description: "Latest draw and winner focus" },
   { value: "WINNERS", label: "Winner Gallery", description: "Completed prize drawings" },
 ];
+
+const confettiPresetLabels: Record<RaffleConfettiPreset, string> = {
+  BRAND: "EventPass",
+  GOLD: "Gold",
+  CELEBRATION: "Celebration",
+  COOL: "Cool",
+  CUSTOM: "Custom",
+};
 
 function displayStatus(display: Display) {
   if (!display.paired) return { label: "Waiting to pair", tone: "waiting", icon: Link2 };
@@ -61,7 +73,7 @@ function DisplayEditor({ display, events, onChanged, timeZone }: { display: Disp
   const StatusIcon = status.icon;
   const prizes = events.find((event) => event.id === draft.eventId)?.rafflePrizes ?? [];
 
-  async function patchDisplay(patch: Partial<Display>, closeWhenSaved = false) {
+  async function patchDisplay(patch: Partial<Omit<Display, "confettiColors">> & { confettiColors?: string[] | null }, closeWhenSaved = false) {
     setSaving(true);
     const response = await fetch(`/api/raffle-displays/${display.id}`, {
       method: "PATCH",
@@ -138,8 +150,18 @@ function DisplayEditor({ display, events, onChanged, timeZone }: { display: Disp
             <label>Rotation interval<Input type="number" min={6} max={60} value={draft.rotationSeconds} onChange={(event) => setDraft({ ...draft, rotationSeconds: Number(event.target.value) })} /></label>
             <label className="ep-display-editor-wide">Temporary prize focus<OperationSelect label="Temporary prize focus" value={draft.forcedPrizeId ?? ""} onValueChange={(value) => setDraft({ ...draft, forcedPrizeId: value || null })} options={[{ value: "", label: "Automatic rotation" }, ...prizes.map((prize) => ({ value: prize.id, label: prize.name }))]} /></label>
           </div>
+          <fieldset className="mt-5 rounded-2xl border border-border/70 bg-background/45 p-4">
+            <legend className="px-1 text-sm font-semibold">Confetti colors</legend>
+            <div className="mt-1 grid gap-2 sm:grid-cols-5">
+              {RAFFLE_CONFETTI_PRESETS.map((preset) => {
+                const colors = preset === "CUSTOM" ? draft.confettiColors : RAFFLE_CONFETTI_PALETTES[preset];
+                return <button key={preset} type="button" onClick={() => setDraft({ ...draft, confettiPreset: preset, confettiColors: [...colors] })} className={`focus-ring rounded-xl border p-3 text-left transition ${draft.confettiPreset === preset ? "border-primary bg-primary/10" : "border-border/70 bg-card/60 hover:border-primary/40"}`} aria-pressed={draft.confettiPreset === preset}><span className="block text-xs font-semibold">{confettiPresetLabels[preset]}</span><span className="mt-2 flex gap-1" aria-hidden="true">{colors.slice(0, 5).map((color, index) => <span key={`${color}-${index}`} className="h-4 flex-1 rounded-sm border border-foreground/10" style={{ backgroundColor: color }} />)}</span></button>;
+              })}
+            </div>
+            {draft.confettiPreset === "CUSTOM" ? <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{draft.confettiColors.slice(0, 4).map((color, index) => <label key={index} className="text-xs font-medium text-muted-foreground">Color {index + 1}<input type="color" value={color} onChange={(event) => setDraft({ ...draft, confettiColors: draft.confettiColors.map((current, colorIndex) => colorIndex === index ? event.target.value.toUpperCase() : current) })} className="focus-ring mt-2 h-11 w-full cursor-pointer rounded-xl border border-border bg-background p-1" /></label>)}</div> : null}
+          </fieldset>
           <footer className="ep-display-editor-actions">
-            <Button loading={saving} loadingLabel="Saving configuration…" onClick={() => void patchDisplay({ name: draft.name, eventId: draft.eventId, mode: draft.mode, rotationSeconds: draft.rotationSeconds, forcedPrizeId: draft.forcedPrizeId }, true)}><Save className="h-4 w-4" /> Save configuration</Button>
+            <Button loading={saving} loadingLabel="Saving configuration…" onClick={() => void patchDisplay({ name: draft.name, eventId: draft.eventId, mode: draft.mode, rotationSeconds: draft.rotationSeconds, forcedPrizeId: draft.forcedPrizeId, confettiPreset: draft.confettiPreset, confettiColors: draft.confettiPreset === "CUSTOM" ? draft.confettiColors : null }, true)}><Save className="h-4 w-4" /> Save configuration</Button>
             <Button variant="secondary" onClick={() => void patchDisplay({ paused: !display.paused })}>{display.paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />} {display.paused ? "Resume display" : "Pause display"}</Button>
           </footer>
         </section>

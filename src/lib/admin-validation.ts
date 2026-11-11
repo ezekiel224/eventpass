@@ -33,6 +33,10 @@ export const updateAdminUserSchema = z.object({
   }).strict()).max(100)
 }).strict();
 
+export const resetAdminUserPasswordSchema = z.object({
+  userId: z.string().min(1)
+}).strict();
+
 export const deleteAdminUserSchema = z.object({
   userId: z.string().min(1),
   confirmationEmail: z.string().trim().email().max(254).transform((value) => value.toLowerCase())

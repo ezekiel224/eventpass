@@ -43,6 +43,7 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [temporaryPassword, setTemporaryPassword] = useState("");
+  const [temporaryPasswordAccount, setTemporaryPasswordAccount] = useState("");
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editRoleIds, setEditRoleIds] = useState<string[]>([]);
@@ -112,6 +113,7 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
       return;
     }
     setTemporaryPassword(data.temporaryPassword ?? suppliedPassword);
+    setTemporaryPasswordAccount(data.user.email);
     setMessage(`Account created for ${data.user.email}. Copy the temporary password now; it will not be shown again.`);
     event.currentTarget.reset();
     await load();
@@ -181,6 +183,30 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
     await load();
   }
 
+  async function resetPassword() {
+    if (!editingUser || !csrf.token || !window.confirm(`Reset the password for ${editingUser.email}? Their current password will stop working immediately.`)) return;
+    setSaving(true);
+    setError("");
+    setMessage("");
+    const response = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "x-csrf-token": csrf.token },
+      body: JSON.stringify({ userId: editingUser.id })
+    });
+    const data = await response.json().catch(() => ({}));
+    setSaving(false);
+    if (!response.ok) {
+      setError(data.error ?? "Could not reset the password.");
+      if (response.status === 403) await csrf.refresh();
+      return;
+    }
+    setTemporaryPassword(data.temporaryPassword);
+    setTemporaryPasswordAccount(data.email);
+    setMessage(`Temporary password generated for ${data.email}. Copy it now; it will not be shown again.`);
+    setEditingUser(null);
+    await load();
+  }
+
   const effectiveRoleSummary = useMemo(() => roles.filter((role) => editRoleIds.includes(role.id)).map((role) => role.name).join(", "), [editRoleIds, roles]);
 
   return (
@@ -232,6 +258,7 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
         {temporaryPassword ? (
           <div className="ep-account-password-result">
             <p>One-time temporary password</p>
+            <span>{temporaryPasswordAccount} must use this once, then choose a new password.</span>
             <div>
               <code>{temporaryPassword}</code>
               <Button type="button" variant="secondary" className="px-3" onClick={() => void navigator.clipboard.writeText(temporaryPassword)}><Copy className="h-4 w-4" /> Copy</Button>
@@ -285,12 +312,14 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
                 ))}
               </div>
             </section>
-            {canDeleteAccounts ? (
-              <section className="ep-account-danger-zone">
-                <div><h3>Permanent account deletion</h3><p>Deletes credentials, role assignments, and permission overrides. Historical audit evidence remains.</p></div>
-                <Button type="button" variant="danger" onClick={() => { setError(""); setDeletingUser(editingUser); setDeleteConfirmation(""); setEditingUser(null); }}><Trash2 className="h-4 w-4" /> Delete account</Button>
-              </section>
-            ) : null}
+            <section className="ep-account-danger-zone">
+              <div><h3>Account recovery</h3><p>Issue a one-time password and require a new password at the next sign-in.</p></div>
+              <Button type="button" variant="secondary" disabled={saving || !csrf.token || editingUser.id === currentUserId} loading={saving} loadingLabel="Resetting password…" onClick={() => void resetPassword()}><KeyRound className="h-4 w-4" /> Reset password</Button>
+            </section>
+            {canDeleteAccounts ? <section className="ep-account-danger-zone">
+              <div><h3>Permanent account deletion</h3><p>Deletes credentials, role assignments, and permission overrides. Historical audit evidence remains.</p></div>
+              <Button type="button" variant="danger" onClick={() => { setError(""); setDeletingUser(editingUser); setDeleteConfirmation(""); setEditingUser(null); }}><Trash2 className="h-4 w-4" /> Delete account</Button>
+            </section> : null}
             <div className="ep-account-editor-actions">
               <Button type="button" variant="secondary" onClick={() => setEditingUser(null)}>Cancel</Button>
               <Button type="button" disabled={!csrf.token || !editRoleIds.length} loading={saving} loadingLabel="Saving access…" onClick={() => void saveAccess()}><Save className="h-4 w-4" /> Save access</Button>

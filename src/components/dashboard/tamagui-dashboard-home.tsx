@@ -24,8 +24,9 @@ function Metric({ label, value, suffix, detail, icon }: { label: string; value: 
   </div>;
 }
 
-export function TamaguiDashboardHome({ data }: { data: DashboardHomeData | null }) {
-  if (!data) return <div className="is_View _mw-726256970 _w-1646821508 _as-909197424 _p-1370393664 ep-home"    ><div className="is_View _b-659677367 _br-127788188 _b-1729970936 _o-1119039191 _p-1370393664"><span role="heading" aria-level={1} className="is_Text _c-479604596 _fs-553854336 _fw-291940586"  >Your event workspace is ready.</span><span className="is_Text _c-1338521705 _fs-553825506 _m-1018323099"  >Create an event to begin registration, admissions, and reporting.</span><a href="/dashboard/events" className="is_DOM ep-primary-link">Create an event <ArrowRight size={15} /></a></div></div>;
+export function TamaguiDashboardHome({ data, permissions }: { data: DashboardHomeData | null; permissions: string[] }) {
+  const can = (permission: string) => permissions.includes(permission);
+  if (!data) return <div className="is_View _mw-726256970 _w-1646821508 _as-909197424 _p-1370393664 ep-home"    ><div className="is_View _b-659677367 _br-127788188 _b-1729970936 _o-1119039191 _p-1370393664"><span role="heading" aria-level={1} className="is_Text _c-479604596 _fs-553854336 _fw-291940586"  >Your event workspace is ready.</span><span className="is_Text _c-1338521705 _fs-553825506 _m-1018323099"  >Create an event to begin registration, admissions, and reporting.</span>{can("events:manage") ? <a href="/dashboard/events" className="is_DOM ep-primary-link">Create an event <ArrowRight size={15} /></a> : null}</div></div>;
 
   const { event, metrics } = data;
   const maxDaily = Math.max(1, ...data.registrationActivity.map((item) => item.count));
@@ -37,7 +38,7 @@ export function TamaguiDashboardHome({ data }: { data: DashboardHomeData | null 
         <span role="heading" aria-level={1} className="is_Text _c-479604596 _fs-553887971 _lh-1392657735 _fw-291940586 _ls-379883670"    >{event.name}</span>
         <div className="is_View _f-1791708213 _g-924523079 _m-1018323161"   ><div className="is_View _f-1839199510 _ai-1055227096 _g-924523017"  ><CalendarDays size={14} /><span className="is_Text _c-1338521705 _fs-553824545" >{event.dateLabel} · {event.timeLabel}</span></div><div className="is_View _f-1839199510 _ai-1055227096 _g-924523017"  ><MapPin size={14} /><span className="is_Text _c-1338521705 _fs-553824545" >{event.venue}</span></div></div>
       </div>
-      <div className="is_View _f-1839199510 _g-924523017 ep-home-actions"  ><a href={`/dashboard/attendees?${eventQuery}`} className="is_DOM ep-secondary-link"><Users size={15} /> Attendees</a><a href={`/dashboard/check-in?${eventQuery}`} className="is_DOM ep-primary-link"><QrCode size={15} /> Open check-in</a></div>
+      <div className="is_View _f-1839199510 _g-924523017 ep-home-actions"  >{can("attendees:manage") ? <a href={`/dashboard/attendees?${eventQuery}`} className="is_DOM ep-secondary-link"><Users size={15} /> Attendees</a> : null}{can("checkins:manage") ? <a href={`/dashboard/check-in?${eventQuery}`} className="is_DOM ep-primary-link"><QrCode size={15} /> Open check-in</a> : null}</div>
     </div>
 
     <div className="is_View _b-659677367 _br-127788188 _b-1729970936 _o-1119039191 _f-1791708213" >
@@ -62,7 +63,7 @@ export function TamaguiDashboardHome({ data }: { data: DashboardHomeData | null 
     </div>
 
     <div className="is_View _b-659677367 _br-127788188 _b-1729970936 _o-1119039191">
-      <div className="is_View _p-1791069041 _f-1839199510 _ai-1055227096 _jc-509505936 _b-1079586356"      ><div className="is_View _f-1839199510 _ai-1055227096 _g-924523017"  ><Activity size={15} /><span className="is_Text _c-479604596 _fs-553827428 _fw-291939625"  >Recent activity</span></div><a href={`/dashboard/attendees?${eventQuery}`} className="is_DOM ep-inline-link">View attendees <ArrowRight size={13} /></a></div>
+      <div className="is_View _p-1791069041 _f-1839199510 _ai-1055227096 _jc-509505936 _b-1079586356"      ><div className="is_View _f-1839199510 _ai-1055227096 _g-924523017"  ><Activity size={15} /><span className="is_Text _c-479604596 _fs-553827428 _fw-291939625"  >Recent activity</span></div>{can("attendees:manage") ? <a href={`/dashboard/attendees?${eventQuery}`} className="is_DOM ep-inline-link">View attendees <ArrowRight size={13} /></a> : null}</div>
       {data.activity.length ? data.activity.map((item, index) => <div key={item.id} className={["is_View _f-1839199510 _ai-1055227096 _g-924523079 _p-1791069010 ep-activity-row", (index === data.activity.length - 1) ? "_b-1582576941" : "_b-1079586356"].filter(Boolean).join(" ")}       ><span className="is_Text _w-1646948505 _c-1338521705 _fs-553822623 ep-tabular"   >{item.time}</span><div className={["is_View _w-223962608 _h-1919518671 _br-1681904590", (item.type === "Email") ? "_b-266458885" : "_b-347830866"].filter(Boolean).join(" ")}    /><div className="is_View _f-1514526504 _mw-839999524" ><span className="is_Text _c-479604596 _fs-553824545 _fw-291939625"  >{item.subject}</span><span className="is_Text _c-1338521705 _fs-553822623 _m-1018323099"  >{item.type} · {item.detail}</span></div></div>) : <span className="is_Text _c-1338521705 _fs-553824545 _p-1370393695"  >Activity will appear as guests register, receive messages, and check in.</span>}
     </div>
   </div>;
