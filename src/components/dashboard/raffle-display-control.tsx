@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Link2, Monitor, Pause, Play, Plus, Save, Trash2, Wifi, WifiOff } from "lucide-react";
+import { ExternalLink, Link2, Monitor, Pause, Play, Plus, RefreshCw, Save, Search, Trash2, Wifi, WifiOff } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ type Display = {
 
 type EventOption = { id: string; name: string; rafflePrizes: { id: string; name: string }[] };
 type ControlData = { displays: Display[]; events: EventOption[] };
+type DisplayFilter = "ALL" | "LIVE" | "OFFLINE" | "UNPAIRED";
 
 const modes: { value: RaffleDisplayMode; label: string; description: string }[] = [
   { value: "WALL", label: "Prize Wall", description: "Responsive multi-prize slideshow" },
@@ -52,6 +53,11 @@ function displayStatus(display: Display) {
   if (!display.paired) return { label: "Waiting to pair", className: "text-amber-600", icon: Link2 };
   if (display.online) return { label: "Online", className: "text-emerald-600", icon: Wifi };
   return { label: "Offline", className: "text-muted-foreground", icon: WifiOff };
+}
+
+function lastSeenLabel(value: string | null) {
+  if (!value) return "Never connected";
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
 
 function DisplayEditor({ display, events, onChanged }: { display: Display; events: EventOption[]; onChanged: () => Promise<void> }) {
@@ -138,14 +144,23 @@ export function RaffleDisplayControl() {
   const [data, setData] = useState<ControlData>({ displays: [], events: [] });
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [filter, setFilter] = useState<DisplayFilter>("ALL");
+  const [query, setQuery] = useState("");
   const [create, setCreate] = useState({ name: "", eventId: "", mode: "WALL" as RaffleDisplayMode, rotationSeconds: 12 });
 
   const load = useCallback(async () => {
-    const response = await fetch("/api/raffle-displays", { cache: "no-store" });
-    const next: ControlData = await response.json();
-    setData(next);
-    setCreate((current) => ({ ...current, eventId: next.events.some((event) => event.id === current.eventId) ? current.eventId : next.events[0]?.id ?? "" }));
-    setLoading(false);
+    setLoading(true);
+    try {
+      const response = await fetch("/api/raffle-displays", { cache: "no-store" });
+      if (!response.ok) throw new Error("Display status could not be loaded.");
+      const next: ControlData = await response.json();
+      setData(next);
+      setCreate((current) => ({ ...current, eventId: next.events.some((event) => event.id === current.eventId) ? current.eventId : next.events[0]?.id ?? "" }));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Display status could not be loaded.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -154,6 +169,16 @@ export function RaffleDisplayControl() {
   }, [load]);
 
   const onlineCount = useMemo(() => data.displays.filter((display) => display.online).length, [data.displays]);
+  const pairedCount = useMemo(() => data.displays.filter((display) => display.paired).length, [data.displays]);
+  const offlineCount = pairedCount - onlineCount;
+  const filteredDisplays = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return data.displays.filter((display) => {
+      const matchesStatus = filter === "ALL" || (filter === "LIVE" && display.online) || (filter === "OFFLINE" && display.paired && !display.online) || (filter === "UNPAIRED" && !display.paired);
+      const matchesQuery = !normalized || `${display.name} ${display.eventName ?? ""} ${display.mode}`.toLowerCase().includes(normalized);
+      return matchesStatus && matchesQuery;
+    });
+  }, [data.displays, filter, query]);
 
   async function addDisplay(event: FormEvent) {
     event.preventDefault();
@@ -167,15 +192,43 @@ export function RaffleDisplayControl() {
 
   return (
     <div className="mt-8 space-y-6">
-      <section className="liquid-notice flex flex-col justify-between gap-5 p-5 sm:flex-row sm:items-center">
-        <div><p className="panel-label">Display cluster</p><p className="mt-2 text-lg font-semibold">{onlineCount} online · {data.displays.length} configured</p><p className="mt-1 text-sm text-muted-foreground">Offsets and slideshow coverage recalculate automatically inside each event and display mode.</p></div>
-        <a href="/display/raffle" target="_blank" rel="noreferrer"><Button variant="secondary"><ExternalLink className="h-4 w-4" /> Open display pairing page</Button></a>
+      <section className="liquid-card overflow-hidden p-0">
+        <div className="flex flex-col justify-between gap-5 border-b border-border/70 p-5 sm:flex-row sm:items-start">
+          <div><h2 className="font-display text-2xl font-semibold tracking-[-0.03em]">Venue screens</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">One view of every configured screen across events. Live status refreshes from display heartbeats.</p></div>
+          <div className="flex flex-wrap gap-2"><Button type="button" variant="secondary" disabled={loading} onClick={() => void load()}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh</Button><a href="/display/raffle" target="_blank" rel="noreferrer" className="focus-ring inline-flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold shadow-[0_6px_18px_rgb(36_28_22/.06)] transition hover:-translate-y-0.5 hover:border-primary/50"><ExternalLink className="h-4 w-4" /> Pair a screen</a></div>
+        </div>
+        <dl className="grid divide-y divide-border/70 sm:grid-cols-4 sm:divide-x sm:divide-y-0">
+          <div className="p-5"><dt className="text-xs font-semibold text-muted-foreground">Configured</dt><dd className="mt-2 text-3xl font-semibold tabular-nums">{data.displays.length}</dd></div>
+          <div className="p-5"><dt className="text-xs font-semibold text-muted-foreground">Live now</dt><dd className="mt-2 text-3xl font-semibold tabular-nums text-primary">{onlineCount}</dd></div>
+          <div className="p-5"><dt className="text-xs font-semibold text-muted-foreground">Offline</dt><dd className="mt-2 text-3xl font-semibold tabular-nums">{offlineCount}</dd></div>
+          <div className="p-5"><dt className="text-xs font-semibold text-muted-foreground">Waiting to pair</dt><dd className="mt-2 text-3xl font-semibold tabular-nums">{data.displays.length - pairedCount}</dd></div>
+        </dl>
       </section>
 
       {message ? <p className="text-sm font-medium text-primary">{message}</p> : null}
 
+      <section className="liquid-card overflow-hidden p-0">
+        <div className="flex flex-col gap-4 border-b border-border/70 p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div><h2 className="text-lg font-semibold">All displays</h2><p className="mt-1 text-sm text-muted-foreground">Raffle screens are shown here now; additional live-sheet types can join this control surface.</p></div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <label className="relative min-w-56"><span className="sr-only">Search displays</span><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} className="pl-9" placeholder="Search screens or events" /></label>
+            <div className="flex flex-wrap gap-1 rounded-xl bg-muted/70 p-1" aria-label="Filter displays">
+              {([['ALL', 'All'], ['LIVE', 'Live'], ['OFFLINE', 'Offline'], ['UNPAIRED', 'Unpaired']] as const).map(([value, label]) => <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)} className={`focus-ring min-h-9 rounded-lg px-3 text-xs font-semibold transition ${filter === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>{label}</button>)}
+            </div>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[52rem] text-left text-sm">
+            <thead className="bg-muted/45 text-xs text-muted-foreground"><tr><th className="px-5 py-3 font-semibold">Display</th><th className="px-5 py-3 font-semibold">Status</th><th className="px-5 py-3 font-semibold">Content</th><th className="px-5 py-3 font-semibold">Event</th><th className="px-5 py-3 font-semibold">Viewport</th><th className="px-5 py-3 font-semibold">Last seen</th></tr></thead>
+            <tbody className="divide-y divide-border/70">{filteredDisplays.map((display) => { const status = displayStatus(display); const StatusIcon = status.icon; return <tr key={`summary-${display.id}`} className="hover:bg-muted/25"><td className="px-5 py-4 font-semibold">{display.name}</td><td className={`px-5 py-4 font-semibold ${display.online ? "text-primary" : "text-muted-foreground"}`}><span className="inline-flex items-center gap-2"><StatusIcon className="h-4 w-4" />{status.label}</span></td><td className="px-5 py-4">Raffle · {modes.find((mode) => mode.value === display.mode)?.label ?? display.mode}</td><td className="px-5 py-4 text-muted-foreground">{display.eventName ?? "Unavailable"}</td><td className="px-5 py-4 tabular-nums text-muted-foreground">{display.viewportWidth && display.viewportHeight ? `${display.viewportWidth} × ${display.viewportHeight}` : "Pending"}</td><td className="px-5 py-4 tabular-nums text-muted-foreground">{lastSeenLabel(display.lastSeenAt)}</td></tr>; })}</tbody>
+          </table>
+          {!loading && filteredDisplays.length === 0 ? <div className="p-8 text-center text-sm text-muted-foreground">No displays match this view.</div> : null}
+          {loading ? <div className="p-8 text-center text-sm text-muted-foreground">Loading display status…</div> : null}
+        </div>
+      </section>
+
       <form onSubmit={addDisplay} className="liquid-card p-5">
-        <div className="flex items-center gap-3"><span className="liquid-lens"><Plus className="h-4 w-4" /></span><div><p className="panel-label">Displays</p><h2 className="mt-1 font-display text-2xl font-semibold tracking-[-0.04em]">Add Display</h2></div></div>
+        <div className="flex items-center gap-3"><span className="liquid-lens"><Plus className="h-4 w-4" /></span><div><h2 className="font-display text-2xl font-semibold tracking-[-0.03em]">Add raffle display</h2><p className="mt-1 text-sm text-muted-foreground">Create a screen configuration, then pair the venue device.</p></div></div>
         <div className="mt-5 grid gap-4 md:grid-cols-[1fr_1fr_1fr_10rem_auto] md:items-end">
           <label className="text-sm font-medium">Name<Input className="mt-2" required placeholder="Ballroom North" value={create.name} onChange={(event) => setCreate({ ...create, name: event.target.value })} /></label>
           <label className="text-sm font-medium">Event<select className={`${selectClass} mt-2`} value={create.eventId} onChange={(event) => setCreate({ ...create, eventId: event.target.value })}>{data.events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}</select></label>
@@ -185,9 +238,12 @@ export function RaffleDisplayControl() {
         </div>
       </form>
 
-      <section className="grid gap-5 xl:grid-cols-2">
-        {data.displays.map((display) => <DisplayEditor key={`${display.id}:${display.updatedAt ?? display.lastSeenAt ?? "new"}`} display={display} events={data.events} onChanged={load} />)}
-        {!loading && !data.displays.length ? <div className="liquid-card p-8 text-center text-muted-foreground xl:col-span-2">No venue displays are configured yet.</div> : null}
+      <section>
+        <div className="mb-4"><h2 className="text-lg font-semibold">Configure displays</h2><p className="mt-1 text-sm text-muted-foreground">Display-specific playback, pairing, and celebration settings.</p></div>
+        <div className="grid gap-5 xl:grid-cols-2">
+        {filteredDisplays.map((display) => <DisplayEditor key={`${display.id}:${display.updatedAt ?? display.lastSeenAt ?? "new"}`} display={display} events={data.events} onChanged={load} />)}
+        {!loading && !filteredDisplays.length ? <div className="liquid-card p-8 text-center text-muted-foreground xl:col-span-2">No displays match this view.</div> : null}
+        </div>
       </section>
     </div>
   );

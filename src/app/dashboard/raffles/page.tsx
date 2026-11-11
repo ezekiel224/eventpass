@@ -2,7 +2,7 @@ import { AppShell } from "@/components/dashboard/app-shell";
 import { Button } from "@/components/ui/button";
 import { PageTitle } from "@/components/dashboard/page-title";
 import { RaffleWorkspace } from "@/components/dashboard/raffle-workspace";
-import { MonitorCog, MonitorUp, ScanLine } from "lucide-react";
+import { MonitorUp, ScanLine } from "lucide-react";
 import Link from "next/link";
 
 export default function RafflesPage() {
@@ -10,9 +10,6 @@ export default function RafflesPage() {
     <AppShell active="Raffles">
       <PageTitle eyebrow="Operations" title="Raffles" />
       <div className="mt-4 flex flex-wrap justify-end gap-2">
-        <Link href="/dashboard/raffles/displays">
-          <Button type="button"><MonitorCog className="h-4 w-4" /> Display Control</Button>
-        </Link>
         <Link href="/dashboard/raffles/display">
           <Button type="button" variant="secondary"><MonitorUp className="h-4 w-4" /> Live Preview</Button>
         </Link>
