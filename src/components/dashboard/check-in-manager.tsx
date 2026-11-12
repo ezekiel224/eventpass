@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, GlassCard } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { initials } from "@/lib/utils";
+import { scannerRequestHeaders } from "@/lib/scanner-client";
 import { AttendeeSummary, CheckInResult } from "@/types/domain";
 
 type CheckInLog = {
@@ -59,7 +60,7 @@ export function CheckInManager() {
 
     const response = await fetch("/api/check-in", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: scannerRequestHeaders(),
       body: JSON.stringify({
         attendeeId: nextAttendeeId || undefined,
         fallbackCode: nextFallbackCode || undefined,

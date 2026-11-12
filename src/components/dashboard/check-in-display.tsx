@@ -1,7 +1,11 @@
 "use client";
 
-import { Building2, CheckCircle2, Clock3, Radio, ShieldAlert, Star, Users } from "lucide-react";
+import { Building2, CheckCircle2, Clock3, Eraser, History as HistoryIcon, Radio, Search, ShieldAlert, Star, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { LiquidModal } from "@/components/ui/liquid-modal";
+import { visibleCheckIns } from "@/lib/check-in-display";
 import { initials } from "@/lib/utils";
 import { AttendeeSummary, EventSummary } from "@/types/domain";
 
@@ -10,6 +14,12 @@ type CheckInLog = {
   duplicate: boolean;
   scannedAt: string;
   attendee: AttendeeSummary;
+};
+
+type HistorySummary = {
+  totalScans: number;
+  admittedGuests: number;
+  matchingScans: number;
 };
 
 function partySize(attendee: AttendeeSummary) {
@@ -36,6 +46,15 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
   const [logs, setLogs] = useState<CheckInLog[]>([]);
   const [connected, setConnected] = useState(false);
   const [visibleCount, setVisibleCount] = useState(10);
+  const [clearedLogIds, setClearedLogIds] = useState<Set<string>>(() => new Set());
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLogs, setHistoryLogs] = useState<CheckInLog[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyLoadingMore, setHistoryLoadingMore] = useState(false);
+  const [historyError, setHistoryError] = useState("");
+  const [historyQuery, setHistoryQuery] = useState("");
+  const [historyCursor, setHistoryCursor] = useState<string | null>(null);
+  const [historySummary, setHistorySummary] = useState<HistorySummary>({ totalScans: 0, admittedGuests: 0, matchingScans: 0 });
   const feedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -71,14 +90,66 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
     return () => observer.disconnect();
   }, []);
 
-  const latest = logs[0];
+  useEffect(() => {
+    if (!historyOpen || !eventId) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      const parameters = new URLSearchParams({ eventId, complete: "true", limit: "100" });
+      if (historyQuery.trim()) parameters.set("q", historyQuery.trim());
+      setHistoryLoading(true);
+      setHistoryError("");
+      void fetch(`/api/check-in?${parameters}`, { cache: "no-store", signal: controller.signal })
+        .then(async (response) => {
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error ?? "Check-in history could not be loaded.");
+          setHistoryLogs(data.checkIns ?? []);
+          setHistoryCursor(data.nextCursor ?? null);
+          setHistorySummary(data.summary ?? { totalScans: 0, admittedGuests: 0, matchingScans: 0 });
+        })
+        .catch((error) => {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          setHistoryError(error instanceof Error ? error.message : "Check-in history could not be loaded.");
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setHistoryLoading(false);
+        });
+    }, historyQuery.trim() ? 250 : 0);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [eventId, historyOpen, historyQuery]);
+
+  const displayedLogs = visibleCheckIns(logs, clearedLogIds);
+  const latest = displayedLogs[0];
   const latestUnder21 = Boolean(latest && (latest.attendee.under21 || latest.attendee.plusOneUnder21));
   const latestPartySize = latest ? partySize(latest.attendee) : 1;
   const latestTone = partyTone(latestPartySize);
-  const visibleLogs = logs.slice(0, visibleCount);
+  const visibleLogs = displayedLogs.slice(0, visibleCount);
   const visibleGuestCount = visibleLogs
     .filter((log) => !log.duplicate)
     .reduce((total, log) => total + partySize(log.attendee), 0);
+  function clearScreen() {
+    setClearedLogIds(new Set(logs.map((log) => log.id)));
+  }
+
+  async function loadMoreHistory() {
+    if (!historyCursor || historyLoadingMore) return;
+    setHistoryLoadingMore(true);
+    try {
+      const parameters = new URLSearchParams({ eventId, complete: "true", limit: "100", cursor: historyCursor });
+      if (historyQuery.trim()) parameters.set("q", historyQuery.trim());
+      const response = await fetch(`/api/check-in?${parameters}`, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Check-in history could not be loaded.");
+      setHistoryLogs((current) => [...current, ...(data.checkIns ?? [])]);
+      setHistoryCursor(data.nextCursor ?? null);
+    } catch (error) {
+      setHistoryError(error instanceof Error ? error.message : "Check-in history could not be loaded.");
+    } finally {
+      setHistoryLoadingMore(false);
+    }
+  }
 
   return (
     <main className="surface-grid min-h-screen bg-background px-4 py-5 text-foreground sm:px-7 sm:py-6">
@@ -90,11 +161,13 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
             <p className="mt-2 text-base text-muted-foreground">Updates appear automatically as passes are scanned.</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <Button type="button" variant="secondary" onClick={clearScreen} disabled={displayedLogs.length === 0}><Eraser className="h-4 w-4" /> Clear screen</Button>
+            <Button type="button" variant="secondary" onClick={() => setHistoryOpen(true)} disabled={!eventId}><HistoryIcon className="h-4 w-4" /> Complete history</Button>
             <span className={`flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold ${connected ? "bg-emerald-500/10 text-emerald-500" : "bg-destructive/10 text-destructive"}`}>
               <span className={`h-2 w-2 rounded-full ${connected ? "animate-pulse bg-emerald-500" : "bg-destructive"}`} />
               {connected ? "Live" : "Reconnecting"}
             </span>
-            <select value={eventId} onChange={(event) => { setEventId(event.target.value); setLogs([]); setConnected(false); }} className="focus-ring h-10 rounded-xl border border-border bg-card px-3 text-sm" aria-label="Event">
+            <select value={eventId} onChange={(event) => { setEventId(event.target.value); setLogs([]); setClearedLogIds(new Set()); setHistoryOpen(false); setHistoryLogs([]); setHistoryQuery(""); setHistoryCursor(null); setConnected(false); }} className="focus-ring h-11 rounded-xl border border-border bg-card px-3 text-sm" aria-label="Event">
               {events.length === 0 ? <option value="">No active events</option> : null}
               {events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}
             </select>
@@ -132,7 +205,7 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
               <div className="text-right"><strong className="block text-4xl font-semibold tabular-nums leading-none">{visibleGuestCount}</strong><span className="mt-1 block text-sm font-semibold text-muted-foreground">guests shown</span></div>
             </div>
             <div ref={feedRef} className="mt-4 min-h-0 flex-1 space-y-2.5 overflow-hidden">
-              {logs.length === 0 ? <p className="text-sm text-muted-foreground">Waiting for recent arrivals…</p> : null}
+              {displayedLogs.length === 0 ? <p className="text-base text-muted-foreground">{clearedLogIds.size === 0 ? "Waiting for recent arrivals…" : "Screen cleared. New arrivals will appear here."}</p> : null}
               {visibleLogs.map((log) => {
                 const under21 = log.attendee.under21 || log.attendee.plusOneUnder21;
                 const size = partySize(log.attendee);
@@ -160,6 +233,33 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
           </div>
         </section>
       </div>
+
+      <LiquidModal open={historyOpen} onClose={() => setHistoryOpen(false)} label="Check-ins" title="Complete history" description="Every scan recorded for the selected event, including duplicates." size="xl">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-6">
+            <div><strong className="block text-3xl font-semibold tabular-nums">{historySummary.totalScans}</strong><span className="text-sm text-muted-foreground">total scans</span></div>
+            <div><strong className="block text-3xl font-semibold tabular-nums">{historySummary.admittedGuests}</strong><span className="text-sm text-muted-foreground">guests admitted</span></div>
+          </div>
+          <label className="relative w-full sm:max-w-sm"><span className="sr-only">Search check-in history</span><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={historyQuery} onChange={(event) => { setHistoryQuery(event.target.value); setHistoryCursor(null); setHistoryLoading(true); }} className="pl-9" placeholder="Search attendee or guest" /></label>
+        </div>
+        {historyError ? <p className="mt-5 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm font-semibold text-destructive">{historyError}</p> : null}
+        {historyLoading ? <p className="mt-6 text-sm text-muted-foreground">Loading complete history…</p> : null}
+        {!historyLoading && !historyError ? <div className="mt-5 divide-y divide-border/70 overflow-hidden rounded-xl border border-border/70">
+          {historyLogs.map((log) => {
+            const size = partySize(log.attendee);
+            const under21 = log.attendee.under21 || log.attendee.plusOneUnder21;
+            const tone = partyTone(size);
+            return <div key={`history-${log.id}`} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 bg-background/55 px-4 py-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
+              <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-sm font-semibold ${tone.avatar}`}>{initials(log.attendee.name)}</span>
+              <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="truncate font-semibold">{log.attendee.name}</p>{under21 ? <span className="rounded-full bg-destructive px-2 py-0.5 text-xs font-black uppercase text-white">Under 21</span> : null}{log.duplicate ? <span className="rounded-full bg-destructive px-2 py-0.5 text-xs font-black uppercase text-white">Duplicate</span> : null}</div><p className="truncate text-sm text-muted-foreground">{log.attendee.ticketTier}{log.attendee.plusOneName ? ` · Guest: ${log.attendee.plusOneName}` : ""}</p></div>
+              <span className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-black ${tone.badge}`}><Users className="h-4 w-4" /> {size}</span>
+              <time className="col-span-2 col-start-2 text-right text-sm font-medium tabular-nums text-muted-foreground sm:col-span-1 sm:col-start-auto" dateTime={log.scannedAt}>{new Date(log.scannedAt).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}</time>
+            </div>;
+          })}
+          {historyLogs.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">{historyQuery ? "No check-ins match this search." : "No check-ins have been recorded."}</p> : null}
+        </div> : null}
+        {!historyLoading && !historyError && historyLogs.length > 0 ? <div className="mt-4 flex flex-col items-center gap-2"><p className="text-sm text-muted-foreground">Showing {historyLogs.length} of {historySummary.matchingScans} matching scans</p>{historyCursor ? <Button type="button" variant="secondary" disabled={historyLoadingMore} onClick={() => void loadMoreHistory()}>{historyLoadingMore ? "Loading…" : "Load 100 more"}</Button> : null}</div> : null}
+      </LiquidModal>
     </main>
   );
 }

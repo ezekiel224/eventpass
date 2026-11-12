@@ -4,6 +4,7 @@ import { BatteryMedium, Check, ChevronDown, Expand, FlaskConical, Gift, Minus, P
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
 import { Button } from "@/components/ui/button";
+import { scannerRequestHeaders } from "@/lib/scanner-client";
 import type { CheckInResult } from "@/types/domain";
 
 type EventOption = { id: string; name: string; startsAt: string };
@@ -126,7 +127,7 @@ export function ImmersiveScanner() {
       setFeedback({ tone: "error", title: "You’re offline", detail: "Reconnect before scanning so duplicates and admissions stay accurate." });
       return false;
     }
-    const response = await fetch("/api/check-in", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...payload, eventId, testMode }) });
+    const response = await fetch("/api/check-in", { method: "POST", headers: scannerRequestHeaders(), body: JSON.stringify({ ...payload, eventId, testMode }) });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       setFeedback({ tone: "error", title: "Pass not accepted", detail: typeof data.error === "string" ? data.error : "Try the fallback code or attendee search." });

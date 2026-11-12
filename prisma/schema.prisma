@@ -95,6 +95,8 @@ model AuditLog {
   id          String   @id @default(cuid())
   actorUserId String?
   actor       User?    @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  actorEmail  String?
+  actorName   String?
   action      String
   targetType  String
   targetId    String?
@@ -163,6 +165,7 @@ model Event {
   qrPassesEnabled           Boolean          @default(true)
   emailConfirmationsEnabled Boolean          @default(true)
   waitlistEnabled           Boolean          @default(false)
+  registrationFields        String?
   registrationDeadline      DateTime?
   raffleName                String?
   raffleDescription         String?
@@ -234,13 +237,17 @@ model Pass {
 }
 
 model CheckIn {
-  id          String   @id @default(cuid())
-  attendeeId  String
-  attendee    Attendee @relation(fields: [attendeeId], references: [id])
-  scannedById String?
-  scannedAt   DateTime @default(now())
-  duplicate   Boolean  @default(false)
-  rawPayload  String?
+  id           String   @id @default(cuid())
+  attendeeId   String
+  attendee     Attendee @relation(fields: [attendeeId], references: [id])
+  admissionKey String?  @unique
+  scannedById  String?
+  scannedAt    DateTime @default(now())
+  duplicate    Boolean  @default(false)
+  rawPayload   String?
+
+  @@index([attendeeId, scannedAt])
+  @@index([scannedAt])
 }
 
 model EmailLog {

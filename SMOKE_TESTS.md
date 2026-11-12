@@ -27,7 +27,11 @@ This runs the strict ESLint configuration and a production Next.js build.
 
 - Check in with a QR code and with a fallback code.
 - Scan the same pass twice and confirm duplicate handling remains visible.
+- Scan the same pass on two devices at nearly the same moment and confirm exactly one admission and one duplicate.
+- Run multiple scanners on the same venue network and confirm they do not share a device rate-limit bucket.
 - Open the live check-in display and confirm new scans appear.
+- Clear the live display, scan another pass, and confirm the new arrival appears immediately.
+- Open complete history, search for an attendee and guest, and load another page of results when available.
 
 ## Raffles and prize receipts
 

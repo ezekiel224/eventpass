@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, Clock3, QrCode, ShieldAlert, Smartphone, Users
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
+import { scannerRequestHeaders } from "@/lib/scanner-client";
 import { initials } from "@/lib/utils";
 import type { CheckInResult } from "@/types/domain";
 
@@ -72,7 +73,7 @@ export function MobilePassScanner({ initialResult = null }: { initialResult?: Ch
     setMessage("");
     const response = await fetch("/api/check-in", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: scannerRequestHeaders(),
       body: JSON.stringify({ qrPayload })
     });
     const data = await response.json();
