@@ -15,6 +15,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:push": "prisma db push",
+    "prisma:prepare": "node --import tsx prisma/prepare-database.ts",
     "prisma:rbac": "tsx prisma/bootstrap-rbac.ts",
     "prisma:seed": "tsx prisma/seed.ts"
   },

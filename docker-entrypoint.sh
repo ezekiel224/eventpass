@@ -6,6 +6,7 @@ export DATABASE_URL="${DATABASE_URL:-file:/app/data/eventpass.db}"
 mkdir -p /app/data
 
 echo "Preparing database at ${DATABASE_URL}"
+npm run prisma:prepare
 npx prisma db push --skip-generate
 
 echo "Preparing system roles and permissions"
