@@ -1,14 +1,22 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { storedImageSchema } from "@/lib/image-schema";
 
 type Params = { params: Promise<{ eventId: string; prizeId: string }> };
 
 export const dynamic = "force-dynamic";
 
-const updateSchema = z.object({
-  action: z.literal("clearWinner")
-});
+const updateSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("clearWinner") }),
+  z.object({
+    action: z.literal("updateDetails"),
+    name: z.string().trim().min(2, "Enter a prize name.").max(120),
+    description: z.string().trim().max(600).optional(),
+    value: z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/, "Enter a fair-market value with up to two decimal places."),
+    imageUrl: storedImageSchema.optional()
+  })
+]);
 
 export async function PATCH(request: Request, { params }: Params) {
   const { eventId, prizeId } = await params;
@@ -25,6 +33,27 @@ export async function PATCH(request: Request, { params }: Params) {
 
   if (!prize) {
     return NextResponse.json({ error: "Prize not found." }, { status: 404 });
+  }
+
+  if (parsed.data.action === "updateDetails") {
+    const updated = await prisma.rafflePrize.update({
+      where: { id: prize.id },
+      data: {
+        name: parsed.data.name,
+        description: parsed.data.description || null,
+        value: parsed.data.value,
+        imageUrl: parsed.data.imageUrl || null
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        value: true,
+        imageUrl: true
+      }
+    });
+
+    return NextResponse.json({ prize: updated });
   }
 
   if (!prize.winnerName) {

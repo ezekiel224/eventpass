@@ -1,12 +1,13 @@
 "use client";
 
-import { ArrowRight, Copy, Download, FileSignature, Gift, ImagePlus, LayoutDashboard, Plus, RefreshCcw, Save, Search, Send, Shuffle, SlidersHorizontal, Sparkles, Ticket, Trash2, UserCheck, UserMinus, Users } from "lucide-react";
+import { ArrowRight, Copy, Download, FileSignature, Gift, ImagePlus, LayoutDashboard, Pencil, Plus, RefreshCcw, Save, Search, Send, Shuffle, SlidersHorizontal, Sparkles, Ticket, Trash2, UserCheck, UserMinus, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
 import { Button } from "@/components/ui/button";
 import { Card, GlassCard } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { LiquidModal } from "@/components/ui/liquid-modal";
 import { compressImageToDataUrl, imageCompressionMessage, ImageCompressionError } from "@/lib/image-compression";
 import { IMAGE_UPLOAD_ACCEPT } from "@/lib/image-constraints";
 import { EventSummary } from "@/types/domain";
@@ -60,6 +61,13 @@ type RaffleData = {
   attendees: RaffleAttendee[];
 };
 
+type PrizeDetailsForm = {
+  name: string;
+  description: string;
+  value: string;
+  imageUrl: string;
+};
+
 const emptyRaffle: RaffleData = {
   stats: {
     prizeCount: 0,
@@ -106,6 +114,10 @@ export function RaffleWorkspace() {
   const [globalTickets, setGlobalTickets] = useState("4");
   const [ticketEdits, setTicketEdits] = useState<Record<string, string>>({});
   const [prizeForm, setPrizeForm] = useState({ name: "", description: "", value: "", imageUrl: "" });
+  const [editingPrize, setEditingPrize] = useState<RafflePrize | null>(null);
+  const [editPrizeForm, setEditPrizeForm] = useState<PrizeDetailsForm>({ name: "", description: "", value: "", imageUrl: "" });
+  const [editPrizeError, setEditPrizeError] = useState("");
+  const [savingPrize, setSavingPrize] = useState(false);
   const [receiptForm, setReceiptForm] = useState({ submitter: "", extension: "", fundingSource: "INSIGHT" });
   const [acceptanceLink, setAcceptanceLink] = useState("");
   const [winner, setWinner] = useState("");
@@ -175,6 +187,7 @@ export function RaffleWorkspace() {
     setSearchTerm("");
     setMessage("");
     setAcceptanceLink("");
+    setEditingPrize(null);
     const nextEvent = events.find((event) => event.id === nextEventId);
     if (nextEvent) setReceiptForm({ submitter: nextEvent.prizeReceiptSubmitter || "", extension: nextEvent.prizeReceiptExtension || "", fundingSource: nextEvent.prizeFundingSource || "INSIGHT" });
     await loadRaffle(nextEventId, "");
@@ -216,6 +229,59 @@ export function RaffleWorkspace() {
       setMessage(imageCompressionMessage(image, "Prize photo"));
     } catch (error) {
       setMessage(error instanceof ImageCompressionError ? error.message : "The prize photo could not be compressed.");
+    }
+  }
+
+  function openPrizeEditor(prize: RafflePrize) {
+    setEditingPrize(prize);
+    setEditPrizeForm({
+      name: prize.name,
+      description: prize.description ?? "",
+      value: prize.value ?? "",
+      imageUrl: prize.imageUrl ?? ""
+    });
+    setEditPrizeError("");
+  }
+
+  async function importEditedPrizePhoto(file: File | undefined) {
+    if (!file) return;
+
+    setEditPrizeError("");
+    try {
+      const image = await compressImageToDataUrl(file);
+      setEditPrizeForm((current) => ({ ...current, imageUrl: image.dataUrl }));
+    } catch (error) {
+      setEditPrizeError(error instanceof ImageCompressionError ? error.message : "The prize photo could not be compressed.");
+    }
+  }
+
+  async function savePrizeDetails(event: FormEvent) {
+    event.preventDefault();
+    if (!editingPrize || savingPrize) return;
+
+    setSavingPrize(true);
+    setEditPrizeError("");
+    try {
+      const response = await fetch(`/api/events/${eventId}/raffle/prizes/${editingPrize.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "updateDetails", ...editPrizeForm })
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setEditPrizeError(data.error ?? "Could not update the prize.");
+        return;
+      }
+
+      const updatedName = data.prize?.name ?? editPrizeForm.name;
+      setEditingPrize(null);
+      setMessage(`${updatedName} updated.`);
+      await loadRaffle();
+    } catch {
+      setEditPrizeError("Could not reach the server. Check the connection and try again.");
+    } finally {
+      setSavingPrize(false);
     }
   }
 
@@ -670,6 +736,7 @@ export function RaffleWorkspace() {
                       <div className="min-w-0"><p className="font-semibold">{prize.name}</p><p className="mt-1 text-sm text-muted-foreground">{prize.totalTickets} tickets entered{prize.value ? ` · $${Number(prize.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</p>{prize.description ? <p className="mt-2 text-sm text-muted-foreground">{prize.description}</p> : null}{prize.winnerName ? <div className="mt-3 flex flex-wrap gap-2"><span className="inline-flex rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">Final winner: {prize.winnerName}{prize.rerollCount > 0 ? ` · ${prize.rerollCount} reroll${prize.rerollCount === 1 ? "" : "s"}` : ""}</span><span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${prize.acceptanceStatus === "SIGNED" ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-600"}`}>{prize.acceptanceStatus === "SIGNED" ? `Signed${prize.acceptanceSignerName ? ` by ${prize.acceptanceSignerName}` : ""}${prize.acceptedAt ? ` · ${new Date(prize.acceptedAt).toLocaleDateString()}` : ""}` : prize.acceptanceStatus === "PENDING" ? "Signing link ready" : "Signature not requested"}</span></div> : null}</div>
                     </div>
                     <div className="flex flex-wrap gap-2">
+                      <Button type="button" variant="secondary" onClick={() => openPrizeEditor(prize)}><Pencil className="h-4 w-4" /> Edit</Button>
                       {prize.winnerName ? <>{prize.acceptanceStatus !== "SIGNED" ? <Button type="button" variant="secondary" onClick={() => void requestAcceptance(prize)}><Send className="h-4 w-4" /> {prize.acceptanceStatus === "PENDING" ? "Email new signing link" : "Email signing link"}</Button> : null}<Button type="button" variant="secondary" onClick={() => void clearWinner(prize)} title="Testing: remove this result and restore winner eligibility"><UserMinus className="h-4 w-4" /> Clear winner</Button><Button type="button" variant="danger" onClick={() => void drawWinner(prize, true)} disabled={prize.totalTickets === 0}><RefreshCcw className="h-4 w-4" /> Override &amp; reroll</Button></> : <Button type="button" variant="secondary" onClick={() => void drawWinner(prize)} disabled={prize.totalTickets === 0}><Shuffle className="h-4 w-4" /> Draw &amp; reveal</Button>}
                       <Button type="button" variant="ghost" className="h-10 w-10 px-0" onClick={() => void archivePrize(prize.id)} aria-label={`Remove ${prize.name}`} title="Remove prize"><Trash2 className="h-4 w-4" /></Button>
                     </div>
@@ -710,6 +777,46 @@ export function RaffleWorkspace() {
           </Card>
         </section>
       ) : null}
+
+      <LiquidModal
+        open={Boolean(editingPrize)}
+        onClose={() => !savingPrize && setEditingPrize(null)}
+        label="Prize details"
+        title={editingPrize ? `Edit ${editingPrize.name}` : "Edit prize"}
+        description="Update the prize shown to operators, guests, and paired displays. Existing entries and winner details stay attached."
+        size="sm"
+      >
+        <form className="grid gap-5" onSubmit={savePrizeDetails}>
+          <div className="grid gap-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-start">
+            <div
+              className="flex aspect-[4/3] items-center justify-center rounded-xl bg-primary/10 bg-cover bg-center text-primary shadow-[inset_0_0_0_1px_hsl(var(--border))]"
+              style={editPrizeForm.imageUrl ? { backgroundImage: `url(${editPrizeForm.imageUrl})` } : undefined}
+              aria-label={editPrizeForm.imageUrl ? "Prize photo preview" : "No prize photo"}
+              role="img"
+            >
+              {editPrizeForm.imageUrl ? null : <ImagePlus className="h-7 w-7" />}
+            </div>
+            <div className="grid gap-3">
+              <label className="grid gap-2 text-sm font-semibold">Prize photo URL<Input value={editPrizeForm.imageUrl} onChange={(event) => setEditPrizeForm((current) => ({ ...current, imageUrl: event.target.value }))} placeholder="https://…" /></label>
+              <label className="grid gap-2 text-sm font-semibold">Upload a photo<Input type="file" accept={IMAGE_UPLOAD_ACCEPT} onChange={(event) => void importEditedPrizePhoto(event.target.files?.[0])} /></label>
+              {editPrizeForm.imageUrl ? <Button type="button" variant="ghost" className="justify-self-start" onClick={() => setEditPrizeForm((current) => ({ ...current, imageUrl: "" }))}>Remove photo</Button> : null}
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            <label className="grid gap-2 text-sm font-semibold">Prize name<Input required minLength={2} maxLength={120} value={editPrizeForm.name} onChange={(event) => setEditPrizeForm((current) => ({ ...current, name: event.target.value }))} /></label>
+            <label className="grid gap-2 text-sm font-semibold">Description<textarea className="focus-ring min-h-28 resize-y rounded-xl border border-border bg-background p-3 text-sm font-normal" maxLength={600} value={editPrizeForm.description} onChange={(event) => setEditPrizeForm((current) => ({ ...current, description: event.target.value }))} placeholder="Optional prize details" /></label>
+            <label className="grid gap-2 text-sm font-semibold">Fair-market value<Input required type="number" min="0.01" step="0.01" inputMode="decimal" value={editPrizeForm.value} onChange={(event) => setEditPrizeForm((current) => ({ ...current, value: event.target.value }))} /></label>
+          </div>
+
+          {editPrizeError ? <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{editPrizeError}</p> : null}
+
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button type="button" variant="ghost" onClick={() => setEditingPrize(null)} disabled={savingPrize}>Cancel</Button>
+            <Button type="submit" disabled={savingPrize || !editPrizeForm.name.trim() || !editPrizeForm.value}><Save className="h-4 w-4" /> {savingPrize ? "Saving…" : "Save changes"}</Button>
+          </div>
+        </form>
+      </LiquidModal>
     </div>
   );
 }
