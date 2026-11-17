@@ -123,7 +123,7 @@ body:has(.ep-nav-displacing-overlay) .ep-nav-stage {
   transition: color 180ms ease;
 }
 
-.ep-theme-letter {
+.ep-app-frame .ep-theme-letter {
   appearance: none;
   position: relative;
   display: inline-block;
@@ -407,7 +407,7 @@ body:has(.ep-nav-displacing-overlay) .ep-nav-stage {
   .ep-site-nav .ep-nav-icon,
   .ep-site-nav .ep-event-switcher { width: 44px; height: 44px; flex-basis: 44px; }
   .ep-theme-wordmark { padding: 6px 8px; }
-  .ep-theme-letter { min-height: 36px; font-size: 30px; line-height: 32px; }
+  .ep-app-frame .ep-theme-letter { min-height: 36px; font-size: 30px; line-height: 32px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
