@@ -19,6 +19,7 @@ type ThemeSystemValue = {
 const ThemeSystemContext = createContext<ThemeSystemValue | null>(null);
 const storageKey = "eventpass-palette";
 const changeEvent = "eventpass-palette-change";
+const cookieMaxAge = 60 * 60 * 24 * 365;
 
 type ThemeViewTransition = { finished: Promise<void>; skipTransition: () => void };
 type ThemeTransitionDocument = Document & {
@@ -45,6 +46,11 @@ export function runThemeTransition(update: () => void | Promise<void>, origin?: 
   });
 }
 
+export function persistAppearance(appearance: "light" | "dark") {
+  window.localStorage.setItem("eventpass-theme", appearance);
+  document.cookie = `eventpass-theme=${appearance}; Path=/; Max-Age=${cookieMaxAge}; SameSite=Lax`;
+}
+
 function isThemeId(value: string | null): value is SiteThemeId {
   return siteThemes.some((theme) => theme.id === value);
 }
@@ -61,9 +67,10 @@ export function ThemeSystemProvider({ children }: { children: ReactNode }) {
 
   const setPalette = useCallback((nextPalette: SiteThemeId, origin?: { x: number; y: number }) => {
     if (nextPalette === palette) return;
+    window.localStorage.setItem(storageKey, nextPalette);
+    document.cookie = `${storageKey}=${nextPalette}; Path=/; Max-Age=${cookieMaxAge}; SameSite=Lax`;
     const applyPalette = () => {
       document.documentElement.dataset.palette = nextPalette;
-      window.localStorage.setItem(storageKey, nextPalette);
       window.dispatchEvent(new Event(changeEvent));
     };
     runThemeTransition(applyPalette, origin);

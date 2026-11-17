@@ -5,11 +5,12 @@ import {
   Gift, KeyRound, LayoutDashboard, LogOut, MailCheck, Menu, Moon, Palette,
   QrCode, Search, Settings, Sun, UserCog, UserRoundPlus, Users, Vote,
 } from "lucide-react";
+import Link from "next/link";
 import { useTheme } from "next-themes";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent, type ReactNode } from "react";
 import { Theme } from "tamagui";
-import { runThemeTransition, siteThemes, useSiteTheme, type SiteThemeId } from "@/components/theme-system";
+import { persistAppearance, runThemeTransition, siteThemes, useSiteTheme, type SiteThemeId } from "@/components/theme-system";
 import "./tamagui-app-frame.css";
 import "./dashboard-surface.css";
 
@@ -83,6 +84,7 @@ export function TamaguiAppFrame({
   isAdmin: boolean;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const { palette, setPalette } = useSiteTheme();
   const themeReady = useSyncExternalStore(subscribeToClient, () => true, () => false);
@@ -150,7 +152,7 @@ export function TamaguiAppFrame({
     const params = new URLSearchParams();
     if (eventId) params.set("eventId", eventId);
     if (searchQuery.trim()) params.set("q", searchQuery.trim());
-    window.location.assign(`/dashboard/attendees${params.size ? `?${params}` : ""}`);
+    router.push(`/dashboard/attendees${params.size ? `?${params}` : ""}`);
   }
 
   function openSearch() {
@@ -161,10 +163,10 @@ export function TamaguiAppFrame({
   function switchAppearance(event: MouseEvent<HTMLButtonElement>) {
     const bounds = event.currentTarget.getBoundingClientRect();
     const nextTheme = dark ? "light" : "dark";
+    persistAppearance(nextTheme);
     runThemeTransition(() => {
       document.documentElement.classList.toggle("dark", nextTheme === "dark");
       document.documentElement.classList.toggle("light", nextTheme === "light");
-      window.localStorage.setItem("eventpass-theme", nextTheme);
       setTheme(nextTheme);
     }, { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 });
   }
@@ -184,15 +186,15 @@ export function TamaguiAppFrame({
                 <div className="ep-hover-panel ep-event-panel">
                   <span className="ep-panel-label">Active events</span>
                   {events.length ? events.slice(0, 6).map((event) => (
-                    <a key={event.id} href={eventHref(event.id)} className={`ep-panel-link${event.id === selectedEvent?.id ? " is-selected" : ""}`}>
+                    <Link key={event.id} href={eventHref(event.id)} className={`ep-panel-link${event.id === selectedEvent?.id ? " is-selected" : ""}`}>
                       <div className="ep-nav-item-copy">
                         <span className="ep-nav-item-label">{event.name}</span>
                         <span className="ep-nav-item-detail">{event.status.toLowerCase()} · {new Date(event.startsAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
                       </div>
-                    </a>
+                    </Link>
                   )) : <span className="ep-nav-item-detail ep-panel-empty">Create an event to begin.</span>}
                   <div className="ep-menu-divider" />
-                  <a href="/dashboard/events" className="ep-panel-link ep-view-all"><Archive size={15} /><span className="ep-nav-item-label">View all events</span></a>
+                  <Link href="/dashboard/events" className="ep-panel-link ep-view-all"><Archive size={15} /><span className="ep-nav-item-label">View all events</span></Link>
                 </div>
               </div>
               <form className={`ep-nav-group ep-search-group${openMenu === "search" ? " is-open" : ""}`} onSubmit={(event) => { event.preventDefault(); searchAttendees(); }} role="search">
@@ -205,9 +207,9 @@ export function TamaguiAppFrame({
             <ThemeWordmark palette={palette} setPalette={setPalette} organizationName={organizationName} />
 
             <nav className="ep-nav-right" aria-label="Primary navigation">
-              <a href={`/dashboard${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`} className={`ep-top-link${active === "Dashboard" || active === "Analytics" ? " is-active" : ""}`}>
+              <Link href={`/dashboard${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`} className={`ep-top-link${active === "Dashboard" || active === "Analytics" ? " is-active" : ""}`}>
                 <span className="ep-top-link-label">Overview</span>
-              </a>
+              </Link>
               <div className="ep-desktop-nav">
                 {visibleGroups.map((group) => (
                   <div className={`ep-nav-group${openMenu === group.label ? " is-open" : ""}`} key={group.label}>
@@ -230,7 +232,7 @@ export function TamaguiAppFrame({
                     <div className="ep-nav-item-copy"><span className="ep-nav-item-label">{accountName}</span><span className="ep-nav-item-detail">Signed in</span></div>
                   </div>
                   <div className="ep-mobile-links">
-                    <a href={`/dashboard${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`} className="ep-mobile-link"><LayoutDashboard size={15} /><span className="ep-nav-item-label">Overview</span></a>
+                    <Link href={`/dashboard${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`} className="ep-mobile-link"><LayoutDashboard size={15} /><span className="ep-nav-item-label">Overview</span></Link>
                     {visibleGroups.flatMap((group) => group.items).map((item) => <NavigationLink key={item.href} item={item} active={active} eventId={eventId} mobile />)}
                   </div>
                   <div className="ep-menu-divider" />
@@ -323,9 +325,9 @@ function NavigationLink({ item, active, eventId, mobile = false }: { item: Navig
   const Icon = item.icon;
   const href = `${item.href}${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`;
   return (
-    <a href={href} className={`${mobile ? "ep-mobile-link" : "ep-panel-link"}${active.toLowerCase() === item.label.toLowerCase() ? " is-selected" : ""}`}>
+    <Link href={href} className={`${mobile ? "ep-mobile-link" : "ep-panel-link"}${active.toLowerCase() === item.label.toLowerCase() ? " is-selected" : ""}`}>
       <div className="ep-link-icon"><Icon size={15} /></div>
       <div className="ep-nav-item-copy"><span className="ep-nav-item-label">{item.label}</span>{!mobile && <span className="ep-nav-item-detail">{item.detail}</span>}</div>
-    </a>
+    </Link>
   );
 }
