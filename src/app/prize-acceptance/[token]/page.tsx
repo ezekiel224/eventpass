@@ -4,6 +4,7 @@ import { Card, GlassCard } from "@/components/ui/card";
 import { PrizeAcceptanceForm } from "@/components/prize/prize-acceptance-form";
 import { prisma } from "@/lib/db";
 import { hashPrizeAcceptanceToken } from "@/lib/prize-acceptance";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function PrizeAcceptancePage({ params }: { params: Promise<
         </div>
         <dl className="grid gap-px bg-border/60 text-sm">
           <div className="bg-card/85 p-5"><dt className="panel-label">Event / promotion</dt><dd className="mt-2 font-semibold">{prize.event.name}</dd></div>
-          <div className="bg-card/85 p-5"><dt className="panel-label">Gift / prize</dt><dd className="mt-2 font-semibold">{prize.name}{prize.description ? ` — ${prize.description}` : ""}</dd></div>
+          <div className="bg-card/85 p-5"><dt className="panel-label">Gift / prize</dt><dd className="mt-2 font-semibold">{prize.name}{prize.description ? <MarkdownContent value={prize.description} className="mt-2 font-normal text-muted-foreground" /> : null}</dd></div>
           <div className="bg-card/85 p-5"><dt className="panel-label">Fair-market value</dt><dd className="mt-2 font-display text-2xl font-semibold tracking-[-0.04em] text-primary">{formattedValue || "Contact the event organizer"}</dd></div>
         </dl>
         <div className="flex items-center gap-2 border-t border-border/60 px-5 py-4 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4 text-primary" /> Secure acknowledgment workflow</div>

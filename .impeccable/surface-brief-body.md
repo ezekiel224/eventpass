@@ -1,20 +1,20 @@
 # Dashboard and administration
 
 - **Mode:** Operate. Event operators and administrators need to switch events, understand readiness, and reach time-sensitive actions without losing context.
-- **Scope:** Replace authenticated dashboard and administration surfaces. Preserve routes, data, permissions, forms, search, responsive behavior, and all public attendee experiences.
-- **Approved comp:** `.impeccable/mocks/dashboard-c.png`. Its master-detail topology is binding; light and dark themes share the same structure.
-- **Memorable moment:** Selecting an event expands its operational workspace while the event list stays anchored; content slides on a shared plane instead of fading away.
+- **Scope:** Replace authenticated dashboard and administration surfaces and extend public registration with the approved configurable form. Preserve routes, data, permissions, search, responsive behavior, and all other public attendee experiences.
+- **Approved direction:** The user-approved Tamagui.dev-inspired top navigation and Emerald Cyber palette. Light and dark themes share the same information architecture.
+- **Memorable moment:** The navigation begins flat and integrated with the page, then gently condenses into a floating pill as the operator scrolls.
 
 ## Direction contract
 
-**THESIS:** EventPass is one continuous event workspace: events remain visible while operations unfold beside them. It refuses the interchangeable sidebar-plus-KPI-card grid.
+**THESIS:** EventPass is one continuous event workspace organized by an elegant shared top bar, not a persistent side rail.
 
-**OWN-WORLD:** Alabaster `#F0EBE5`, warm ink neutrals, Spanish Orange `#F4680A`, and Royal Orange `#F99D45`; dark mode uses warm near-black neutrals. Crisp rules, restrained radii, flat color, no gradients, and no secondary chromatic status palette.
+**OWN-WORLD:** Emerald Cyber base, brand, and alert scales generated through Tamagui. Cool green-neutral surfaces, deep green ink, vivid emerald action, restrained radii, flat color, and no gradients.
 
 **STORY:** The operator chooses an event, reads readiness and operational health, then takes the next action—especially opening check-in—without navigating away from context.
 
-**FIRST VIEWPORT:** A persistent dark rail anchors navigation. An event stack occupies the next column. The selected event fills the broad detail plane with identity, section tabs, flat metrics, readiness tasks, the orange primary action, and an activity ledger.
+**FIRST VIEWPORT:** A flat top navigation presents the event selector at the leading edge, the organization home control in the center, and compressed hover navigation plus account controls at the trailing edge. The dashboard begins immediately below with operational context and the emerald primary action.
 
-**FORM:** Category-standard dashboard architecture, selected as canon from direction seed `684e8050`, elevated into the user-approved master-detail Event Workspace composition.
+**FORM:** Tamagui-first product architecture with shared frame, surface, typography, and responsive primitives across dashboard and administration routes.
 
 **FINISH:** unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

@@ -1,4 +1,5 @@
 import "./globals.css";
+import "../../public/tamagui.generated.css";
 import { Providers } from "@/components/providers";
 import { GlobalBackdrop } from "@/components/layout/global-backdrop";
 import { getBranding } from "@/lib/branding";
@@ -16,7 +17,10 @@ export async function generateMetadata() {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-palette="harbor" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var p=localStorage.getItem('eventpass-palette');if(['harbor','copper','aubergine','amber'].indexOf(p)>-1)document.documentElement.dataset.palette=p}catch(e){}})()` }} />
+      </head>
       <body className="min-h-dvh font-sans antialiased">
         <Providers>
           <PwaRegistration />

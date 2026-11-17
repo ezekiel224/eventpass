@@ -8,6 +8,8 @@ import { getCommunicationTemplate, renderCommunicationTemplate } from "@/lib/com
 import { rateLimit } from "@/services/rate-limit";
 import { formatDate, formatTime } from "@/lib/utils";
 import { getPublicAppBaseUrl } from "@/lib/public-url";
+import { mappedRegistrationAnswers, parseRegistrationFields, validateRegistrationAnswers, withRegistrationAnswerMetadata } from "@/lib/registration-fields";
+import { normalizePersonName } from "@/lib/text";
 
 export const dynamic = "force-dynamic";
 
@@ -29,10 +31,24 @@ export async function POST(request: NextRequest) {
   if (event.registrationDeadline && event.registrationDeadline < new Date()) {
     return NextResponse.json({ error: "The registration deadline has passed" }, { status: 400 });
   }
-  const registrationCount = await prisma.attendee.count({ where: { eventId: event.id, status: { not: "WAITLIST" } } });
+  const registrationFields = parseRegistrationFields(event.registrationFields);
+  const answerValidation = validateRegistrationAnswers(registrationFields, parsed.data.customAnswers);
+  if (!answerValidation.valid) {
+    return NextResponse.json({ error: "Complete the required registration questions.", fieldErrors: answerValidation.errors }, { status: 400 });
+  }
+  const mappedAnswers = mappedRegistrationAnswers(registrationFields, answerValidation.answers);
+  const guestEnabled = mappedAnswers.guestStatus === "ADULT" || mappedAnswers.guestStatus === "UNDER_21";
+  if (guestEnabled && (!parsed.data.plusOneFirstName || !parsed.data.plusOneLastName)) {
+    return NextResponse.json({ error: "Enter the guest’s first and last name." }, { status: 400 });
+  }
+  const storedAnswers = withRegistrationAnswerMetadata(registrationFields, answerValidation.answers);
+  const registrationCount = await prisma.attendee.count({ where: { eventId: event.id, status: "REGISTERED" } });
   const waitlisted = registrationCount >= event.capacity;
   if (waitlisted && !event.waitlistEnabled) {
     return NextResponse.json({ error: "This event has reached capacity" }, { status: 409 });
+  }
+  if (waitlisted && !mappedAnswers.email) {
+    return NextResponse.json({ error: "The event waitlist is missing its required email question. Contact the event organizer." }, { status: 409 });
   }
 
   const attendee = await prisma.attendee.create({
@@ -40,20 +56,21 @@ export async function POST(request: NextRequest) {
       eventId: parsed.data.eventId,
       firstName: parsed.data.firstName,
       lastName: parsed.data.lastName,
-      email: parsed.data.email,
-      phone: parsed.data.phone,
-      company: parsed.data.company,
-      selectedAllergens: stringifyStringArray(parsed.data.selectedAllergens),
-      selectedMenu: parsed.data.selectedMenu || null,
-      plusOneEnabled: parsed.data.plusOneEnabled ?? false,
-      plusOneFirstName: parsed.data.plusOneFirstName,
-      plusOneLastName: parsed.data.plusOneLastName,
-      plusOneAllergens: stringifyStringArray(parsed.data.plusOneAllergens),
-      plusOneMenu: parsed.data.plusOneEnabled ? parsed.data.plusOneMenu || null : null,
+      email: mappedAnswers.email || null,
+      phone: mappedAnswers.phone,
+      company: mappedAnswers.company,
+      selectedAllergens: stringifyStringArray(mappedAnswers.selectedAllergens),
+      selectedMenu: mappedAnswers.selectedMenu || null,
+      plusOneEnabled: guestEnabled,
+      plusOneFirstName: guestEnabled ? normalizePersonName(parsed.data.plusOneFirstName!) : null,
+      plusOneLastName: guestEnabled ? normalizePersonName(parsed.data.plusOneLastName!) : null,
+      plusOneAllergens: stringifyStringArray([]),
+      plusOneMenu: null,
       under21: parsed.data.under21 ?? false,
-      plusOneUnder21: parsed.data.plusOneEnabled ? parsed.data.plusOneUnder21 ?? false : false,
+      plusOneUnder21: mappedAnswers.guestStatus === "UNDER_21",
       ticketTier: "General",
       notes: null,
+      customAnswers: JSON.stringify(storedAnswers),
       vip: false,
       status: waitlisted ? "WAITLIST" : "REGISTERED"
     }
@@ -69,16 +86,18 @@ export async function POST(request: NextRequest) {
   const attendeePathId = encodeURIComponent(attendee.id);
   const passUrl = `${appBaseUrl}/pass/${attendeePathId}`;
 
-  let emailStatus = "QUEUED";
+  let emailStatus = mappedAnswers.email && event.emailConfirmationsEnabled ? "QUEUED" : "SKIPPED";
   let subject = `Your pass for ${event.name}`;
   let providerId: string | undefined;
   let emailError: string | undefined;
 
-  try {
+  if (mappedAnswers.email && event.emailConfirmationsEnabled) try {
     const branding = await getBranding();
-    const template = await getCommunicationTemplate(event.organizationId, "PASS_CONFIRMATION");
+    const template = await getCommunicationTemplate(event.organizationId, "PASS_CONFIRMATION", event.id);
     const rendered = renderCommunicationTemplate(template, {
       name: `${parsed.data.firstName} ${parsed.data.lastName}`,
+      firstName: parsed.data.firstName,
+      lastName: parsed.data.lastName,
       eventName: event.name,
       eventDescription: event.description ?? "",
       eventDate: formatDate(event.startsAt, branding.timezone),
@@ -94,7 +113,7 @@ export async function POST(request: NextRequest) {
     subject = rendered.subject;
     const qrImageUrl = `${appBaseUrl}/api/pass/${attendeePathId}/qr`;
     const delivery = await sendEmail({
-      to: parsed.data.email,
+      to: mappedAnswers.email,
       subject,
       html: renderPassEmail({
         name: `${parsed.data.firstName} ${parsed.data.lastName}`,
@@ -134,18 +153,20 @@ export async function POST(request: NextRequest) {
     emailError = error instanceof Error ? error.message : "Email delivery failed";
   }
 
-  await prisma.emailLog.create({
-    data: {
-      eventId: event.id,
-      attendeeId: attendee.id,
-      recipient: parsed.data.email,
-      type: "Digital pass",
-      subject,
-      providerId,
-      status: emailStatus,
-      error: emailError
-    }
-  });
+  if (mappedAnswers.email && event.emailConfirmationsEnabled) {
+    await prisma.emailLog.create({
+      data: {
+        eventId: event.id,
+        attendeeId: attendee.id,
+        recipient: mappedAnswers.email,
+        type: "Digital pass",
+        subject,
+        providerId,
+        status: emailStatus,
+        error: emailError
+      }
+    });
+  }
 
   const created = await prisma.attendee.findUniqueOrThrow({
     where: { id: attendee.id },

@@ -1,7 +1,8 @@
 import { getDefaultOrganization } from "@/lib/prisma-helpers";
 import { cache } from "react";
+import { isValidTimeZone } from "@/lib/utils";
 
-export const SYSTEM_ACCENT_COLOR = "#315CF5";
+export const SYSTEM_ACCENT_COLOR = "#0FC56A";
 
 export type Branding = {
   name: string;
@@ -28,7 +29,7 @@ export const getBranding = cache(async (): Promise<Branding> => {
       logoUrl: organization.logoUrl,
       primaryColor: SYSTEM_ACCENT_COLOR,
       accentColor: SYSTEM_ACCENT_COLOR,
-      timezone: organization.timezone
+      timezone: isValidTimeZone(organization.timezone) ? organization.timezone : fallbackBranding.timezone
     };
   } catch (error) {
     if (process.env.NODE_ENV !== "production") {

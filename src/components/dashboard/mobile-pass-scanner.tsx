@@ -4,8 +4,8 @@ import { ArrowLeft, CheckCircle2, Clock3, QrCode, ShieldAlert, Smartphone, Users
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
+import { formatTime, initials } from "@/lib/utils";
 import { scannerRequestHeaders } from "@/lib/scanner-client";
-import { initials } from "@/lib/utils";
 import type { CheckInResult } from "@/types/domain";
 
 function ageAlertCopy(result: CheckInResult) {
@@ -42,7 +42,7 @@ function playAgeAlert() {
   }
 }
 
-export function MobilePassScanner({ initialResult = null }: { initialResult?: CheckInResult | null }) {
+export function MobilePassScanner({ initialResult = null, timeZone }: { initialResult?: CheckInResult | null; timeZone: string }) {
   const [result, setResult] = useState<CheckInResult | null>(initialResult);
   const [message, setMessage] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -147,7 +147,7 @@ export function MobilePassScanner({ initialResult = null }: { initialResult?: Ch
               <div className={`mt-4 flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold ${result.duplicate ? "bg-destructive/15 text-destructive" : "bg-primary/10 text-primary"}`}>
                 {result.duplicate ? <ShieldAlert className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
                 {result.duplicate ? "Already checked in · duplicate logged" : "Checked in"}
-                <span className="ml-auto inline-flex items-center gap-1 tabular-nums"><Clock3 className="h-3.5 w-3.5" />{new Date(result.checkedInAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>
+                <span className="ml-auto inline-flex items-center gap-1 tabular-nums"><Clock3 className="h-3.5 w-3.5" />{formatTime(result.checkedInAt, timeZone)}</span>
               </div>
             </section>
           ) : (

@@ -2,15 +2,23 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 
 type CheckInClient = Pick<PrismaClient, "checkIn"> | Prisma.TransactionClient;
 
-export async function recordCheckIn(client: CheckInClient, attendeeId: string, rawPayload: string) {
+type CheckInMetadata = {
+  stationId?: string;
+  clientScanId?: string;
+  recordedAt?: Date;
+  syncedAt?: Date;
+  scannedById?: string;
+};
+
+export async function recordCheckIn(client: CheckInClient, attendeeId: string, rawPayload: string, metadata: CheckInMetadata = {}) {
   const existingAdmission = await client.checkIn.findFirst({
-    where: { attendeeId, duplicate: false },
+    where: { attendeeId, duplicate: false, reversedAt: null },
     select: { id: true }
   });
 
   if (existingAdmission) {
     return client.checkIn.create({
-      data: { attendeeId, duplicate: true, rawPayload }
+      data: { attendeeId, duplicate: true, rawPayload, ...metadata }
     });
   }
 
@@ -20,7 +28,8 @@ export async function recordCheckIn(client: CheckInClient, attendeeId: string, r
         attendeeId,
         admissionKey: attendeeId,
         duplicate: false,
-        rawPayload
+        rawPayload,
+        ...metadata
       }
     });
   } catch (error) {
@@ -28,8 +37,11 @@ export async function recordCheckIn(client: CheckInClient, attendeeId: string, r
       throw error;
     }
 
-    return client.checkIn.create({
-      data: { attendeeId, duplicate: true, rawPayload }
-    });
+    if (metadata.clientScanId) {
+      const reconciled = await client.checkIn.findUnique({ where: { clientScanId: metadata.clientScanId } });
+      if (reconciled) return reconciled;
+    }
+
+    return client.checkIn.create({ data: { attendeeId, duplicate: true, rawPayload, ...metadata } });
   }
 }

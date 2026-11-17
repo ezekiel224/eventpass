@@ -3,7 +3,9 @@
 import { Gift, RefreshCcw, Sparkles, Ticket } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { MarkdownContent } from "@/components/ui/markdown-content";
 import { EventSummary } from "@/types/domain";
+import { formatTime } from "@/lib/utils";
 
 type RafflePrize = {
   id: string;
@@ -63,7 +65,7 @@ function randomPalette() {
   return Array.from({ length: 9 }, randomVividColor);
 }
 
-export function RaffleDisplay({ initialEventId = "" }: { initialEventId?: string }) {
+export function RaffleDisplay({ initialEventId = "", timeZone }: { initialEventId?: string; timeZone: string }) {
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [eventId, setEventId] = useState(initialEventId);
   const [raffle, setRaffle] = useState<RaffleData>(emptyRaffle);
@@ -243,7 +245,7 @@ export function RaffleDisplay({ initialEventId = "" }: { initialEventId?: string
             <h1 className="mt-2 text-4xl font-semibold sm:text-5xl">{selectedEvent?.name ?? "Prize Pools"}</h1>
             <p className="mt-3 text-sm text-muted-foreground">
               {raffle.stats.prizeCount} prizes · {raffle.stats.totalPrizeTickets} tickets entered
-              {updatedAt ? ` · Updated ${updatedAt.toLocaleTimeString()}` : ""}
+              {updatedAt ? ` · Updated ${formatTime(updatedAt, timeZone)}` : ""}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -296,7 +298,7 @@ export function RaffleDisplay({ initialEventId = "" }: { initialEventId?: string
                     {prize.totalTickets} tickets
                   </div>
                   <h2 className="mt-4 text-3xl font-semibold leading-tight">{prize.name}</h2>
-                  {prize.description ? <p className="mt-3 text-base leading-7 text-muted-foreground">{prize.description}</p> : null}
+                  {prize.description ? <MarkdownContent value={prize.description} className="mt-3 text-base text-muted-foreground" /> : null}
                 </div>
                 <div className="grid grid-cols-[1fr_auto] items-end gap-4">
                   <div>

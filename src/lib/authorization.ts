@@ -53,12 +53,17 @@ export async function getAuthorizationForUser(userId: string) {
       email: user.email,
       username: user.username,
       name: user.name,
+      role: user.role,
       active: user.active,
       mustChangePassword: user.mustChangePassword
     },
     roles: user.roles.map(({ role }) => ({ id: role.id, slug: role.slug, name: role.name })),
     permissions
   };
+}
+
+export function isAdministrator(authorization: NonNullable<Awaited<ReturnType<typeof getAuthorizationForUser>>>) {
+  return authorization.user.role === "ADMIN" || authorization.roles.some((role) => role.slug === "admin");
 }
 
 export async function userHasPermission(userId: string, permission: PermissionSlug) {

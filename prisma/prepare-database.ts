@@ -16,8 +16,22 @@ async function prepareCheckInAdmissionConstraint() {
   if (tables.length === 0) return;
 
   const columns = await prisma.$queryRawUnsafe<TableInfoRow[]>(`PRAGMA table_info("CheckIn")`);
-  if (!columns.some((column) => column.name === "admissionKey")) {
-    await prisma.$executeRawUnsafe(`ALTER TABLE "CheckIn" ADD COLUMN "admissionKey" TEXT`);
+  const existingColumns = new Set(columns.map((column) => column.name));
+  const nullableColumns = [
+    ["admissionKey", "TEXT"],
+    ["stationId", "TEXT"],
+    ["clientScanId", "TEXT"],
+    ["recordedAt", "DATETIME"],
+    ["syncedAt", "DATETIME"],
+    ["reversedAt", "DATETIME"],
+    ["reversedById", "TEXT"],
+    ["reversalReason", "TEXT"]
+  ] as const;
+
+  for (const [name, type] of nullableColumns) {
+    if (!existingColumns.has(name)) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "CheckIn" ADD COLUMN "${name}" ${type}`);
+    }
   }
 
   // Existing records have a NULL admissionKey. SQLite allows multiple NULLs
@@ -27,11 +41,29 @@ async function prepareCheckInAdmissionConstraint() {
     `CREATE UNIQUE INDEX IF NOT EXISTS "CheckIn_admissionKey_key" ON "CheckIn"("admissionKey")`
   );
   await prisma.$executeRawUnsafe(
+    `CREATE UNIQUE INDEX IF NOT EXISTS "CheckIn_clientScanId_key" ON "CheckIn"("clientScanId")`
+  );
+  await prisma.$executeRawUnsafe(
     `CREATE INDEX IF NOT EXISTS "CheckIn_attendeeId_scannedAt_idx" ON "CheckIn"("attendeeId", "scannedAt")`
   );
   await prisma.$executeRawUnsafe(
     `CREATE INDEX IF NOT EXISTS "CheckIn_scannedAt_idx" ON "CheckIn"("scannedAt")`
   );
+  await prisma.$executeRawUnsafe(
+    `CREATE INDEX IF NOT EXISTS "CheckIn_stationId_scannedAt_idx" ON "CheckIn"("stationId", "scannedAt")`
+  );
+  await prisma.$executeRawUnsafe(
+    `CREATE INDEX IF NOT EXISTS "CheckIn_attendeeId_reversedAt_idx" ON "CheckIn"("attendeeId", "reversedAt")`
+  );
+
+  const stationTables = await prisma.$queryRawUnsafe<TableInfoRow[]>(
+    `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'CheckInStation'`
+  );
+  if (stationTables.length > 0) {
+    await prisma.$executeRawUnsafe(
+      `CREATE UNIQUE INDEX IF NOT EXISTS "CheckInStation_eventId_deviceKey_key" ON "CheckInStation"("eventId", "deviceKey")`
+    );
+  }
 }
 
 async function main() {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { eventQueryInclude, serializeEvent, stringifyStringArray } from "@/lib/prisma-helpers";
 import { eventUpdateSchema } from "@/lib/validation";
+import { eventCommunicationTemplateKey } from "@/lib/communication-templates";
 
 type Params = { params: Promise<{ eventId: string }> };
 
@@ -53,7 +54,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
 export async function DELETE(_request: NextRequest, { params }: Params) {
   const { eventId } = await params;
-  const existing = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
+  const existing = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true, organizationId: true } });
   if (!existing) return NextResponse.json({ error: "Event not found." }, { status: 404 });
 
   await prisma.$transaction(async (transaction) => {
@@ -63,6 +64,7 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
     await transaction.pass.deleteMany({ where: { attendee: { eventId } } });
     await transaction.raffleEntry.deleteMany({ where: { attendee: { eventId } } });
     await transaction.attendee.deleteMany({ where: { eventId } });
+    await transaction.communicationTemplate.deleteMany({ where: { organizationId: existing.organizationId, key: eventCommunicationTemplateKey("PASS_CONFIRMATION", eventId) } });
 
     // Raffle and voting records cascade from the event.
     await transaction.event.delete({ where: { id: eventId } });

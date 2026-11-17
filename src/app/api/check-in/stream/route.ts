@@ -15,12 +15,14 @@ async function recentCheckIns(eventId?: string) {
     },
     orderBy: { scannedAt: "desc" },
     take: 100,
-    include: { attendee: { include: attendeeInclude } }
+    include: { station: true, attendee: { include: attendeeInclude } }
   });
 
   return checkIns.map((checkIn) => ({
     id: checkIn.id,
     duplicate: checkIn.duplicate,
+    reversedAt: checkIn.reversedAt?.toISOString() ?? null,
+    stationName: checkIn.station?.name ?? null,
     scannedAt: checkIn.scannedAt.toISOString(),
     attendee: serializeAttendee(checkIn.attendee)
   }));
@@ -37,7 +39,7 @@ export async function GET(request: NextRequest) {
       const sendSnapshot = async () => {
         try {
           const checkIns = await recentCheckIns(eventId);
-          const signature = checkIns.map((checkIn) => checkIn.id).join(":");
+          const signature = checkIns.map((checkIn) => `${checkIn.id}:${checkIn.reversedAt ?? "active"}`).join(":");
           if (signature !== lastSignature) {
             lastSignature = signature;
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ checkIns })}\n\n`));

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseStringArray } from "@/lib/prisma-helpers";
+import { parseRegistrationFields } from "@/lib/registration-fields";
 
 type Params = { params: Promise<{ eventId: string }> };
 
@@ -39,6 +40,7 @@ export async function GET(_request: Request, { params }: Params) {
   if (!event) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
+  const registrationFields = parseRegistrationFields(event.registrationFields);
 
   const rows = [
     [
@@ -65,7 +67,8 @@ export async function GET(_request: Request, { params }: Params) {
       "Raffle Tickets Assigned",
       "Raffle Entries",
       "Fallback Code",
-      "Notes"
+      "Notes",
+      ...registrationFields.map((field) => field.label)
     ],
     ...event.attendees.map((attendee) => {
       const successfulCheckIn = attendee.checkIns.find((checkIn) => !checkIn.duplicate);
@@ -74,6 +77,14 @@ export async function GET(_request: Request, { params }: Params) {
         .filter((entry) => entry.ticketCount > 0)
         .map((entry) => `${entry.prize.name}: ${entry.ticketCount}`)
         .join("; ");
+
+      let customAnswers: Record<string, string | string[] | boolean> = {};
+      try {
+        const parsed = attendee.customAnswers ? JSON.parse(attendee.customAnswers) : {};
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) customAnswers = parsed;
+      } catch {
+        customAnswers = {};
+      }
 
       return [
         event.name,
@@ -99,7 +110,14 @@ export async function GET(_request: Request, { params }: Params) {
         assignedRaffleTickets,
         raffleEntries,
         attendee.pass?.fallbackCode ?? "",
-        attendee.notes ?? ""
+        attendee.notes ?? "",
+        ...registrationFields.map((field) => {
+          const answer = customAnswers[field.id];
+          if (field.type === "GUEST") return answer === "ADULT" ? "Yes - 21+" : answer === "UNDER_21" ? "Yes - under 21" : "No guest";
+          if (Array.isArray(answer)) return answer.join("; ");
+          if (typeof answer === "boolean") return answer ? "Yes" : "No";
+          return answer ?? "";
+        })
       ];
     })
   ];

@@ -1,0 +1,7 @@
+.ep-confirm-dialog-content {
+  width: calc(100vw - 32px) !important;
+  max-width: 460px !important;
+  padding: 20px !important;
+  gap: 16px !important;
+  box-shadow: 0 24px 64px rgb(15 23 42 / 24%) !important;
+}

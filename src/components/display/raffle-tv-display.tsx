@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Award, Expand, Gift, MonitorUp, Pause, Play, Radio, Ticket, Trophy, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RaffleDisplayMode } from "@/lib/raffle-display";
+import { markdownToPlainText } from "@/lib/markdown";
 
 type Prize = {
   id: string;
@@ -105,7 +106,7 @@ function SpotlightScene({ prize, position, total }: { prize?: Prize; position: n
         <div>
           <p className="raffle-tv-kicker">Prize spotlight · {position} of {total}</p>
           <h2 className="mt-[1.8vmin] text-[clamp(2.4rem,7.6vmin,8.4rem)] font-semibold leading-[0.88] tracking-[-0.06em]">{prize.name}</h2>
-          {prize.description ? <p className="mt-[2.2vmin] line-clamp-3 max-w-[62ch] text-[clamp(1rem,2.2vmin,2.1rem)] leading-[1.35] text-muted-foreground">{prize.description}</p> : null}
+          {prize.description ? <p className="mt-[2.2vmin] line-clamp-3 max-w-[62ch] text-[clamp(1rem,2.2vmin,2.1rem)] leading-[1.35] text-muted-foreground">{markdownToPlainText(prize.description)}</p> : null}
         </div>
         <div className="flex items-end justify-between gap-[3vmin] border-t border-foreground/10 pt-[2.5vmin]">
           <div>
@@ -311,7 +312,6 @@ export function RaffleTvDisplay() {
 
   useEffect(() => {
     if (!winnerReveal || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
     let cancelled = false;
     const timers: number[] = [];
     let resetConfetti: (() => void) | undefined;
@@ -319,55 +319,25 @@ export function RaffleTvDisplay() {
     void import("canvas-confetti").then(({ default: confetti }) => {
       if (cancelled) return;
       resetConfetti = () => confetti.reset();
-      const celebrationColors = confettiPaletteKey.split(",");
-
+      const colors = confettiPaletteKey.split(",");
       const fire = (delay: number, origin: { x: number; y: number }, angle: number) => {
         timers.push(window.setTimeout(() => {
-          if (cancelled) return;
-          confetti({
-            angle,
-            colors: celebrationColors,
-            decay: 0.92,
-            disableForReducedMotion: true,
-            drift: angle < 90 ? 0.15 : -0.15,
-            gravity: 0.9,
-            origin,
-            particleCount: 150,
-            scalar: 1.25,
-            spread: 72,
-            startVelocity: 68,
-            ticks: 240,
-            zIndex: 60
-          });
+          if (!cancelled) confetti({ angle, colors, decay: 0.92, disableForReducedMotion: true, drift: angle < 90 ? 0.15 : -0.15, gravity: 0.9, origin, particleCount: 150, scalar: 1.25, spread: 72, startVelocity: 68, ticks: 240, zIndex: 60 });
         }, delay));
       };
-
       fire(200, { x: 0.03, y: 0.82 }, 58);
       fire(200, { x: 0.97, y: 0.82 }, 122);
       fire(1700, { x: 0.12, y: 0.72 }, 66);
       fire(1700, { x: 0.88, y: 0.72 }, 114);
       fire(3500, { x: 0.04, y: 0.88 }, 54);
       fire(3500, { x: 0.96, y: 0.88 }, 126);
-
       const showerEndsAt = Date.now() + CONFETTI_DURATION_MS;
       const shower = window.setInterval(() => {
         if (cancelled || Date.now() >= showerEndsAt) {
           window.clearInterval(shower);
           return;
         }
-        confetti({
-          colors: celebrationColors,
-          decay: 0.94,
-          disableForReducedMotion: true,
-          gravity: 0.62,
-          origin: { x: Math.random(), y: -0.08 },
-          particleCount: 12,
-          scalar: 0.95,
-          spread: 50,
-          startVelocity: 12,
-          ticks: 300,
-          zIndex: 60
-        });
+        confetti({ colors, decay: 0.94, disableForReducedMotion: true, gravity: 0.62, origin: { x: Math.random(), y: -0.08 }, particleCount: 12, scalar: 0.95, spread: 50, startVelocity: 12, ticks: 300, zIndex: 60 });
       }, 180);
       timers.push(shower);
     });
@@ -412,7 +382,7 @@ export function RaffleTvDisplay() {
     <main className="raffle-tv-shell flex h-dvh min-h-0 flex-col overflow-hidden p-[clamp(.75rem,2vmin,2rem)] text-foreground">
       <header className="mb-[clamp(.65rem,1.5vmin,1.5rem)] flex shrink-0 items-end justify-between gap-5 px-[0.6vmin]">
         <div className="min-w-0">
-          <p className="raffle-tv-kicker"><span className={`h-2 w-2 rounded-full ${online ? "bg-emerald-500" : "bg-amber-500"}`} /> {online ? "Live raffle" : "Reconnecting"}</p>
+          <p className="raffle-tv-kicker"><span className={`h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-primary"}`} /> {online ? "Live raffle" : "Reconnecting"}</p>
           <h1 className="mt-[0.5vmin] truncate text-[clamp(1.4rem,3.2vmin,3.5rem)] font-semibold leading-none tracking-[-0.045em]">{session.content.event.name}</h1>
           <p className="mt-[0.7vmin] truncate text-[clamp(.75rem,1.25vmin,1.1rem)] text-muted-foreground">{session.content.event.venue} · {session.content.stats.prizeCount} active prizes · {session.content.stats.totalPrizeTickets} tickets entered</p>
         </div>
@@ -441,8 +411,8 @@ export function RaffleTvDisplay() {
         </footer>
       ) : null}
 
-      {!online ? <div className="pointer-events-none absolute right-[2vmin] top-[2vmin] flex items-center gap-2 rounded-full border border-amber-500/30 bg-background/90 px-4 py-2 text-sm font-semibold text-amber-600"><WifiOff className="h-4 w-4" /> Last live data retained</div> : null}
-      <AnimatePresence>{winnerReveal ? <motion.div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-background/95 p-[5vmin] text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="status" aria-live="assertive"><div className="absolute inset-0 bg-primary/[0.08]" /><motion.div className="relative w-full max-w-[92vw]" initial={{ y: "6vmin", scale: 0.9, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} transition={sceneTransition}><motion.p className="raffle-tv-kicker justify-center" initial={{ letterSpacing: "0.5em", opacity: 0 }} animate={{ letterSpacing: "0.22em", opacity: 1 }} transition={{ delay: 0.18, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>Winner</motion.p><motion.h2 className="mx-auto mt-[2.4vmin] max-w-[12ch] text-[clamp(4rem,15vmin,15rem)] font-semibold leading-[0.8] tracking-[-0.04em]" initial={{ filter: "blur(18px)", scale: 0.82 }} animate={{ filter: "blur(0px)", scale: 1 }} transition={{ delay: 0.08, duration: 1.15, ease: [0.16, 1, 0.3, 1] }}>{winnerReveal.winnerName}</motion.h2><motion.div className="mx-auto mt-[3.5vmin] h-px w-[min(70vw,42rem)] bg-primary/50" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ delay: 0.45, duration: 1.1, ease: [0.16, 1, 0.3, 1] }} /><motion.p className="mt-[3vmin] text-[clamp(1.4rem,4vmin,4rem)] text-muted-foreground" initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.55, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>wins <span className="font-semibold text-foreground">{winnerReveal.prizeName}</span></motion.p></motion.div></motion.div> : null}</AnimatePresence>
+      {!online ? <div className="pointer-events-none absolute right-[2vmin] top-[2vmin] flex items-center gap-2 rounded-full border border-primary/30 bg-background/90 px-4 py-2 text-sm font-semibold text-primary"><WifiOff className="h-4 w-4" /> Last live data retained</div> : null}
+      <AnimatePresence>{winnerReveal ? <motion.div className="fixed inset-0 z-50 grid place-items-center overflow-hidden bg-background/95 p-[5vmin] text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><motion.div initial={{ y: "7vmin", scale: 0.84, opacity: 0 }} animate={{ y: 0, scale: 1, opacity: 1 }} transition={{ duration: 1.15, ease: [0.16, 1, 0.3, 1] }}><motion.p className="raffle-tv-kicker justify-center" initial={{ letterSpacing: "0.5em", opacity: 0 }} animate={{ letterSpacing: "0.22em", opacity: 1 }} transition={{ delay: 0.25, duration: 0.9 }}>Winner</motion.p><motion.h2 className="mt-[2vmin] text-[clamp(4rem,15vmin,15rem)] font-semibold leading-[0.8] tracking-[-0.07em]" initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.35, duration: 1.25, ease: [0.16, 1, 0.3, 1] }}>{winnerReveal.winnerName}</motion.h2><motion.p className="mt-[3vmin] text-[clamp(1.4rem,4vmin,4rem)] text-muted-foreground" initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.9, duration: 0.8 }}>wins <span className="font-semibold text-foreground">{winnerReveal.prizeName}</span></motion.p></motion.div></motion.div> : null}</AnimatePresence>
     </main>
   );
 }

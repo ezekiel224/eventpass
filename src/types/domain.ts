@@ -20,6 +20,7 @@ export type EventSummary = {
   emailConfirmationsEnabled: boolean;
   waitlistEnabled: boolean;
   registrationDeadline: string | null;
+  registrationFields: import("@/lib/registration-fields").RegistrationField[];
   prizeReceiptSubmitter: string | null;
   prizeReceiptExtension: string | null;
   prizeFundingSource: string | null;
@@ -55,6 +56,7 @@ export type AttendeeSummary = {
   raffleTickets: number;
   notes: string | null;
   status: string;
+  customAnswers: Record<string, string | string[] | boolean>;
   checkedIn: boolean;
   checkedInAt: string | null;
   passId: string | null;

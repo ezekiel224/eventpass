@@ -1,0 +1,50 @@
+.ep-account-editor { display: grid; gap: 20px; }
+.ep-account-editor-section,
+.ep-account-status-row,
+.ep-account-danger-zone { border: 1px solid var(--border-color); border-radius: 16px; background: var(--background); }
+.ep-account-editor-section { overflow: hidden; }
+.ep-account-editor-heading { padding: 16px 18px; border-bottom: 1px solid var(--border-color); }
+.ep-account-editor-heading h3,
+.ep-account-status-row h3,
+.ep-account-danger-zone h3 { margin: 0; color: var(--color); font-size: 14px; font-weight: 800; line-height: 20px; }
+.ep-account-editor-heading p,
+.ep-account-status-row p,
+.ep-account-danger-zone p { margin: 4px 0 0; color: var(--color-8); font-size: 12px; line-height: 18px; }
+.ep-account-role-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+.ep-account-choice { min-height: 78px; display: flex; align-items: flex-start; gap: 12px; padding: 14px 18px; border-top: 1px solid var(--border-color); border-left: 1px solid var(--border-color); }
+.ep-account-choice:nth-child(-n+2) { border-top: 0; }
+.ep-account-choice:nth-child(odd) { border-left: 0; }
+.ep-account-choice label { min-width: 0; display: block; cursor: pointer; }
+.ep-account-choice strong,
+.ep-account-choice span { display: block; }
+.ep-account-choice strong { font-size: 13px; line-height: 18px; }
+.ep-account-choice span { margin-top: 3px; color: var(--color-8); font-size: 11px; line-height: 16px; }
+.ep-account-status-row,
+.ep-account-danger-zone { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 18px; }
+.ep-account-active-control { display: flex; align-items: center; gap: 9px; }
+.ep-account-active-control label { font-size: 13px; font-weight: 750; cursor: pointer; }
+.ep-account-permission-grid { display: grid; }
+.ep-account-permission-row { min-height: 76px; display: grid; grid-template-columns: minmax(0,1fr) 160px; align-items: center; gap: 18px; padding: 13px 18px; border-top: 1px solid var(--border-color); }
+.ep-account-permission-row:first-child { border-top: 0; }
+.ep-account-permission-row strong,
+.ep-account-permission-row span { display: block; }
+.ep-account-permission-row strong { font-size: 12px; line-height: 18px; }
+.ep-account-permission-row span { margin-top: 2px; color: var(--color-8); font-size: 11px; line-height: 16px; }
+.ep-account-permission-row .ep-operation-select { width: 100%; min-width: 0; margin-top: 0; }
+.ep-account-danger-zone { border-color: var(--c-color-alert-300); background: var(--c-color-alert-50); }
+.ep-account-danger-zone h3 { color: var(--c-color-alert-700); }
+.ep-account-editor-actions { position: sticky; bottom: 0; z-index: 2; display: flex; justify-content: flex-end; gap: 8px; padding: 12px 0 4px; background: var(--background); }
+
+@media (max-width: 640px) {
+  .ep-account-role-grid { grid-template-columns: 1fr; }
+  .ep-account-choice { border-left: 0; }
+  .ep-account-choice:nth-child(2) { border-top: 1px solid var(--border-color); }
+  .ep-account-status-row,
+  .ep-account-danger-zone { align-items: stretch; flex-direction: column; }
+  .ep-account-permission-row { grid-template-columns: 1fr; gap: 10px; }
+  .ep-account-editor-actions { display: grid; grid-template-columns: 1fr 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ep-account-editor * { transition-duration: .01ms !important; }
+}

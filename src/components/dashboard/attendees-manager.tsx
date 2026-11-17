@@ -1,16 +1,20 @@
 "use client";
 
-import { CalendarDays, Download, ExternalLink, Mail, Pencil, Save, Search, Star, Trash2, UserPlus } from "lucide-react";
-import Link from "next/link";
+import { Braces, ChevronDown, ChevronUp, Download, ExternalLink, Mail, MoreHorizontal, Pencil, Save, Search, Star, Trash2, UserPlus } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Menu } from "tamagui";
 import { AgeChoice } from "@/components/ui/age-choice";
 import { AttendeeCsvImport } from "@/components/dashboard/attendee-csv-import";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { LiquidModal } from "@/components/ui/liquid-modal";
-import { initials } from "@/lib/utils";
+import { OperationSelect } from "@/components/ui/operation-select";
+import { PreviewSheet } from "@/components/ui/preview-sheet";
+import { formatTime, initials } from "@/lib/utils";
+import { isRegistrationAnswerMetadataKey, storedRegistrationFieldLabel } from "@/lib/registration-fields";
 import { AttendeeSummary, EventSummary } from "@/types/domain";
+import "./attendees-campaigns.css";
 
 const initialForm = {
   eventId: "",
@@ -34,7 +38,17 @@ const initialForm = {
   vip: false
 };
 
-export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string }) {
+function answerText(value: string | string[] | boolean | undefined) {
+  if (Array.isArray(value)) return value.length ? value.join(", ") : "No selections";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  return value || "Not provided";
+}
+
+function fieldName(value: string) {
+  return value.replaceAll(/[_-]+/g, " ").replace(/\b\w/g, (character) => character.toLocaleUpperCase());
+}
+
+export function AttendeesManager({ eventId, initialQuery = "", timeZone }: { eventId: string; initialQuery?: string; timeZone: string }) {
   const [attendees, setAttendees] = useState<AttendeeSummary[]>([]);
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [selectedEventId, setSelectedEventId] = useState("");
@@ -47,10 +61,12 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
   const [editForm, setEditForm] = useState(initialForm);
   const [savingEdit, setSavingEdit] = useState(false);
   const [editMessage, setEditMessage] = useState("");
+  const [showRawJson, setShowRawJson] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<AttendeeSummary | null>(null);
 
-  async function loadData(preferredEventId = selectedEventId) {
+  async function loadData(preferredEventId = eventId || selectedEventId) {
     setLoading(true);
     const eventResponse = await fetch("/api/events", { cache: "no-store" });
     const eventData = await eventResponse.json();
@@ -66,20 +82,10 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
     setLoading(false);
   }
 
-  async function selectEvent(eventId: string) {
-    setSelectedEventId(eventId);
-    setForm((current) => ({ ...current, eventId, selectedAllergens: [], selectedMenu: "", plusOneAllergens: [], plusOneMenu: "" }));
-    setLoading(true);
-    const response = await fetch(`/api/attendees?eventId=${encodeURIComponent(eventId)}`, { cache: "no-store" });
-    const data = await response.json();
-    setAttendees(data.attendees ?? []);
-    setLoading(false);
-  }
-
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    void loadData(eventId);
+  }, [eventId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const ticketTiers = useMemo(() => [...new Set(attendees.map((attendee) => attendee.ticketTier).filter(Boolean))].sort(), [attendees]);
 
@@ -94,7 +100,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
       return true;
     };
     const matches = attendees.filter((attendee) => matchesFilter(attendee) &&
-      [attendee.id, attendee.passId ?? "", attendee.name, attendee.email, attendee.company ?? "", attendee.ticketTier, attendee.eventName, attendee.fallbackCode ?? "", attendee.status]
+      [attendee.id, attendee.passId ?? "", attendee.name, attendee.email, attendee.company ?? "", attendee.ticketTier, attendee.eventName, attendee.fallbackCode ?? "", attendee.status, ...Object.values(attendee.customAnswers).flat().map(String)]
         .join(" ")
         .toLocaleLowerCase()
         .includes(normalized)
@@ -108,6 +114,14 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
   }, [attendees, filter, query, sort]);
 
   const selectedEvent = events.find((event) => event.id === selectedEventId);
+  const editingAttendee = attendees.find((attendee) => attendee.id === editingAttendeeId);
+  const configuredFieldIds = new Set((selectedEvent?.registrationFields ?? []).map((field) => field.id));
+  const restOfFields = Object.entries(editingAttendee?.customAnswers ?? {}).filter(([fieldId]) => !isRegistrationAnswerMetadataKey(fieldId) && !configuredFieldIds.has(fieldId));
+  const rawAttendeeJson = editingAttendee ? {
+    ...editingAttendee,
+    fallbackCode: editingAttendee.fallbackCode ? "[REDACTED]" : null,
+    qrPayload: editingAttendee.qrPayload ? "[REDACTED]" : null
+  } : null;
 
   function setField(name: keyof typeof form, value: string | boolean | string[]) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -206,6 +220,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
     });
     setMessage("");
     setEditMessage("");
+    setShowRawJson(false);
   }
 
   function setEditField(name: keyof typeof editForm, value: string | boolean | string[]) {
@@ -225,6 +240,15 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
   async function saveAttendee(event: FormEvent) {
     event.preventDefault();
     if (!editingAttendeeId) return;
+    const customAnswers = { ...(editingAttendee?.customAnswers ?? {}) };
+    for (const field of selectedEvent?.registrationFields ?? []) {
+      if (field.mapping === "EMAIL") customAnswers[field.id] = editForm.email;
+      if (field.mapping === "PHONE") customAnswers[field.id] = editForm.phone;
+      if (field.mapping === "WORK_CENTER") customAnswers[field.id] = editForm.company;
+      if (field.mapping === "MENU") customAnswers[field.id] = editForm.selectedMenu;
+      if (field.mapping === "ALLERGENS") customAnswers[field.id] = editForm.selectedAllergens;
+      if (field.mapping === "GUEST") customAnswers[field.id] = !editForm.plusOneEnabled ? "NONE" : editForm.plusOneUnder21 === "yes" ? "UNDER_21" : "ADULT";
+    }
     setSavingEdit(true);
     setEditMessage("");
     const response = await fetch(`/api/attendees/${editingAttendeeId}`, {
@@ -248,6 +272,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
         ticketTier: editForm.ticketTier || "General",
         seat: editForm.seat || undefined,
         notes: editForm.notes || undefined,
+        customAnswers,
         vip: editForm.vip
       })
     });
@@ -263,7 +288,6 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
   }
 
   async function deleteAttendee(attendee: AttendeeSummary) {
-    if (!window.confirm(`Delete ${attendee.name}? Their pass, check-ins, and raffle entries will also be removed. This cannot be undone.`)) return;
     const response = await fetch(`/api/attendees/${attendee.id}`, { method: "DELETE" });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
@@ -271,6 +295,7 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
       return;
     }
     setMessage(`${attendee.name} was deleted.`);
+    setDeleteTarget(null);
     await loadData(selectedEventId);
   }
 
@@ -318,27 +343,38 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
     URL.revokeObjectURL(url);
   }
 
+  function attendeeActions(attendee: AttendeeSummary) {
+    return (
+      <Menu placement="bottom-end" offset={6}>
+        <Menu.Trigger asChild>
+          <Button type="button" variant="ghost" className="ep-row-menu-trigger" aria-label={`Actions for ${attendee.name}`}><MoreHorizontal size={18} /></Button>
+        </Menu.Trigger>
+        <Menu.Portal zIndex={125_000}>
+          <Menu.Content className="ep-nav-displacing-overlay ep-attendee-action-menu" minWidth={216} padding="1" borderWidth={1} borderColor="border-color" borderRadius="4" backgroundColor="background" boxShadow="0 18px 45px rgba(2, 20, 12, 0.18)" transition="quick" opacity="enter:0 exit:0" scale="enter:0.96 exit:0.98" y="enter:-5px exit:-3px">
+            <Menu.Item className="ep-attendee-menu-item" key={`${attendee.id}:open`} textValue="Open event pass" onSelect={() => window.open(`/pass/${attendee.id}`, "_blank", "noopener,noreferrer")}><Menu.ItemTitle>Open event pass</Menu.ItemTitle><ExternalLink size={15} /></Menu.Item>
+            <Menu.Item className="ep-attendee-menu-item" key={`${attendee.id}:edit`} textValue="Edit attendee" onSelect={() => startEditing(attendee)}><Menu.ItemTitle>Edit attendee</Menu.ItemTitle><Pencil size={15} /></Menu.Item>
+            <Menu.Item className="ep-attendee-menu-item" key={`${attendee.id}:send`} textValue="Send event pass" disabled={!attendee.email} onSelect={() => void sendPass(attendee)}><Menu.ItemTitle>{attendee.email ? "Send event pass" : "Add email before sending"}</Menu.ItemTitle><Mail size={15} /></Menu.Item>
+            <Menu.Item className="ep-attendee-menu-item" key={`${attendee.id}:vip`} textValue={attendee.vip ? "Remove VIP" : "Mark as VIP"} onSelect={() => void toggleVip(attendee)}><Menu.ItemTitle>{attendee.vip ? "Remove VIP" : "Mark as VIP"}</Menu.ItemTitle><Star size={15} /></Menu.Item>
+            <Menu.Separator className="ep-attendee-menu-separator" />
+            <Menu.Item className="ep-attendee-menu-item" destructive key={`${attendee.id}:delete`} textValue="Delete attendee" onSelect={() => window.setTimeout(() => setDeleteTarget(attendee), 180)}><Menu.ItemTitle color="alert-700">Delete attendee</Menu.ItemTitle><Trash2 size={15} /></Menu.Item>
+          </Menu.Content>
+        </Menu.Portal>
+      </Menu>
+    );
+  }
+
   return (
-    <div className="mt-7 space-y-5">
-      <Card className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-        <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><CalendarDays className="h-5 w-5" aria-hidden="true" /></span>
-          <div><p className="text-sm font-semibold">Event attendees</p><p className="text-xs text-muted-foreground">Archived events are excluded from active workflows.</p></div>
+    <div className="ep-attendees-workspace">
+      <section className="ep-attendee-context" aria-labelledby="attendee-context-title">
+        <div>
+          <h2 id="attendee-context-title">{selectedEvent?.name ?? (loading ? "Loading event…" : "No active event")}</h2>
+          <p>{selectedEvent ? `${attendees.length} ${attendees.length === 1 ? "guest" : "guests"} in this event workspace` : "Choose an event from the shared navigation to manage its guests."}</p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <label className="grid gap-1.5 sm:min-w-72">
-          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Active event</span>
-          <select value={selectedEventId} onChange={(event) => void selectEvent(event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 text-sm" disabled={events.length === 0}>
-            {events.length === 0 ? <option value="">No active events</option> : null}
-            {events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}
-          </select>
-        </label>
-        <Button type="button" onClick={() => { setMessage(""); setAddingAttendee(true); }} disabled={!selectedEvent}><UserPlus className="h-4 w-4" /> Add attendee</Button>
-        </div>
-      </Card>
+        <Button type="button" onClick={() => { setMessage(""); setAddingAttendee(true); }} disabled={!selectedEvent}><UserPlus size={16} /> Add attendee</Button>
+      </section>
       {!addingAttendee && message ? <p className="liquid-notice" role="status">{message}</p> : null}
       <AttendeeCsvImport event={selectedEvent} onImported={() => loadData(selectedEventId)} />
-      <LiquidModal open={addingAttendee} onClose={() => setAddingAttendee(false)} title="Add attendee" description={selectedEvent ? `Create a registration and digital pass for ${selectedEvent.name}.` : "Select an active event before adding attendees."} size="lg">
+      <LiquidModal open={addingAttendee} onClose={() => setAddingAttendee(false)} title="Add attendee" description={selectedEvent ? `Add to ${selectedEvent.name}.` : "Select an event first."} size="lg">
       <div>
         <form className="mt-5 grid gap-3" onSubmit={addAttendee}>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -426,88 +462,65 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
         </form>
       </div>
       </LiquidModal>
-      <Card className="p-5">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div className="min-w-0 flex-1">
-            <p className="mb-2 text-sm font-semibold">{selectedEvent?.name ?? "No active event"} <span className="font-normal text-muted-foreground">· {attendees.length} guests</span></p>
-            <div className="relative max-w-lg">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={query} onChange={(event) => setQuery(event.target.value)} className="pl-9" placeholder="Search name, email, pass ID, company or tier…" />
-            </div>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <select value={filter} onChange={(event) => setFilter(event.target.value)} className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm" aria-label="Filter attendees">
-              <option value="all">All attendees</option>
-              <option value="vip">VIP</option>
-              <option value="standard">Standard</option>
-              <option value="checked-in">Checked in</option>
-              <option value="not-checked-in">Not checked in</option>
-              {ticketTiers.map((tier) => <option key={tier} value={`tier:${tier}`}>{tier} tier</option>)}
-            </select>
-            <select value={sort} onChange={(event) => setSort(event.target.value)} className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm" aria-label="Sort attendees">
-              <option value="name">Name A–Z</option>
-              <option value="vip">VIP first</option>
-              <option value="check-in">Check-in status</option>
-              <option value="tier">Pass tier</option>
-            </select>
-            <Button variant="secondary" onClick={exportCsv} disabled={!selectedEvent}><Download className="h-4 w-4" /> Export CSV</Button>
+      <section className="ep-roster-panel" aria-labelledby="attendee-directory-title">
+        <header className="ep-roster-header">
+          <div><h2 id="attendee-directory-title">Attendees</h2></div>
+          <span className="ep-roster-count" aria-live="polite">{filtered.length} shown</span>
+        </header>
+        <div className="ep-roster-tools">
+          <label className="ep-attendee-search"><span className="sr-only">Search attendees</span><Search size={16} aria-hidden="true" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search name, email, pass ID, company or tier…" /></label>
+          <div className="ep-attendee-filters">
+            <OperationSelect value={filter} onValueChange={setFilter} label="Filter attendees" options={[{ value: "all", label: "All attendees" }, { value: "vip", label: "VIP" }, { value: "standard", label: "Standard" }, { value: "checked-in", label: "Checked in" }, { value: "not-checked-in", label: "Not checked in" }, ...ticketTiers.map((tier) => ({ value: `tier:${tier}`, label: `${tier} tier` }))]} />
+            <OperationSelect value={sort} onValueChange={setSort} label="Sort attendees" options={[{ value: "name", label: "Name A–Z" }, { value: "vip", label: "VIP first" }, { value: "check-in", label: "Check-in status" }, { value: "tier", label: "Pass tier" }]} />
+            <Button variant="secondary" onClick={exportCsv} disabled={!selectedEvent}><Download size={16} /> Export CSV</Button>
           </div>
         </div>
-        <div className="mt-5 overflow-x-auto">
-          <table className="data-table w-full min-w-[900px] text-left text-sm">
-            <thead className="border-b border-border text-muted-foreground">
+        <div className="ep-roster-table-wrap">
+          <table className="ep-roster-table">
+            <thead>
               <tr>
-                <th className="py-3 font-medium">Attendee</th>
-                <th className="py-3 font-medium">Event</th>
-                <th className="py-3 font-medium">Ticket</th>
-                <th className="py-3 font-medium">Check-in</th>
-                <th className="py-3 font-medium">Fallback</th>
-                <th className="py-3 font-medium">Actions</th>
+                <th>Attendee</th><th>Access</th><th>Check-in</th><th>Fallback</th><th><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {loading ? (
-                <tr><td className="py-6 text-muted-foreground" colSpan={6}>Loading attendees...</td></tr>
+                <tr><td className="ep-roster-state" colSpan={5}>Loading attendees…</td></tr>
               ) : null}
               {!loading && filtered.length === 0 ? (
-                <tr><td className="py-6 text-muted-foreground" colSpan={6}>No attendees found.</td></tr>
+                <tr><td className="ep-roster-state" colSpan={5}>{attendees.length ? "No guests match these filters." : "No attendees yet. Add a guest or import a CSV to begin."}</td></tr>
               ) : null}
               {filtered.map((attendee) => (
-                <tr key={attendee.id} className={attendee.vip ? "bg-amber-400/[0.04]" : undefined}>
-                  <td className="py-4">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 font-semibold text-primary">{initials(attendee.name)}</span>
-                      <div>
-                        <p className="flex items-center gap-2 font-medium">{attendee.name} {attendee.vip ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-[11px] font-bold text-amber-500"><Star className="h-3 w-3 fill-current" /> VIP</span> : null}</p>
-                        <p className="text-muted-foreground">{attendee.email ?? "No email"}</p>
-                        {attendee.notes ? <p className="mt-1 line-clamp-2 max-w-sm text-xs text-muted-foreground"><span className="font-semibold text-foreground/70">Internal:</span> {attendee.notes}</p> : null}
-                        {attendee.under21 || attendee.plusOneUnder21 ? <p className="text-xs font-medium text-destructive">Under 21 alert</p> : null}
-                        {attendee.plusOneName ? <p className="text-xs text-muted-foreground">Plus-one: {attendee.plusOneName}</p> : null}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4">{attendee.eventName}</td>
-                  <td className="py-4">{attendee.ticketTier}</td>
-                  <td className="py-4">{attendee.checkedIn ? `Checked in ${attendee.checkedInAt ? new Date(attendee.checkedInAt).toLocaleTimeString() : ""}` : "Pending"}</td>
-                  <td className="py-4 font-mono text-xs">{attendee.fallbackCode}</td>
-                  <td className="py-4">
-                    <div className="flex gap-1">
-                      <Link href={`/pass/${attendee.id}`} title="Open event pass" aria-label="Open event pass"><Button variant="ghost" className="h-9 w-9 px-0"><ExternalLink className="h-4 w-4" /></Button></Link>
-                      <Button title="Edit attendee pass" aria-label="Edit attendee pass" variant="ghost" className="h-9 w-9 px-0" onClick={() => startEditing(attendee)}><Pencil className="h-4 w-4" /></Button>
-                      <Button title={attendee.email ? "Send event pass" : "No email address"} aria-label="Send event pass" variant="ghost" className="h-9 w-9 px-0" disabled={!attendee.email} onClick={() => void sendPass(attendee)}><Mail className="h-4 w-4" /></Button>
-                      <Button title="Toggle VIP" aria-label="Toggle VIP" variant="ghost" className="h-9 w-9 px-0" onClick={() => void toggleVip(attendee)}><Star className="h-4 w-4" /></Button>
-                      <Button title="Delete attendee" aria-label="Delete attendee" variant="ghost" className="h-9 w-9 px-0" onClick={() => void deleteAttendee(attendee)}><Trash2 className="h-4 w-4" /></Button>
-                    </div>
-                  </td>
+                <tr key={attendee.id} data-vip={attendee.vip || undefined}>
+                  <td><div className="ep-attendee-identity"><span className="ep-attendee-avatar">{initials(attendee.name)}</span><div><div className="ep-attendee-name">{attendee.name}{attendee.vip ? <span className="ep-vip-badge"><Star size={11} fill="currentColor" /> VIP</span> : null}</div><p>{attendee.email ?? "No email address"}</p>{attendee.plusOneName ? <p>Guest: {attendee.plusOneName}</p> : null}{attendee.under21 || attendee.plusOneUnder21 ? <span className="ep-age-alert">Under 21 attention</span> : null}</div></div></td>
+                  <td><strong>{attendee.ticketTier}</strong>{attendee.seat ? <span>{attendee.seat}</span> : null}</td>
+                  <td><span className={`ep-checkin-status${attendee.checkedIn ? " is-complete" : ""}`}>{attendee.checkedIn ? "Checked in" : "Pending"}</span>{attendee.checkedInAt ? <small>{formatTime(attendee.checkedInAt, timeZone)}</small> : null}</td>
+                  <td><code>{attendee.fallbackCode}</code></td>
+                  <td>{attendeeActions(attendee)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </Card>
-      <LiquidModal open={Boolean(editingAttendeeId)} onClose={() => setEditingAttendeeId(null)} title="Edit attendee details" description="Update identity, access, guest, and operational details without leaving the attendee table." size="lg">
+        <div className="ep-roster-cards">
+          {loading ? <p className="ep-roster-state">Loading attendees…</p> : null}
+          {!loading && filtered.length === 0 ? <p className="ep-roster-state">{attendees.length ? "No guests match these filters." : "No attendees yet. Add a guest or import a CSV to begin."}</p> : null}
+          {filtered.map((attendee) => <article className="ep-attendee-card" key={`${attendee.id}:mobile`} data-vip={attendee.vip || undefined}><header><div className="ep-attendee-identity"><span className="ep-attendee-avatar">{initials(attendee.name)}</span><div><div className="ep-attendee-name">{attendee.name}{attendee.vip ? <span className="ep-vip-badge"><Star size={11} fill="currentColor" /> VIP</span> : null}</div><p>{attendee.email ?? "No email address"}</p></div></div>{attendeeActions(attendee)}</header><dl><div><dt>Access</dt><dd>{attendee.ticketTier}{attendee.seat ? ` · ${attendee.seat}` : ""}</dd></div><div><dt>Check-in</dt><dd>{attendee.checkedIn ? `Checked in${attendee.checkedInAt ? ` · ${formatTime(attendee.checkedInAt, timeZone)}` : ""}` : "Pending"}</dd></div><div><dt>Fallback</dt><dd><code>{attendee.fallbackCode}</code></dd></div></dl>{attendee.plusOneName ? <p className="ep-attendee-card-note">Guest: {attendee.plusOneName}</p> : null}{attendee.under21 || attendee.plusOneUnder21 ? <span className="ep-age-alert">Under 21 attention</span> : null}</article>)}
+        </div>
+      </section>
+      <PreviewSheet
+        open={Boolean(editingAttendeeId)}
+        onOpenChange={(open) => {
+          if (!open && !savingEdit) {
+            setEditingAttendeeId(null);
+            setShowRawJson(false);
+          }
+        }}
+        title={editingAttendee ? `Edit ${editingAttendee.name}` : "Edit attendee"}
+        description="Update attendee details and access."
+        closeLabel="Close attendee editor"
+      >
         {editingAttendeeId ? (
-          <form className="grid gap-4" onSubmit={saveAttendee}>
+          <form className="ep-attendee-editor" onSubmit={saveAttendee}>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium">First name<Input value={editForm.firstName} onChange={(event) => setEditField("firstName", event.target.value)} required /></label>
               <label className="grid gap-1.5 text-sm font-medium">Last name<Input value={editForm.lastName} onChange={(event) => setEditField("lastName", event.target.value)} required /></label>
@@ -580,15 +593,45 @@ export function AttendeesManager({ initialQuery = "" }: { initialQuery?: string 
               </div>
             ) : null}
 
+            {editingAttendee && selectedEvent?.registrationFields.length ? (
+              <div className="form-section p-4">
+                <p className="text-sm font-semibold">Registration answers</p>
+                <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {selectedEvent.registrationFields.map((field) => {
+                    const answer = editingAttendee.customAnswers[field.id];
+                    const display = field.type === "GUEST"
+                      ? answer === "ADULT" ? "Yes · 21+" : answer === "UNDER_21" ? "Yes · under 21" : answer === "NONE" ? "No guest" : "Not provided"
+                      : Array.isArray(answer) ? answer.join(", ") : typeof answer === "boolean" ? (answer ? "Yes" : "No") : answer || "Not provided";
+                    return <div key={field.id}><dt className="text-xs font-semibold text-muted-foreground">{field.label}</dt><dd className="mt-1 break-words text-sm">{display}</dd></div>;
+                  })}
+                </dl>
+              </div>
+            ) : null}
+
+            {editingAttendee ? (
+              <div className="form-section p-4">
+                <div><p className="text-sm font-semibold">Rest of fields</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Saved custom answers that are no longer connected to the event’s current registration form.</p></div>
+                {restOfFields.length ? <dl className="mt-3 grid gap-3 sm:grid-cols-2">{restOfFields.map(([fieldId, answer]) => <div key={fieldId}><dt className="text-xs font-semibold text-muted-foreground">{storedRegistrationFieldLabel(editingAttendee.customAnswers, fieldId) ?? fieldName(fieldId)}</dt><dd className="mt-1 break-words text-sm">{answerText(answer)}</dd><p className="mt-1 break-all font-mono text-xs text-muted-foreground">{fieldId}</p></div>)}</dl> : <p className="mt-3 text-sm text-muted-foreground">No detached custom fields for this attendee.</p>}
+              </div>
+            ) : null}
+
+            {editingAttendee ? (
+              <div className="overflow-hidden rounded-xl border border-border/80 bg-background/50">
+                <button type="button" aria-expanded={showRawJson} onClick={() => setShowRawJson((current) => !current)} className="focus-ring flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold hover:bg-primary/[0.04]"><span className="flex items-center gap-2"><Braces className="h-4 w-4 text-primary" /> View raw JSON <span className="font-normal text-muted-foreground">· pass credentials redacted</span></span>{showRawJson ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}</button>
+                {showRawJson ? <pre className="max-h-80 overflow-auto border-t border-border/70 bg-muted/35 p-4 text-xs leading-5 text-foreground"><code>{JSON.stringify(rawAttendeeJson, null, 2)}</code></pre> : null}
+              </div>
+            ) : null}
+
             <label className="grid gap-1.5 text-sm font-medium">Internal notes<Input value={editForm.notes} onChange={(event) => setEditField("notes", event.target.value)} /></label>
             {editMessage ? <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{editMessage}</p> : null}
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => setEditingAttendeeId(null)}>Cancel</Button>
+            <div className="ep-attendee-editor-actions">
+              <Button type="button" variant="secondary" disabled={savingEdit} onClick={() => { setEditingAttendeeId(null); setShowRawJson(false); }}>Cancel</Button>
               <Button type="submit" disabled={savingEdit}><Save className="h-4 w-4" /> {savingEdit ? "Saving…" : "Save pass changes"}</Button>
             </div>
           </form>
         ) : null}
-      </LiquidModal>
+      </PreviewSheet>
+      <ConfirmDialog open={Boolean(deleteTarget)} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }} title={deleteTarget ? `Delete ${deleteTarget.name}?` : "Delete attendee?"} description="Their pass, check-ins, and raffle entries will also be removed. This cannot be undone." confirmLabel="Delete attendee" destructive onConfirm={() => { if (deleteTarget) void deleteAttendee(deleteTarget); }} />
     </div>
   );
 }

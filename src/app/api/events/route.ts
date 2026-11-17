@@ -3,6 +3,7 @@ import { eventSchema } from "@/lib/validation";
 import { prisma } from "@/lib/db";
 import { eventQueryInclude, getDefaultOrganization, serializeEvent, stringifyStringArray } from "@/lib/prisma-helpers";
 import { rateLimit } from "@/services/rate-limit";
+import { communicationTemplateDefinitions, eventCommunicationTemplateKey } from "@/lib/communication-templates";
 
 export const dynamic = "force-dynamic";
 
@@ -43,16 +44,18 @@ export async function POST(request: NextRequest) {
 
   try {
     const organization = await getDefaultOrganization();
-    const event = await prisma.event.create({
-      data: {
+    const event = await prisma.$transaction(async (transaction) => {
+      const created = await transaction.event.create({ data: {
         ...parsed.data,
         photoUrl: parsed.data.photoUrl || undefined,
         allergenOptions: stringifyStringArray(parsed.data.allergenOptions),
         menuOptions: stringifyStringArray(parsed.data.menuOptions),
         organizationId: organization.id,
         status: requestedStatus
-      },
-      include: eventQueryInclude()
+      }, include: eventQueryInclude() });
+      const template = communicationTemplateDefinitions.PASS_CONFIRMATION;
+      await transaction.communicationTemplate.create({ data: { organizationId: organization.id, key: eventCommunicationTemplateKey("PASS_CONFIRMATION", created.id), subject: template.subject, body: template.body, actionLabel: template.actionLabel } });
+      return created;
     });
 
     return NextResponse.json({ event: serializeEvent(event) }, { status: 201 });

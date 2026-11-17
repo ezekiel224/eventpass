@@ -6,7 +6,8 @@ import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
 import { Button } from "@/components/ui/button";
 import { Card, GlassCard } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { initials } from "@/lib/utils";
+import { LiquidModal } from "@/components/ui/liquid-modal";
+import { formatTime, initials } from "@/lib/utils";
 import { scannerRequestHeaders } from "@/lib/scanner-client";
 import { AttendeeSummary, CheckInResult } from "@/types/domain";
 
@@ -14,10 +15,12 @@ type CheckInLog = {
   id: string;
   duplicate: boolean;
   scannedAt: string;
+  reversedAt: string | null;
+  stationName: string | null;
   attendee: AttendeeSummary;
 };
 
-export function CheckInManager() {
+export function CheckInManager({ timeZone }: { timeZone: string }) {
   const [attendees, setAttendees] = useState<AttendeeSummary[]>([]);
   const [logs, setLogs] = useState<CheckInLog[]>([]);
   const [attendeeId, setAttendeeId] = useState("");
@@ -25,6 +28,8 @@ export function CheckInManager() {
   const [qrPayload, setQrPayload] = useState("");
   const [result, setResult] = useState<CheckInResult | null>(null);
   const [message, setMessage] = useState("");
+  const [undoTarget, setUndoTarget] = useState<CheckInLog | null>(null);
+  const [undoReason, setUndoReason] = useState("");
 
   async function loadData() {
     const [attendeeResponse, logResponse] = await Promise.all([
@@ -78,6 +83,8 @@ export function CheckInManager() {
         id: `${data.attendee.id}:${data.checkedInAt}`,
         duplicate: data.duplicate,
         scannedAt: data.checkedInAt,
+        reversedAt: null,
+        stationName: null,
         attendee: data.attendee
       }, ...current].slice(0, 20));
       return true;
@@ -85,6 +92,17 @@ export function CheckInManager() {
       setMessage(data.error ?? "Could not validate this pass.");
       return false;
     }
+  }
+
+  async function undoCheckIn() {
+    if (!undoTarget || undoReason.trim().length < 3) return;
+    const response = await fetch(`/api/check-in/${undoTarget.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reason: undoReason }) });
+    const data = await response.json();
+    if (!response.ok) { setMessage(data.error ?? "Could not undo the check-in."); return; }
+    setMessage("Check-in undone. The attendee can be checked in again.");
+    setUndoTarget(null);
+    setUndoReason("");
+    await loadData();
   }
 
   async function submit(event: FormEvent) {
@@ -184,7 +202,7 @@ export function CheckInManager() {
               {result ? (
                 <div className={result.duplicate ? "mt-5 flex items-center gap-2 rounded-xl bg-destructive/10 p-3 text-sm text-destructive" : "mt-5 flex items-center gap-2 rounded-xl bg-accent/10 p-3 text-sm text-accent"}>
                   {result.duplicate ? <ShieldAlert className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                  {result.duplicate ? "Already checked in. Duplicate scan logged." : `Valid pass. Checked in at ${new Date(result.checkedInAt).toLocaleTimeString()}.`}
+                  {result.duplicate ? "Already checked in. Duplicate scan logged." : `Valid pass. Checked in at ${formatTime(result.checkedInAt, timeZone)}.`}
                 </div>
               ) : (
                 <div className="mt-5 flex items-center gap-2 rounded-xl bg-primary/10 p-3 text-sm text-primary">
@@ -200,17 +218,21 @@ export function CheckInManager() {
           <div className="mt-3 space-y-2">
             {logs.length === 0 ? <p className="text-sm text-muted-foreground">No scans yet.</p> : null}
             {logs.map((log) => {
-              const alert = log.duplicate || log.attendee.under21 || log.attendee.plusOneUnder21;
+              const alert = !log.reversedAt && (log.duplicate || log.attendee.under21 || log.attendee.plusOneUnder21);
               return (
                 <div key={log.id} className={`flex items-center justify-between gap-3 rounded-xl border p-3 text-sm transition ${alert ? "border-destructive/45 bg-destructive/[0.07]" : "border-border/70 bg-background/40 hover:border-primary/30"}`}>
-                  <span className="font-medium">{log.attendee.name}{log.attendee.under21 || log.attendee.plusOneUnder21 ? " · Under 21" : ""}</span>
-                  <span className={alert ? "shrink-0 font-bold text-destructive" : "shrink-0 text-accent"}>{log.duplicate ? "Duplicate scan" : log.attendee.under21 || log.attendee.plusOneUnder21 ? "Age alert" : "Checked in"}</span>
+                  <span className="min-w-0 font-medium"><span className="block truncate">{log.attendee.name}{log.attendee.under21 || log.attendee.plusOneUnder21 ? " · Under 21" : ""}</span><span className="block text-xs font-normal text-muted-foreground">{log.stationName ?? "Unassigned station"} · {formatTime(log.scannedAt, timeZone)}</span></span>
+                  <span className="flex shrink-0 items-center gap-2"><span className={alert ? "font-bold text-destructive" : "text-accent"}>{log.reversedAt ? "Undone" : log.duplicate ? "Duplicate" : log.attendee.under21 || log.attendee.plusOneUnder21 ? "Age alert" : "Checked in"}</span>{!log.reversedAt ? <Button type="button" variant="ghost" className="h-9 px-2" onClick={() => setUndoTarget(log)}><RotateCcw className="h-3.5 w-3.5" /> Undo</Button> : null}</span>
                 </div>
               );
             })}
           </div>
         </Card>
       </div>
+      <LiquidModal open={Boolean(undoTarget)} onClose={() => { setUndoTarget(null); setUndoReason(""); }} title="Undo this check-in?" description={undoTarget ? `${undoTarget.attendee.name} will return to not checked in. The reason and operator are retained in the audit trail.` : ""} size="sm" label={null}>
+        <label className="grid gap-2 text-sm font-semibold">Reason<Input autoFocus value={undoReason} onChange={(event) => setUndoReason(event.target.value)} placeholder="Scanned by mistake" /></label>
+        <div className="mt-5 flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => { setUndoTarget(null); setUndoReason(""); }}>Cancel</Button><Button type="button" variant="danger" disabled={undoReason.trim().length < 3} onClick={() => void undoCheckIn()}><RotateCcw className="h-4 w-4" /> Undo check-in</Button></div>
+      </LiquidModal>
     </>
   );
 }

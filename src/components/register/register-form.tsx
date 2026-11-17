@@ -1,35 +1,47 @@
 "use client";
 
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import { CheckCircle2, LoaderCircle, Mail, TicketCheck } from "lucide-react";
+import { Check, CheckCircle2, LockKeyhole, TicketCheck } from "lucide-react";
+import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { Checkbox, Label, TextArea } from "tamagui";
 import { AgeChoice } from "@/components/ui/age-choice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { OperationSelect } from "@/components/ui/operation-select";
+import type { RegistrationField } from "@/lib/registration-fields";
 
 const initialForm = {
   firstName: "",
   lastName: "",
-  email: "",
-  phone: "",
-  company: "Hanover Park",
   under21: "",
-  selectedAllergens: [] as string[],
-  selectedMenu: "",
-  plusOneEnabled: false,
   plusOneFirstName: "",
-  plusOneLastName: "",
-  plusOneUnder21: "",
-  plusOneAllergens: [] as string[],
-  plusOneMenu: ""
+  plusOneLastName: ""
 };
 
-export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventId: string; allergenOptions: string[]; menuOptions: string[] }) {
+function PublicCheckbox({ checked, onCheckedChange, label, required, compact = false }: {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  label: string;
+  required?: boolean;
+  compact?: boolean;
+}) {
+  return <Label className={`ep-public-choice${compact ? " is-compact" : ""}`}>
+    <Checkbox className="ep-public-checkbox" checked={checked} required={required} onCheckedChange={(next) => onCheckedChange(next === true)}>
+      <Checkbox.Indicator><Check aria-hidden="true" /></Checkbox.Indicator>
+    </Checkbox>
+    <span>{label}{required ? " *" : ""}</span>
+  </Label>;
+}
+
+export function RegisterForm({ eventId, registrationFields }: { eventId: string; registrationFields: RegistrationField[] }) {
   const [form, setForm] = useState(initialForm);
+  const [customAnswers, setCustomAnswers] = useState<Record<string, string | string[] | boolean>>({});
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [waitlisted, setWaitlisted] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const [passUrl, setPassUrl] = useState("");
   const [reducedMotion, setReducedMotion] = useState(false);
   const clickAudioRef = useRef<HTMLAudioElement>(null);
 
@@ -43,29 +55,64 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
 
   function registerAnotherGuest() {
     setForm(initialForm);
+    setCustomAnswers({});
     setMessage("");
     setWaitlisted(false);
     setRegistered(false);
+    setPassUrl("");
   }
 
-  function setField(name: keyof typeof form, value: string | boolean | string[]) {
+  function setField(name: keyof typeof form, value: string | boolean) {
     setForm((current) => ({ ...current, [name]: value }));
   }
 
-  function toggleAllergen(field: "selectedAllergens" | "plusOneAllergens", allergen: string) {
-    setForm((current) => {
-      const selected = current[field];
-      return {
-        ...current,
-        [field]: selected.includes(allergen) ? selected.filter((item) => item !== allergen) : [...selected, allergen]
-      };
-    });
+  function setCustomAnswer(fieldId: string, value: string | string[] | boolean) {
+    setCustomAnswers((current) => ({ ...current, [fieldId]: value }));
+  }
+
+  function setGuestAnswer(fieldId: string, checked: boolean) {
+    setCustomAnswer(fieldId, checked ? "PENDING" : "NONE");
+    if (!checked) {
+      setField("plusOneFirstName", "");
+      setField("plusOneLastName", "");
+    }
+  }
+
+  function toggleCustomChoice(fieldId: string, option: string) {
+    const selected = Array.isArray(customAnswers[fieldId]) ? customAnswers[fieldId] as string[] : [];
+    setCustomAnswer(fieldId, selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option]);
   }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (!form.under21 || (form.plusOneEnabled && !form.plusOneUnder21)) {
-      setMessage("Please confirm the age status for each guest.");
+    if (!form.under21) {
+      setMessage("Confirm the attendee age status.");
+      return;
+    }
+    const missingRequiredChoice = registrationFields.find((field) => field.required && (
+      (field.type === "CHECKBOX" && customAnswers[field.id] !== true)
+      || (field.type === "SELECT" && !customAnswers[field.id])
+    ));
+    if (missingRequiredChoice) {
+      setMessage(`${missingRequiredChoice.label} is required.`);
+      return;
+    }
+    const missingMultiSelect = registrationFields.find((field) => {
+      const answer = customAnswers[field.id];
+      return field.required && field.type === "MULTISELECT" && (!Array.isArray(answer) || answer.length === 0);
+    });
+    if (missingMultiSelect) {
+      setMessage(`${missingMultiSelect.label} is required.`);
+      return;
+    }
+    const pendingGuest = registrationFields.find((field) => field.type === "GUEST" && customAnswers[field.id] === "PENDING");
+    if (pendingGuest) {
+      setMessage("Confirm whether the guest is 21 or older.");
+      return;
+    }
+    const selectedGuest = registrationFields.find((field) => field.type === "GUEST" && (customAnswers[field.id] === "ADULT" || customAnswers[field.id] === "UNDER_21"));
+    if (selectedGuest && (!form.plusOneFirstName.trim() || !form.plusOneLastName.trim())) {
+      setMessage("Enter the guest’s first and last name.");
       return;
     }
     setSaving(true);
@@ -79,27 +126,22 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
           eventId,
           firstName: form.firstName,
           lastName: form.lastName,
-          email: form.email,
-          phone: form.phone || undefined,
-          company: form.company || undefined,
           under21: form.under21 === "yes",
-          selectedAllergens: form.selectedAllergens,
-          selectedMenu: form.selectedMenu || undefined,
-          plusOneEnabled: form.plusOneEnabled,
-          plusOneFirstName: form.plusOneEnabled ? form.plusOneFirstName : undefined,
-          plusOneLastName: form.plusOneEnabled ? form.plusOneLastName : undefined,
-          plusOneUnder21: form.plusOneEnabled ? form.plusOneUnder21 === "yes" : false,
-          plusOneAllergens: form.plusOneEnabled ? form.plusOneAllergens : [],
-          plusOneMenu: form.plusOneEnabled ? form.plusOneMenu || undefined : undefined
+          plusOneFirstName: selectedGuest ? form.plusOneFirstName : undefined,
+          plusOneLastName: selectedGuest ? form.plusOneLastName : undefined,
+          customAnswers
         })
       });
       const data = await response.json();
-
       if (response.ok) {
         if (data.waitlisted) setWaitlisted(true);
-        else setRegistered(true);
+        else {
+          setPassUrl(data.passUrl ?? "");
+          setRegistered(true);
+        }
       } else {
-        setMessage(data.error ?? "Could not register. Try a different email or check event availability.");
+        const firstFieldError = data.fieldErrors && typeof data.fieldErrors === "object" ? Object.values(data.fieldErrors)[0] : null;
+        setMessage(typeof firstFieldError === "string" ? firstFieldError : data.error ?? "Could not register. Review the form and try again.");
       }
     } catch {
       setMessage("We couldn’t reach the registration service. Check your connection and try again.");
@@ -109,120 +151,62 @@ export function RegisterForm({ eventId, allergenOptions, menuOptions }: { eventI
   }
 
   if (waitlisted) {
-    return <div className="mt-6 py-8 text-center"><CheckCircle2 className="mx-auto h-10 w-10 text-primary" /><h3 className="mt-3 text-xl font-semibold">You’re on the waitlist</h3><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">Your information was saved. The event organizer will contact you if space becomes available.</p><Button className="mt-6" variant="secondary" type="button" onClick={registerAnotherGuest}>Register another guest</Button></div>;
+    return <div className="ep-public-result"><CheckCircle2 aria-hidden="true" /><h3>You’re on the waitlist</h3><p>Your information was saved. The event team will contact you if space becomes available.</p><Button variant="secondary" type="button" onClick={registerAnotherGuest}>Register another attendee</Button></div>;
   }
 
   if (registered) {
-    return <div className="registration-success mt-6 py-10 text-center" role="status"><div className="registration-success-lottie mx-auto" aria-hidden="true">{reducedMotion ? <span className="registration-success-fallback"><CheckCircle2 className="h-9 w-9" /></span> : <DotLottieReact src="/animations/registration-success.lottie" autoplay renderConfig={{ devicePixelRatio: 1.5 }} />}</div><h3 className="mt-5 text-2xl font-semibold tracking-[-0.03em]">Thank you for registering</h3><p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">Your registration is complete. Check your email for event details and your digital pass.</p><Button className="mt-7" type="button" onClick={registerAnotherGuest}>Register another guest</Button></div>;
+    return <div className="registration-success ep-public-result" role="status"><div className="registration-success-lottie" aria-hidden="true">{reducedMotion ? <span className="registration-success-fallback"><CheckCircle2 className="h-9 w-9" /></span> : <DotLottieReact src="/animations/registration-success.lottie" autoplay renderConfig={{ devicePixelRatio: 1.5 }} />}</div><h3>Registration complete</h3><p>Your digital pass is ready. If this form requested an email address, a copy is also on its way.</p><div className="ep-public-result-actions">{passUrl ? <Link href={passUrl}><Button type="button"><TicketCheck className="h-4 w-4" /> Open digital pass</Button></Link> : null}<Button variant="secondary" type="button" onClick={registerAnotherGuest}>Register another attendee</Button></div></div>;
   }
 
   return (
-    <form className="mt-6 grid gap-5" onSubmit={submit}>
-      <div className="form-section grid gap-4 p-4 sm:p-5">
-        <p className="panel-label">Primary attendee</p>
+    <form className="ep-public-register-form" onSubmit={submit}>
+      <section className="ep-public-form-section">
+        <h3>Attendee details</h3>
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-2 text-sm font-semibold">First name<Input value={form.firstName} onChange={(event) => setField("firstName", event.target.value)} placeholder="First name" required /></label>
-          <label className="grid gap-2 text-sm font-semibold">Last name<Input value={form.lastName} onChange={(event) => setField("lastName", event.target.value)} placeholder="Last name" required /></label>
-        </div>
-        <label className="grid gap-2 text-sm font-semibold">Email address<Input value={form.email} onChange={(event) => setField("email", event.target.value)} placeholder="name@company.com" type="email" required /></label>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-2 text-sm font-semibold">Phone <span className="sr-only">optional</span><Input value={form.phone} onChange={(event) => setField("phone", event.target.value)} placeholder="Optional" /></label>
-          <label className="grid gap-2 text-sm font-semibold">
-            Location
-            <select value={form.company} onChange={(event) => setField("company", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal" required>
-              <option value="Hanover Park">Hanover Park</option>
-              <option value="Remote">Remote</option>
-              <option value="External">External</option>
-            </select>
-          </label>
+          <label className="ep-public-field">First name<Input autoComplete="given-name" value={form.firstName} onChange={(event) => setField("firstName", event.target.value)} placeholder="First name" required /></label>
+          <label className="ep-public-field">Last name<Input autoComplete="family-name" value={form.lastName} onChange={(event) => setField("lastName", event.target.value)} placeholder="Last name" required /></label>
         </div>
         <AgeChoice value={form.under21 as "" | "yes" | "no"} onChange={(value) => setField("under21", value)} />
-      </div>
-      {allergenOptions.length > 0 ? (
-        <div className="form-section p-4 sm:p-5">
-          <p className="panel-label">Dietary requirements</p>
-          <p className="mt-2 text-sm font-semibold">Allergens</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {allergenOptions.map((allergen) => (
-              <label key={allergen} className="choice-tile flex cursor-pointer items-center gap-2 px-3 py-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={form.selectedAllergens.includes(allergen)}
-                  onChange={() => toggleAllergen("selectedAllergens", allergen)}
-                  className="h-4 w-4 accent-primary"
-                />
-                {allergen}
-              </label>
-            ))}
-          </div>
-        </div>
-      ) : null}
-      {menuOptions.length > 0 ? (
-        <label className="form-section grid gap-2 p-4 text-sm font-semibold sm:p-5">
-          Menu selection
-          <select value={form.selectedMenu} onChange={(event) => setField("selectedMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal" required>
-            <option value="">Choose a menu option</option>
-            {menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-          </select>
-        </label>
-      ) : null}
-      <label className="choice-tile flex min-h-14 cursor-pointer items-center gap-3 p-4 text-sm font-semibold">
-        <input type="checkbox" checked={form.plusOneEnabled} onChange={(event) => setField("plusOneEnabled", event.target.checked)} className="h-4 w-4 accent-primary" />
-        Add a plus-one
-      </label>
-      {form.plusOneEnabled ? (
-        <div className="form-section grid gap-4 p-4 sm:p-5">
-          <p className="panel-label">Additional guest</p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Input value={form.plusOneFirstName} onChange={(event) => setField("plusOneFirstName", event.target.value)} placeholder="Plus-one first name" required />
-            <Input value={form.plusOneLastName} onChange={(event) => setField("plusOneLastName", event.target.value)} placeholder="Plus-one last name" required />
-          </div>
-          <AgeChoice
-            value={form.plusOneUnder21 as "" | "yes" | "no"}
-            onChange={(value) => setField("plusOneUnder21", value)}
-            subject="plus-one"
-          />
-          {allergenOptions.length > 0 ? (
-            <div>
-              <p className="text-sm font-medium">Plus-one allergens</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {allergenOptions.map((allergen) => (
-                  <label key={allergen} className="choice-tile flex cursor-pointer items-center gap-2 px-3 py-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={form.plusOneAllergens.includes(allergen)}
-                      onChange={() => toggleAllergen("plusOneAllergens", allergen)}
-                      className="h-4 w-4 accent-primary"
-                    />
-                    {allergen}
-                  </label>
-                ))}
-              </div>
+      </section>
+
+      {registrationFields.length > 0 ? (
+        <section className="ep-public-form-section">
+          <div><h3>Event questions</h3><p className="ep-public-form-help">Your answers go to the event team and cannot be changed here after submission.</p></div>
+          {registrationFields.map((field) => (
+            <div key={field.id} className="grid gap-2">
+              {field.type === "GUEST" ? (
+                <div className="grid gap-3">
+                  <PublicCheckbox checked={customAnswers[field.id] === "PENDING" || customAnswers[field.id] === "ADULT" || customAnswers[field.id] === "UNDER_21"} onCheckedChange={(checked) => setGuestAnswer(field.id, checked)} label={field.label} />
+                  {customAnswers[field.id] === "PENDING" || customAnswers[field.id] === "ADULT" || customAnswers[field.id] === "UNDER_21" ? <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="ep-public-field">Guest first name<Input autoComplete="off" value={form.plusOneFirstName} onChange={(event) => setField("plusOneFirstName", event.target.value)} placeholder="First name" required /></label>
+                    <label className="ep-public-field">Guest last name<Input autoComplete="off" value={form.plusOneLastName} onChange={(event) => setField("plusOneLastName", event.target.value)} placeholder="Last name" required /></label>
+                  </div> : null}
+                  {customAnswers[field.id] === "PENDING" || customAnswers[field.id] === "ADULT" || customAnswers[field.id] === "UNDER_21" ? <AgeChoice value={customAnswers[field.id] === "UNDER_21" ? "yes" : customAnswers[field.id] === "ADULT" ? "no" : ""} onChange={(value) => setCustomAnswer(field.id, value === "yes" ? "UNDER_21" : "ADULT")} subject="guest" /> : null}
+                </div>
+              ) : field.type === "CHECKBOX" ? (
+                <PublicCheckbox required={field.required} checked={customAnswers[field.id] === true} onCheckedChange={(checked) => setCustomAnswer(field.id, checked)} label={field.label} />
+              ) : field.type === "TEXTAREA" ? (
+                <label className="ep-public-field">{field.label}{field.required ? " *" : ""}<TextArea required={field.required} value={typeof customAnswers[field.id] === "string" ? customAnswers[field.id] as string : ""} onChangeText={(value) => setCustomAnswer(field.id, value)} className="ep-public-textarea" /></label>
+              ) : field.type === "SELECT" ? (
+                <label className="ep-public-field">{field.label}{field.required ? " *" : ""}<OperationSelect label={field.label} placeholder="Choose an option" value={typeof customAnswers[field.id] === "string" ? customAnswers[field.id] as string : ""} onValueChange={(value) => setCustomAnswer(field.id, value)} options={field.options.map((option) => ({ label: option, value: option }))} /></label>
+              ) : field.type === "MULTISELECT" ? (
+                <fieldset aria-required={field.required} className="ep-public-fieldset"><legend>{field.label}{field.required ? " *" : ""}</legend><div className="ep-public-choice-list">{field.options.map((option, index) => <PublicCheckbox key={`${option}:${index}`} compact checked={(Array.isArray(customAnswers[field.id]) ? customAnswers[field.id] as string[] : []).includes(option)} onCheckedChange={() => toggleCustomChoice(field.id, option)} label={option} />)}</div></fieldset>
+              ) : (
+                <label className="ep-public-field">{field.label}{field.required ? " *" : ""}<Input required={field.required} type={field.mapping === "EMAIL" ? "email" : field.mapping === "PHONE" ? "tel" : "text"} value={typeof customAnswers[field.id] === "string" ? customAnswers[field.id] as string : ""} onChange={(event) => setCustomAnswer(field.id, event.target.value)} /></label>
+              )}
+              {field.helpText ? <p className="ep-public-field-help">{field.helpText}</p> : null}
             </div>
-          ) : null}
-          {menuOptions.length > 0 ? (
-            <label className="grid gap-2 text-sm font-medium">
-              Plus-one menu selection
-              <select value={form.plusOneMenu} onChange={(event) => setField("plusOneMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal" required>
-                <option value="">Choose a menu option</option>
-                {menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}
-              </select>
-            </label>
-          ) : null}
-        </div>
+          ))}
+        </section>
       ) : null}
-      {message ? <p className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">{message}</p> : null}
-      <div className="registration-submit-stage">
-        <Button className="h-12 w-full" disabled={saving} type="submit" aria-busy={saving}>
-          {saving ? <>{reducedMotion ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <span className="registration-submit-lottie" aria-hidden="true"><DotLottieReact src="/animations/registration-success.lottie" autoplay loop renderConfig={{ devicePixelRatio: 1.25 }} /></span>} Creating registration…</> : <><TicketCheck className="h-4 w-4" /> Register and generate pass</>}
-        </Button>
-        <span className="sr-only" aria-live="polite">{saving ? "Creating your registration and digital pass." : ""}</span>
+
+      {message ? <p className="ep-public-form-error" role="alert">{message}</p> : null}
+      <div className="registration-submit-stage ep-public-submit">
+        <Button className="h-12 w-full" loading={saving} loadingLabel="Creating registration…" type="submit"><TicketCheck className="h-4 w-4" /> Register and generate pass</Button>
+        <span className="sr-only" aria-live="polite">{saving ? "Creating the registration and digital pass." : ""}</span>
         <audio ref={clickAudioRef} src="/sounds/registration-click.mp3" preload="auto" aria-hidden="true" />
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="control-panel flex items-center gap-2 p-3 text-xs text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> Unique attendee identity</div>
-        <div className="control-panel flex items-center gap-2 p-3 text-xs text-muted-foreground"><Mail className="h-4 w-4 text-primary" /> Secure delivery workflow</div>
-      </div>
+      <div className="ep-public-trust"><span><CheckCircle2 aria-hidden="true" /> Pass created at submission</span><span><LockKeyhole aria-hidden="true" /> Details stay with event staff</span></div>
     </form>
   );
 }

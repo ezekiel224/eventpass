@@ -2,7 +2,8 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { CircleAlert } from "lucide-react";
+import { Label, SizableText, XStack, YStack } from "tamagui";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -40,18 +41,24 @@ export function LoginForm() {
   }
 
   return (
-    <form className="mt-7 grid gap-4" onSubmit={handleSubmit}>
-      <label className="grid gap-2 text-sm font-semibold">Email or username<Input autoComplete="username" name="identifier" placeholder="operator@company.com" required /></label>
-      <label className="grid gap-2 text-sm font-semibold">Password<Input autoComplete="current-password" name="password" placeholder="Enter your password" required type="password" /></label>
-      {error ? (
-        <p className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive" role="alert">
-          {error}
-        </p>
-      ) : null}
-      <Button className="mt-2 h-12 w-full" disabled={isSubmitting} type="submit">
-        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-        Sign in
-      </Button>
-    </form>
+    <YStack asChild gap="4">
+      <form onSubmit={handleSubmit}>
+        <YStack gap="2">
+          <Label htmlFor="login-identifier" fontFamily="body" fontSize="sm" fontWeight="700">Email or username</Label>
+          <Input id="login-identifier" autoComplete="username" name="identifier" required />
+        </YStack>
+        <YStack gap="2">
+          <Label htmlFor="login-password" fontFamily="body" fontSize="sm" fontWeight="700">Password</Label>
+          <Input id="login-password" autoComplete="current-password" name="password" required type="password" />
+        </YStack>
+        {error ? (
+          <XStack gap="2" alignItems="center" role="alert">
+            <CircleAlert size={16} aria-hidden="true" color="var(--c-color-alert-600)" />
+            <SizableText fontFamily="body" fontSize="sm" fontWeight="600" color="var(--c-color-alert-700)">{error}</SizableText>
+          </XStack>
+        ) : null}
+        <Button className="mt-2 w-full" loading={isSubmitting} loadingLabel="Signing in…" type="submit">Sign in</Button>
+      </form>
+    </YStack>
   );
 }

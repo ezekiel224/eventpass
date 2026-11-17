@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "EventPass Scanner" }
 };
 
-export const viewport: Viewport = { themeColor: "#100d0b", viewportFit: "cover", width: "device-width", initialScale: 1, maximumScale: 1 };
+export const viewport: Viewport = { themeColor: "#06110c", viewportFit: "cover", width: "device-width", initialScale: 1, maximumScale: 1 };
 
 export default async function ScanPage() {
   await requirePermission("checkins:manage");

@@ -1,5 +1,10 @@
+"use client";
+
 import { ButtonHTMLAttributes } from "react";
+import { LoaderCircle } from "lucide-react";
+import { Button as TamaguiButton, type ButtonProps } from "@/components/tamagui/Button";
 import { cn } from "@/lib/utils";
+import "./tamagui-primitives.css";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
@@ -7,24 +12,21 @@ export function Button({
   className,
   variant = "primary",
   children,
+  loading = false,
+  loadingLabel = "Working…",
+  disabled,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; loading?: boolean; loadingLabel?: string }) {
   return (
-    <button
-      className={cn(
-        "focus-ring group relative inline-flex h-11 items-center justify-center overflow-hidden rounded-xl px-4 text-sm font-semibold tracking-[-0.01em] transition duration-300 ease-luxury active:scale-[0.98]",
-        variant === "primary" && "bg-primary text-primary-foreground shadow-[0_10px_24px_hsl(var(--primary)/.16)] hover:-translate-y-0.5 hover:bg-primary/90",
-        variant === "secondary" && "border border-border bg-card text-foreground shadow-[0_6px_18px_rgb(36_28_22/.06)] hover:-translate-y-0.5 hover:border-primary/50 hover:bg-muted/70",
-        variant === "ghost" && "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-        variant === "danger" && "bg-destructive text-white hover:-translate-y-0.5 hover:shadow-soft",
-        className
-      )}
-      {...props}
+    <TamaguiButton
+      className={cn("ep-tamagui-button", loading && "is-loading", className)}
+      data-variant={variant}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...(props as ButtonProps)}
     >
-      <span className="pointer-events-none absolute inset-0 opacity-0 transition group-active:opacity-100">
-        <span className="absolute left-1/2 top-1/2 h-2 w-2 rounded-full bg-white/60 animate-ripple" />
-      </span>
-      <span className="relative inline-flex items-center gap-2">{children}</span>
-    </button>
+      <span className="ep-button-content" aria-hidden={loading}>{children}</span>
+      {loading ? <span className="ep-button-loading"><LoaderCircle aria-hidden="true" />{loadingLabel}</span> : null}
+    </TamaguiButton>
   );
 }

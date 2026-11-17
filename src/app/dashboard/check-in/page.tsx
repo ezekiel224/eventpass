@@ -1,19 +1,20 @@
 import { AppShell } from "@/components/dashboard/app-shell";
 import { CheckInManager } from "@/components/dashboard/check-in-manager";
 import { PageTitle } from "@/components/dashboard/page-title";
-import { Button } from "@/components/ui/button";
 import { MonitorUp, ScanLine } from "lucide-react";
-import Link from "next/link";
+import { getBranding } from "@/lib/branding";
+import { DashboardActions, DashboardLinkButton } from "@/components/dashboard/dashboard-surface";
 
-export default function CheckInPage() {
+export default async function CheckInPage() {
+  const branding = await getBranding();
   return (
     <AppShell active="Check In">
-      <PageTitle eyebrow="Access" title="Event Check-In" />
-      <div className="mt-4 flex flex-wrap justify-end gap-2">
-        <Link href="/dashboard/check-in/display"><Button type="button" variant="secondary"><MonitorUp className="h-4 w-4" /> Open Live Display</Button></Link>
-        <Link href="/dashboard/check-in/scanner"><Button type="button"><ScanLine className="h-4 w-4" /> Open Pass Scanner</Button></Link>
-      </div>
-      <CheckInManager />
+      <PageTitle title="Check-In" />
+      <DashboardActions>
+        <DashboardLinkButton href="/dashboard/check-in/display" tone="secondary"><MonitorUp size={15} /> Open live display</DashboardLinkButton>
+        <DashboardLinkButton href="/dashboard/check-in/scanner"><ScanLine size={15} /> Open pass scanner</DashboardLinkButton>
+      </DashboardActions>
+      <CheckInManager timeZone={branding.timezone} />
     </AppShell>
   );
 }

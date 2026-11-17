@@ -1,50 +1,47 @@
+import "./_page.css"
 import { MailCheck } from "lucide-react";
 import { AppShell } from "@/components/dashboard/app-shell";
 import { PageTitle } from "@/components/dashboard/page-title";
-import { Card } from "@/components/ui/card";
+import { DashboardBadge, DashboardEmpty, DashboardPanel, DashboardPanelHeader, DashboardRow } from "@/components/dashboard/dashboard-surface";
 import { prisma } from "@/lib/db";
+import { getBranding } from "@/lib/branding";
 
 export const dynamic = "force-dynamic";
 
 export default async function EmailLogsPage() {
-  const emailLogs = await prisma.emailLog.findMany({
+  const [emailLogs, branding] = await Promise.all([prisma.emailLog.findMany({
     orderBy: { createdAt: "desc" },
     take: 50,
     include: { event: true }
-  });
+  }), getBranding()]);
 
   return (
-    <AppShell active="Dashboard">
-      <PageTitle eyebrow="Historical delivery records, including archived events" title="Communications" />
-      <Card className="mt-6 overflow-hidden p-0">
-        <div className="flex flex-col justify-between gap-2 border-b border-border px-5 py-5 sm:flex-row sm:items-center sm:px-6">
-          <div>
-            <h2 className="text-lg font-semibold">Recent email logs</h2>
-            <p className="mt-1 text-xs text-muted-foreground">The 50 most recent delivery attempts across all events.</p>
-          </div>
-          <p className="rounded-full border border-border bg-muted/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{process.env.EMAIL_PROVIDER ?? "console"} provider</p>
-        </div>
-        <div className="space-y-2 p-4 sm:p-5">
-          {emailLogs.length === 0 ? <p className="text-sm text-muted-foreground">No email attempts yet.</p> : null}
-          {emailLogs.map((log) => (
-            <div key={log.id} className="choice-tile flex flex-col justify-between gap-3 p-4 sm:flex-row sm:items-center">
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><MailCheck className="h-5 w-5" /></span>
-                <div className="min-w-0">
-                  <p className="font-medium">{log.type}</p>
-                  <p className="truncate text-sm text-muted-foreground">{log.recipient} · {log.event.name}</p>
-                  {log.event.status === "ARCHIVED" ? <p className="mt-1 text-xs font-medium text-muted-foreground">Archived event</p> : null}
-                  {log.error ? <p className="mt-1 text-xs text-destructive">{log.error}</p> : null}
-                </div>
-              </div>
-              <div className="shrink-0 text-sm sm:text-right">
-                <span className={log.status === "FAILED" ? "rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive" : "rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"}>{log.status}</span>
-                <p className="mt-2 text-muted-foreground">{log.createdAt.toLocaleString()}</p>
+    <AppShell active="Campaigns">
+      <PageTitle title="Delivery History" />
+      <DashboardPanel>
+        <DashboardPanelHeader
+          title="Recent email logs"
+          description="The 50 most recent delivery attempts across the organization."
+          aside={<DashboardBadge>{process.env.EMAIL_PROVIDER ?? "console"} provider</DashboardBadge>}
+        />
+        {emailLogs.length === 0 ? <DashboardEmpty>No email attempts yet.</DashboardEmpty> : null}
+        {emailLogs.map((log) => (
+          <DashboardRow key={log.id}>
+            <div className="is_View _f-1872995505 _mw-839999524 _ai-1055227096 _g-924523048"   >
+              <div className="is_View _w-1646887001 _h-624256600 _f-1246371194 _ai-1055227096 _jc-166379546 _br-1889339809 _b-347950030 _c-674879385"       ><MailCheck size={15} /></div>
+              <div className="is_View _f-549969169 _mw-839999524 _g-924522986"  >
+                <span className="is_Text _c-479604596 _fs-553824545 _fw-291939625"  >{log.type}</span>
+                <span className="is_Text _c-1589498260 _fs-553823584 _mw-263605216 _o-1433117770 _to-1924430550 _ws-768898162"  >{log.recipient} · {log.event.name}</span>
+                {log.error ? <span className="is_Text _c-1220575877 _fs-553822623" >{log.error}</span> : null}
               </div>
             </div>
-          ))}
-        </div>
-      </Card>
+            <div className="is_View _f-473034193 _ai-1238633270 _g-924523017"  >
+              <DashboardBadge tone={log.status === "FAILED" ? "danger" : "brand"}>{log.status}</DashboardBadge>
+              <span className="is_Text _c-1589498260 _fs-553822623 _fv-2124220867"  >{new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: branding.timezone }).format(log.createdAt)}</span>
+            </div>
+          </DashboardRow>
+        ))}
+      </DashboardPanel>
     </AppShell>
   );
 }

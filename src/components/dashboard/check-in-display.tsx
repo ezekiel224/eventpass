@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LiquidModal } from "@/components/ui/liquid-modal";
 import { visibleCheckIns } from "@/lib/check-in-display";
-import { initials } from "@/lib/utils";
+import { formatDate, formatTime, initials } from "@/lib/utils";
 import { AttendeeSummary, EventSummary } from "@/types/domain";
 
 type CheckInLog = {
   id: string;
   duplicate: boolean;
+  reversedAt?: string | null;
   scannedAt: string;
   attendee: AttendeeSummary;
 };
@@ -40,7 +41,7 @@ function partyTone(size: number) {
       };
 }
 
-export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: string }) {
+export function CheckInDisplay({ initialEventId = "", timeZone }: { initialEventId?: string; timeZone: string }) {
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [eventId, setEventId] = useState(initialEventId);
   const [logs, setLogs] = useState<CheckInLog[]>([]);
@@ -75,7 +76,7 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
     source.onerror = () => setConnected(false);
     source.onmessage = (message) => {
       const data = JSON.parse(message.data) as { checkIns?: CheckInLog[] };
-      setLogs(data.checkIns ?? []);
+      setLogs((data.checkIns ?? []).filter((checkIn) => !checkIn.reversedAt));
     };
     return () => source.close();
   }, [eventId]);
@@ -193,7 +194,7 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
                 <div className="mt-6 flex flex-wrap items-center gap-3" role={latest.duplicate || latestUnder21 ? "alert" : "status"}>
                   {latest.duplicate ? <span className="inline-flex min-h-11 items-center gap-2 rounded-full bg-destructive px-4 py-2 text-sm font-black uppercase text-white"><ShieldAlert className="h-5 w-5" /> Duplicate scan</span> : <span className="inline-flex min-h-11 items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-bold text-white"><CheckCircle2 className="h-5 w-5" /> Checked in</span>}
                   {latestUnder21 ? <span className="inline-flex min-h-11 items-center gap-2 rounded-full bg-destructive px-4 py-2 text-sm font-black uppercase text-white"><ShieldAlert className="h-5 w-5" /> {latest.attendee.under21 && latest.attendee.plusOneUnder21 ? "Both under 21" : latest.attendee.under21 ? "Attendee under 21" : "Guest under 21"}</span> : null}
-                  <span className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-background/75 px-4 py-2 text-base font-semibold"><Clock3 className="h-5 w-5 text-muted-foreground" /> {new Date(latest.scannedAt).toLocaleTimeString()}</span>
+                  <span className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-background/75 px-4 py-2 text-base font-semibold"><Clock3 className="h-5 w-5 text-muted-foreground" /> {formatTime(latest.scannedAt, timeZone)}</span>
                 </div>
               </div>
             ) : <p className="mt-8 text-muted-foreground">Waiting for the first arrival…</p>}
@@ -225,7 +226,7 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
                     <span className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-base font-black ${tone.badge}`} title={`${size} ${size === 1 ? "person" : "people"} on this pass`}><Users className="h-4 w-4" /> {size}</span>
-                    <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground"><Clock3 className="h-3.5 w-3.5" /> {new Date(log.scannedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span>
+                    <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground"><Clock3 className="h-3.5 w-3.5" /> {formatTime(log.scannedAt, timeZone)}</span>
                   </div>
                 </div>
               );})}
@@ -253,7 +254,7 @@ export function CheckInDisplay({ initialEventId = "" }: { initialEventId?: strin
               <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-sm font-semibold ${tone.avatar}`}>{initials(log.attendee.name)}</span>
               <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="truncate font-semibold">{log.attendee.name}</p>{under21 ? <span className="rounded-full bg-destructive px-2 py-0.5 text-xs font-black uppercase text-white">Under 21</span> : null}{log.duplicate ? <span className="rounded-full bg-destructive px-2 py-0.5 text-xs font-black uppercase text-white">Duplicate</span> : null}</div><p className="truncate text-sm text-muted-foreground">{log.attendee.ticketTier}{log.attendee.plusOneName ? ` · Guest: ${log.attendee.plusOneName}` : ""}</p></div>
               <span className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-black ${tone.badge}`}><Users className="h-4 w-4" /> {size}</span>
-              <time className="col-span-2 col-start-2 text-right text-sm font-medium tabular-nums text-muted-foreground sm:col-span-1 sm:col-start-auto" dateTime={log.scannedAt}>{new Date(log.scannedAt).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}</time>
+              <time className="col-span-2 col-start-2 text-right text-sm font-medium tabular-nums text-muted-foreground sm:col-span-1 sm:col-start-auto" dateTime={log.scannedAt}>{formatDate(log.scannedAt, timeZone)} · {formatTime(log.scannedAt, timeZone)}</time>
             </div>;
           })}
           {historyLogs.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">{historyQuery ? "No check-ins match this search." : "No check-ins have been recorded."}</p> : null}

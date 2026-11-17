@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminUserSchema, deleteAdminUserSchema, resetAdminUserPasswordSchema, updateAdminUserSchema } from "@/lib/admin-validation";
 import { auditLogData } from "@/lib/audit";
-import { authorizeApi } from "@/lib/authorization";
+import { authorizeApi, isAdministrator } from "@/lib/authorization";
 import { validateCsrf } from "@/lib/csrf";
 import { prisma } from "@/lib/db";
 
@@ -210,42 +210,71 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const access = await authorizeApi(request, "users:manage");
   if (!access.ok) return access.response;
+  if (!isAdministrator(access.authorization)) {
+    return NextResponse.json({ error: "Only administrators can permanently delete accounts" }, { status: 403 });
+  }
   const csrfFailure = validateCsrf(request);
   if (csrfFailure) return csrfFailure;
 
-  const parsed = deleteAdminUserSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Choose an account to delete." }, { status: 400 });
+  const parsed = deleteAdminUserSchema.safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid deletion request" }, { status: 400 });
+  }
   if (parsed.data.userId === access.authorization.user.id) {
-    return NextResponse.json({ error: "You cannot delete your own account." }, { status: 400 });
+    return NextResponse.json({ error: "You cannot delete your own account" }, { status: 400 });
   }
 
   const target = await prisma.user.findUnique({
     where: { id: parsed.data.userId },
-    select: { id: true, email: true, active: true, roles: { select: { role: { select: { slug: true } } } } }
+    include: { roles: { include: { role: true } } }
   });
-  if (!target) return NextResponse.json({ error: "Account not found." }, { status: 404 });
-  if (target.active && target.roles.some(({ role }) => role.slug === "admin")) {
-    const activeAdminCount = await prisma.user.count({
-      where: { active: true, roles: { some: { role: { slug: "admin" } } } }
+  if (!target) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+  if (target.email.toLowerCase() !== parsed.data.confirmationEmail) {
+    return NextResponse.json({ error: "The confirmation email does not match this account" }, { status: 400 });
+  }
+
+  const targetIsAdmin = target.role === "ADMIN" || target.roles.some(({ role }) => role.slug === "admin");
+  if (targetIsAdmin) {
+    const possibleAdmins = await prisma.user.findMany({
+      where: {
+        active: true,
+        OR: [
+          { role: "ADMIN" },
+          { roles: { some: { role: { slug: "admin" } } } }
+        ]
+      },
+      select: { id: true }
     });
-    if (activeAdminCount <= 1) {
-      return NextResponse.json({ error: "The last active Admin account cannot be deleted." }, { status: 409 });
+    if (possibleAdmins.length <= 1) {
+      return NextResponse.json({ error: "The last active administrator cannot be deleted" }, { status: 409 });
     }
   }
 
   await prisma.$transaction(async (transaction) => {
+    await transaction.auditLog.updateMany({
+      where: { actorUserId: target.id, actorEmail: null },
+      data: { actorEmail: target.email, actorName: target.name }
+    });
     await transaction.auditLog.create({
       data: auditLogData({
         request,
         actorUserId: access.authorization.user.id,
+        actor: access.authorization.user,
         action: "admin.user_deleted",
         targetType: "User",
         targetId: target.id,
-        metadata: { email: target.email }
+        metadata: {
+          email: target.email,
+          username: target.username,
+          name: target.name,
+          roles: target.roles.map(({ role }) => role.slug),
+          active: target.active,
+          createdAt: target.createdAt.toISOString()
+        }
       })
     });
     await transaction.user.delete({ where: { id: target.id } });
   });
 
-  return NextResponse.json({ deleted: true, email: target.email });
+  return NextResponse.json({ ok: true, deletedUserId: target.id, deletedEmail: target.email });
 }

@@ -1,13 +1,15 @@
 import { z } from "zod";
 import { passThemeIds } from "@/components/pass/pass-system";
 
+const instantSchema = (message: string) => z.string().datetime({ offset: true, message }).transform((value) => new Date(value));
+
 export const eventFieldsSchema = z.object({
   name: z.string().trim().min(2, "Enter an event name with at least 2 characters.").max(120, "Keep the event name under 120 characters."),
   description: z.string().trim().min(8, "Add a short description with at least 8 characters.").max(2000, "Keep the description under 2,000 characters."),
   venue: z.string().trim().min(2, "Enter the venue name.").max(160, "Keep the venue name under 160 characters."),
   address: z.string().trim().min(4, "Enter the venue address.").max(240, "Keep the address under 240 characters."),
-  startsAt: z.coerce.date({ invalid_type_error: "Choose a valid event date and start time." }),
-  endsAt: z.coerce.date({ invalid_type_error: "Choose a valid event date and end time." }),
+  startsAt: instantSchema("Choose a valid event date and start time with a timezone."),
+  endsAt: instantSchema("Choose a valid event date and end time with a timezone."),
   capacity: z.coerce.number().int("Capacity must be a whole number.").min(1, "Capacity must be at least 1.").max(1_000_000, "Capacity is too large."),
   photoUrl: z.string().trim().refine((value) => {
     if (!value) return true;
@@ -28,7 +30,7 @@ export const eventFieldsSchema = z.object({
   qrPassesEnabled: z.boolean().default(true),
   emailConfirmationsEnabled: z.boolean().default(true),
   waitlistEnabled: z.boolean().default(false),
-  registrationDeadline: z.coerce.date({ invalid_type_error: "Choose a valid registration deadline." }).optional()
+  registrationDeadline: instantSchema("Choose a valid registration deadline with a timezone.").optional()
 });
 
 type EventTiming = {
@@ -49,7 +51,7 @@ function validateEventTiming(data: EventTiming, context: z.RefinementCtx) {
 export const eventSchema = eventFieldsSchema.superRefine(validateEventTiming);
 
 export const eventUpdateSchema = eventFieldsSchema.partial().extend({
-  registrationDeadline: z.coerce.date({ invalid_type_error: "Choose a valid registration deadline." }).nullable().optional(),
+  registrationDeadline: instantSchema("Choose a valid registration deadline with a timezone.").nullable().optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
   prizeReceiptSubmitter: z.string().trim().max(120).nullable().optional(),
   prizeReceiptExtension: z.string().trim().max(40).nullable().optional(),
@@ -76,16 +78,31 @@ export const attendeeRegistrationSchema = z.object({
   seat: z.string().max(80).optional(),
   notes: z.string().max(1000).optional(),
   vip: z.boolean().optional(),
-  customAnswers: z.record(z.string()).optional()
+  customAnswers: z.record(z.string(), z.union([z.string(), z.array(z.string()), z.boolean()])).optional()
 });
 
 export const publicAttendeeRegistrationSchema = attendeeRegistrationSchema.omit({
+  email: true,
+  phone: true,
+  company: true,
+  selectedAllergens: true,
+  selectedMenu: true,
+  plusOneFirstName: true,
+  plusOneLastName: true,
+  plusOneEnabled: true,
+  plusOneUnder21: true,
+  plusOneAllergens: true,
+  plusOneMenu: true,
   notes: true,
   vip: true,
   ticketTier: true,
   seat: true,
   customAnswers: true
-}).extend({ email: z.string().email() });
+}).extend({
+  plusOneFirstName: z.string().trim().max(80).optional(),
+  plusOneLastName: z.string().trim().max(80).optional(),
+  customAnswers: z.record(z.string(), z.union([z.string(), z.array(z.string()), z.boolean()])).optional()
+});
 
 export const attendeeUpdateSchema = attendeeRegistrationSchema.omit({ eventId: true }).partial().extend({
   status: z.string().max(40).optional()
@@ -102,5 +119,8 @@ export const checkInSchema = z.object({
   attendeeId: z.string().optional(),
   fallbackCode: z.string().optional(),
   qrPayload: z.string().optional(),
-  testMode: z.boolean().optional()
+  testMode: z.boolean().optional(),
+  stationId: z.string().min(3).optional(),
+  clientScanId: z.string().min(8).max(100).optional(),
+  recordedAt: z.string().datetime({ offset: true }).optional()
 });

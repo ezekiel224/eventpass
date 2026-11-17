@@ -20,17 +20,17 @@ export function LiquidModal({
   onClose,
   title,
   description,
-  label = "Editor",
   children,
-  size = "md"
+  size = "md",
+  label = "Editor"
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   description?: string;
-  label?: string;
   children: React.ReactNode;
   size?: keyof typeof widths;
+  label?: string | null;
 }) {
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const titleId = useId();
@@ -112,8 +112,8 @@ export function LiquidModal({
           >
             <header className="relative z-10 flex shrink-0 items-start justify-between gap-5 border-b border-white/15 px-5 py-5 dark:border-white/10 sm:px-7 sm:py-6">
               <div className="min-w-0">
-                <p className="panel-label text-primary">{label}</p>
-                <h2 id={titleId} className="mt-2 font-display text-2xl font-semibold tracking-[-0.04em] sm:text-3xl">{title}</h2>
+                {label ? <p className="panel-label text-primary">{label}</p> : null}
+                <h2 id={titleId} className={cn("font-display text-2xl font-semibold tracking-[-0.04em] sm:text-3xl", label && "mt-2")}>{title}</h2>
                 {description ? <p id={descriptionId} className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p> : null}
               </div>
               <button type="button" className="liquid-icon-button focus-ring" onClick={onClose} aria-label="Close dialog"><X className="h-4 w-4" /></button>

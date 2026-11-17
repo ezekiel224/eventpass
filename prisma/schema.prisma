@@ -106,6 +106,8 @@ model AuditLog {
   createdAt   DateTime @default(now())
 
   @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
   @@index([targetType, targetId])
 }
 
@@ -184,42 +186,45 @@ model Event {
   raffleDisplays            RaffleDisplay[]
   raffleActivities          RaffleActivity[]
   votingBallots             VotingBallot[]
+  campaigns                 Campaign[]
+  checkInStations           CheckInStation[]
   createdAt                 DateTime         @default(now())
   updatedAt                 DateTime         @updatedAt
 }
 
 model Attendee {
-  id                String        @id @default(cuid())
-  eventId           String
-  event             Event         @relation(fields: [eventId], references: [id])
-  firstName         String
-  lastName          String
-  email             String?
-  phone             String?
-  company           String?
-  birthDate         DateTime?
-  selectedAllergens String?
-  selectedMenu      String?
-  plusOneEnabled    Boolean       @default(false)
-  plusOneFirstName  String?
-  plusOneLastName   String?
-  plusOneBirthDate  DateTime?
-  plusOneAllergens  String?
-  plusOneMenu       String?
-  under21           Boolean       @default(false)
-  plusOneUnder21    Boolean       @default(false)
-  ticketTier        String        @default("General")
-  seat              String?
-  vip               Boolean       @default(false)
-  raffleTickets     Int           @default(0)
-  notes             String?
-  customAnswers     String?
-  status            String        @default("REGISTERED")
-  pass              Pass?
-  checkIns          CheckIn[]
-  raffleEntries     RaffleEntry[]
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id                 String              @id @default(cuid())
+  eventId            String
+  event              Event               @relation(fields: [eventId], references: [id])
+  firstName          String
+  lastName           String
+  email              String?
+  phone              String?
+  company            String?
+  birthDate          DateTime?
+  selectedAllergens  String?
+  selectedMenu       String?
+  plusOneEnabled     Boolean             @default(false)
+  plusOneFirstName   String?
+  plusOneLastName    String?
+  plusOneBirthDate   DateTime?
+  plusOneAllergens   String?
+  plusOneMenu        String?
+  under21            Boolean             @default(false)
+  plusOneUnder21     Boolean             @default(false)
+  ticketTier         String              @default("General")
+  seat               String?
+  vip                Boolean             @default(false)
+  raffleTickets      Int                 @default(0)
+  notes              String?
+  customAnswers      String?
+  status             String              @default("REGISTERED")
+  pass               Pass?
+  checkIns           CheckIn[]
+  raffleEntries      RaffleEntry[]
+  campaignRecipients CampaignRecipient[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@unique([eventId, email])
   @@index([eventId, status])
@@ -237,17 +242,43 @@ model Pass {
 }
 
 model CheckIn {
-  id           String   @id @default(cuid())
-  attendeeId   String
-  attendee     Attendee @relation(fields: [attendeeId], references: [id])
-  admissionKey String?  @unique
-  scannedById  String?
-  scannedAt    DateTime @default(now())
-  duplicate    Boolean  @default(false)
-  rawPayload   String?
+  id             String          @id @default(cuid())
+  attendeeId     String
+  attendee       Attendee        @relation(fields: [attendeeId], references: [id])
+  admissionKey   String?         @unique
+  stationId      String?
+  station        CheckInStation? @relation(fields: [stationId], references: [id], onDelete: SetNull)
+  scannedById    String?
+  clientScanId   String?         @unique
+  recordedAt     DateTime?
+  syncedAt       DateTime?
+  scannedAt      DateTime        @default(now())
+  duplicate      Boolean         @default(false)
+  rawPayload     String?
+  reversedAt     DateTime?
+  reversedById   String?
+  reversalReason String?
 
   @@index([attendeeId, scannedAt])
   @@index([scannedAt])
+  @@index([stationId, scannedAt])
+  @@index([attendeeId, reversedAt])
+}
+
+model CheckInStation {
+  id         String    @id @default(cuid())
+  eventId    String
+  event      Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name       String
+  deviceKey  String
+  active     Boolean   @default(true)
+  lastSeenAt DateTime?
+  checkIns   CheckIn[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([eventId, deviceKey])
+  @@index([eventId, active])
 }
 
 model EmailLog {
@@ -263,6 +294,48 @@ model EmailLog {
   error      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model Campaign {
+  id             String              @id @default(cuid())
+  eventId        String
+  event          Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name           String
+  subject        String
+  body           String
+  segment        String              @default("REGISTERED")
+  status         String              @default("DRAFT")
+  scheduledAt    DateTime?
+  sentAt         DateTime?
+  createdById    String?
+  recipientCount Int                 @default(0)
+  deliveredCount Int                 @default(0)
+  failedCount    Int                 @default(0)
+  recipients     CampaignRecipient[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([eventId, status, scheduledAt])
+}
+
+model CampaignRecipient {
+  id         String    @id @default(cuid())
+  campaignId String
+  campaign   Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  attendeeId String?
+  attendee   Attendee? @relation(fields: [attendeeId], references: [id], onDelete: SetNull)
+  email      String
+  name       String
+  status     String    @default("PENDING")
+  providerId String?
+  error      String?
+  sentAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([campaignId, email])
+  @@index([campaignId, status])
+  @@index([attendeeId])
 }
 
 model RafflePrize {

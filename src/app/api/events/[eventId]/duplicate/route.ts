@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { eventQueryInclude, serializeEvent } from "@/lib/prisma-helpers";
+import { communicationTemplateDefinitions, eventCommunicationTemplateKey, getCommunicationTemplate } from "@/lib/communication-templates";
 
 type Params = { params: Promise<{ eventId: string }> };
 
@@ -23,8 +24,9 @@ export async function POST(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
 
-  const duplicate = await prisma.event.create({
-    data: {
+  const sourceTemplate = await getCommunicationTemplate(original.organizationId, "PASS_CONFIRMATION", original.id);
+  const duplicate = await prisma.$transaction(async (transaction) => {
+    const created = await transaction.event.create({ data: {
       organizationId: original.organizationId,
       name: `${original.name} Copy`,
       description: original.description,
@@ -59,8 +61,10 @@ export async function POST(_request: Request, { params }: Params) {
           status: prize.status
         }))
       }
-    },
-    include: eventQueryInclude()
+    }, include: eventQueryInclude() });
+    const defaults = communicationTemplateDefinitions.PASS_CONFIRMATION;
+    await transaction.communicationTemplate.create({ data: { organizationId: original.organizationId, key: eventCommunicationTemplateKey("PASS_CONFIRMATION", created.id), subject: sourceTemplate.subject || defaults.subject, body: sourceTemplate.body || defaults.body, actionLabel: sourceTemplate.actionLabel || defaults.actionLabel } });
+    return created;
   });
 
   return NextResponse.json({ event: serializeEvent(duplicate) }, { status: 201 });

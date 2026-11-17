@@ -1,6 +1,6 @@
 # EventPass
 
-A modern event pass management platform for creating events, registering attendees, emailing QR-code passes, and checking attendees in from a polished admin dashboard.
+A modern event pass management platform for creating events, registering attendees with configurable forms, issuing QR-code passes immediately, optionally emailing them, and checking attendees in from a polished admin dashboard.
 
 ## Local Development
 
@@ -92,6 +92,9 @@ curl -X POST http://127.0.0.1:3000/api/email/test \
 
 - Next.js App Router, TypeScript, Tailwind CSS, Framer Motion, Lucide icons
 - Auth screens, permission-aware admin dashboard, event and attendee management
+- Configurable registration forms with locked core identity/age questions, reusable presets, and staff-only post-submission changes
+- Campaign workspace for scheduled broadcasts and event-specific automated registration confirmations with safe Markdown formatting and previews
+- Shared toolbar-based Markdown descriptions for events, prizes, campaigns, and lifecycle email copy
 - QR pass generation and validation API shape
 - Scanner UI with duplicate check-in handling flow
 - Raffle operations, secure winner acknowledgment, and legal-template Excel prize receipts

@@ -150,7 +150,7 @@ export function renderPassEmail({
       <div style="border:1px solid #e5e7eb;border-radius:18px;padding:28px;background:white">
         <p style="color:${safe.primaryColor};font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:12px">${safe.organizationName}</p>
         <h1 style="font-size:28px;margin:12px 0">Your pass for ${safe.eventName}</h1>
-        <p style="line-height:1.6;color:#4b5563">${messageHtml ?? `Hi ${safe.name}, your digital event pass is ready. Keep this email handy and present the QR code at check-in.`}</p>
+        <div style="line-height:1.6;color:#4b5563">${messageHtml ?? `Hi ${safe.name}, your digital event pass is ready. Keep this email handy and present the QR code at check-in.`}</div>
         <table role="presentation" style="width:100%;margin:22px 0;border-collapse:collapse;background:#f8fafc;border-radius:12px">
           <tr><td style="padding:14px 16px;color:#64748b;width:34%">Date</td><td style="padding:14px 16px;font-weight:700">${safe.date}</td></tr>
           <tr><td style="padding:14px 16px;color:#64748b">Time</td><td style="padding:14px 16px;font-weight:700">${safe.time}</td></tr>
@@ -205,7 +205,7 @@ export function renderActionEmail({
       <div style="border:1px solid #e5e7eb;border-radius:18px;padding:28px;background:white">
         <p style="color:${color};font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:12px">${escapeHtml(organizationName)}</p>
         <h1 style="font-size:28px;margin:12px 0">${escapeHtml(heading)}</h1>
-        <p style="line-height:1.7;color:#4b5563">${messageHtml}</p>
+        <div style="line-height:1.7;color:#4b5563">${messageHtml}</div>
         <p style="margin:24px 0 0"><a href="${escapeHtml(actionUrl)}" style="display:inline-block;padding:13px 18px;border-radius:12px;background:${color};color:#fff;text-decoration:none;font-weight:700">${escapeHtml(actionLabel)}</a></p>
       </div>
     </div>`;

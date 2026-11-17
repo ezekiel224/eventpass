@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthorizationForUser } from "@/lib/authorization";
+import { auditLogData, auditRequestMetadata } from "@/lib/audit";
+import { prisma } from "@/lib/db";
 import { hasTrustedRequestOrigin } from "@/lib/csrf";
 import { permissionForRequest } from "@/lib/permissions";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
@@ -74,6 +76,25 @@ export async function proxy(request: NextRequest) {
     const forbiddenUrl = request.nextUrl.clone();
     forbiddenUrl.pathname = "/forbidden";
     return NextResponse.rewrite(forbiddenUrl, { status: 403 });
+  }
+
+  const action = pathname.startsWith("/api")
+    ? (SAFE_METHODS.has(request.method) ? "web.data_viewed" : "web.action_requested")
+    : "web.page_viewed";
+  try {
+    await prisma.auditLog.create({
+      data: auditLogData({
+        request,
+        actorUserId: authorization.user.id,
+        actor: authorization.user,
+        action,
+        targetType: pathname.startsWith("/api") ? "API route" : "Page",
+        targetId: pathname,
+        metadata: auditRequestMetadata(request)
+      })
+    });
+  } catch (error) {
+    console.error("Could not write request audit record", error);
   }
 
   return NextResponse.next();
