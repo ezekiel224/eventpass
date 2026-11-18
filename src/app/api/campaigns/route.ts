@@ -13,8 +13,9 @@ const schema = z.object({
 export async function GET(request: NextRequest) {
   const access = await authorizeApi(request, "settings:manage");
   if (!access.ok) return access.response;
+  const organizationId = access.authorization.organization.id;
   const eventId = request.nextUrl.searchParams.get("eventId") ?? undefined;
-  const campaigns = await prisma.campaign.findMany({ where: eventId ? { eventId } : undefined, include: { event: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 100 });
+  const campaigns = await prisma.campaign.findMany({ where: { event: { organizationId }, ...(eventId ? { eventId } : {}) }, include: { event: { select: { name: true } } }, orderBy: { createdAt: "desc" }, take: 100 });
   return NextResponse.json({ campaigns: campaigns.map((campaign) => ({ ...campaign, scheduledAt: campaign.scheduledAt?.toISOString() ?? null, sentAt: campaign.sentAt?.toISOString() ?? null, createdAt: campaign.createdAt.toISOString(), updatedAt: campaign.updatedAt.toISOString() })) });
 }
 
@@ -23,14 +24,14 @@ export async function POST(request: NextRequest) {
   if (!access.ok) return access.response;
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Review the campaign details.", details: parsed.error.flatten() }, { status: 400 });
-  const event = await prisma.event.findUnique({ where: { id: parsed.data.eventId }, select: { id: true, name: true } });
+  const event = await prisma.event.findFirst({ where: { id: parsed.data.eventId, organizationId: access.authorization.organization.id }, select: { id: true, name: true } });
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
   const recipientCount = await countCampaignRecipients(event.id, parsed.data.segment);
   const scheduledAt = parsed.data.scheduledAt ? new Date(parsed.data.scheduledAt) : null;
   const status = scheduledAt ? "SCHEDULED" : "DRAFT";
   const campaign = await prisma.$transaction(async (transaction) => {
     const created = await transaction.campaign.create({ data: { ...parsed.data, scheduledAt, status, createdById: access.authorization.user.id, recipientCount } });
-    await transaction.auditLog.create({ data: auditLogData({ request, actorUserId: access.authorization.user.id, actor: access.authorization.user, action: scheduledAt ? "campaign.scheduled" : "campaign.created", targetType: "Campaign", targetId: created.id, metadata: { eventId: event.id, eventName: event.name, segment: created.segment, recipientCount, scheduledAt: scheduledAt?.toISOString() } }) });
+    await transaction.auditLog.create({ data: auditLogData({ request, actorUserId: access.authorization.user.id, actor: access.authorization.user, organizationId: access.authorization.organization.id, action: scheduledAt ? "campaign.scheduled" : "campaign.created", targetType: "Campaign", targetId: created.id, metadata: { eventId: event.id, eventName: event.name, segment: created.segment, recipientCount, scheduledAt: scheduledAt?.toISOString() } }) });
     return created;
   });
   return NextResponse.json({ campaign }, { status: 201 });

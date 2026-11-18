@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { LivePassExperience } from "@/components/pass/live-pass-experience";
-import { isPassTheme } from "@/components/pass/pass-system";
 import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
 import { normalizeExistingPass } from "@/lib/pass-data";
@@ -31,14 +30,13 @@ export default async function PassPage({
   if (!attendee || !attendee.pass) notFound();
 
   const event = attendee.event;
-  const branding = await getBranding();
+  const branding = await getBranding(event.organizationId);
   const qrDataUrl = await createQrDataUrl(JSON.parse(attendee.pass.qrPayload));
   const attendeeName = `${attendee.firstName} ${attendee.lastName}`;
   const selectedAllergens = parseStringArray(attendee.selectedAllergens);
   const plusOneAllergens = parseStringArray(attendee.plusOneAllergens);
   const plusOneName = attendee.plusOneEnabled ? `${attendee.plusOneFirstName ?? ""} ${attendee.plusOneLastName ?? ""}`.trim() || null : null;
   const under21Alert = attendee.under21 || attendee.plusOneUnder21;
-  const eventTheme = isPassTheme(event.passTheme) ? event.passTheme : "minimal";
   const remainingRaffleTickets = Math.max(
     0,
     attendee.raffleTickets - attendee.raffleEntries.reduce((sum, entry) => sum + entry.ticketCount, 0)
@@ -77,9 +75,9 @@ export default async function PassPage({
   });
 
   return (
-    <main className={styles.passPage} data-pass-theme={eventTheme}>
+    <main className={styles.passPage}>
       <div className={styles.content}>
-        <LivePassExperience attendeeId={attendee.id} initialData={passData} theme={eventTheme} />
+        <LivePassExperience attendeeId={attendee.id} initialData={passData} />
       </div>
     </main>
   );

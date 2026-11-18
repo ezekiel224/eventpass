@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { authorizeEventApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ eventId: string }> };
 
@@ -13,6 +14,8 @@ const ticketSchema = z.object({
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   const { eventId } = await params;
+  const access = await authorizeEventApi(request, eventId, "raffles:manage");
+  if (!access.ok) return access.response;
   const parsed = ticketSchema.safeParse(await request.json());
 
   if (!parsed.success) {

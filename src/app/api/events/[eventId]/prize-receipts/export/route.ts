@@ -1,15 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sortPrizesByName } from "@/lib/prize-order";
 import { createPrizeReceiptWorkbook } from "@/lib/prize-receipt-xlsx";
 import { getBranding } from "@/lib/branding";
+import { authorizeEventApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ eventId: string }> };
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
   const { eventId } = await params;
+  const access = await authorizeEventApi(request, eventId, "raffles:manage");
+  if (!access.ok) return access.response;
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     include: {
@@ -31,7 +34,7 @@ export async function GET(_request: Request, { params }: Params) {
     return NextResponse.json({ error: `${unsigned.length} winner${unsigned.length === 1 ? " has" : "s have"} not signed yet. The payroll workbook is available after every winner signs.` }, { status: 409 });
   }
 
-  const branding = await getBranding();
+  const branding = await getBranding(access.authorization.organization.id);
   const workbook = createPrizeReceiptWorkbook(event, sortPrizesByName(event.rafflePrizes), branding.timezone);
   const slug = event.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "event";
   return new Response(Buffer.from(workbook), {

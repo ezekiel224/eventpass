@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
   let emailError: string | undefined;
 
   if (mappedAnswers.email && event.emailConfirmationsEnabled) try {
-    const branding = await getBranding();
+    const branding = await getBranding(event.organizationId);
     const template = await getCommunicationTemplate(event.organizationId, "PASS_CONFIRMATION", event.id);
     const rendered = renderCommunicationTemplate(template, {
       name: `${parsed.data.firstName} ${parsed.data.lastName}`,

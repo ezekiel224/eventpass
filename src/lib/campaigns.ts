@@ -22,7 +22,7 @@ export async function sendCampaign(campaignId: string, publicBaseUrl: string) {
   if (claimed.count === 0) return null;
   const campaign = await prisma.campaign.findUniqueOrThrow({ where: { id: campaignId }, include: { event: true } });
   const attendees = await prisma.attendee.findMany({ where: attendeeWhere(campaign.eventId, campaign.segment), select: { id: true, firstName: true, lastName: true, email: true } });
-  const branding = await getBranding();
+  const branding = await getBranding(campaign.event.organizationId);
 
   await prisma.campaignRecipient.createMany({ data: attendees.flatMap((attendee) => attendee.email ? [{ campaignId, attendeeId: attendee.id, email: attendee.email, name: `${attendee.firstName} ${attendee.lastName}` }] : []) });
   const recipients = await prisma.campaignRecipient.findMany({ where: { campaignId, status: "PENDING" } });
@@ -55,8 +55,8 @@ export async function sendCampaign(campaignId: string, publicBaseUrl: string) {
   return prisma.campaign.update({ where: { id: campaignId }, data: { status: failedCount > 0 && deliveredCount === 0 ? "FAILED" : "SENT", sentAt: new Date(), recipientCount: recipients.length, deliveredCount, failedCount } });
 }
 
-export async function processDueCampaigns(publicBaseUrl: string) {
-  const due = await prisma.campaign.findMany({ where: { status: "SCHEDULED", scheduledAt: { lte: new Date() } }, select: { id: true }, take: 10 });
+export async function processDueCampaigns(publicBaseUrl: string, organizationId?: string) {
+  const due = await prisma.campaign.findMany({ where: { status: "SCHEDULED", scheduledAt: { lte: new Date() }, ...(organizationId ? { event: { organizationId } } : {}) }, select: { id: true }, take: 10 });
   for (const campaign of due) await sendCampaign(campaign.id, publicBaseUrl);
   return due.length;
 }

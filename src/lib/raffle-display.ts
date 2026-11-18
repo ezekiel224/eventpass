@@ -88,7 +88,7 @@ export function serializeRaffleDisplay(display: {
 }
 
 export async function getRaffleDisplayContent(eventId: string) {
-  const event = await prisma.event.findUnique({
+  const [event, eligibleGuestTotal] = await Promise.all([prisma.event.findUnique({
     where: { id: eventId },
     select: {
       id: true,
@@ -102,7 +102,7 @@ export async function getRaffleDisplayContent(eventId: string) {
         orderBy: [{ drawnAt: "asc" }, { createdAt: "asc" }]
       }
     }
-  });
+  }), prisma.attendee.count({ where: { eventId, status: "REGISTERED" } })]);
 
   if (!event) return null;
 
@@ -112,6 +112,8 @@ export async function getRaffleDisplayContent(eventId: string) {
     description: prize.description,
     value: prize.value,
     imageUrl: prize.imageUrl,
+    entryMode: prize.entryMode,
+    eligibleGuestTotal,
     totalTickets: prize.entries.reduce((sum, entry) => sum + entry.ticketCount, 0),
     entrantCount: prize.entries.filter((entry) => entry.ticketCount > 0).length,
     winnerName: prize.winnerName,
@@ -131,7 +133,8 @@ export async function getRaffleDisplayContent(eventId: string) {
     },
     stats: {
       prizeCount: prizes.filter((prize) => !prize.drawnAt).length,
-      totalPrizeTickets: prizes.reduce((sum, prize) => sum + prize.totalTickets, 0)
+      totalPrizeTickets: prizes.reduce((sum, prize) => sum + prize.totalTickets, 0),
+      guestDrawCount: prizes.filter((prize) => prize.entryMode === "ALL_GUESTS").length
     },
     latestDraw: latestDraw ? {
       id: `${latestDraw.id}:${latestDraw.drawnAt}`,

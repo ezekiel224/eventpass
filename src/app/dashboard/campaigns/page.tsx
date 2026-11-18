@@ -6,8 +6,7 @@ import { requirePermission } from "@/lib/authorization";
 import { getBranding } from "@/lib/branding";
 
 export default async function CampaignsPage({ searchParams }: { searchParams: Promise<{ eventId?: string }> }) {
-  await requirePermission("settings:manage");
-  const { eventId } = await searchParams;
-  const branding = await getBranding();
+  const [authorization, { eventId }] = await Promise.all([requirePermission("settings:manage"), searchParams]);
+  const branding = await getBranding(authorization.organization.id);
   return <AppShell active="Campaigns"><PageTitle title="Campaigns" /><CampaignsManager eventId={eventId ?? ""} timeZone={branding.timezone} automatedMessages={<CommunicationTemplatesManager eventId={eventId ?? ""} />} /></AppShell>;
 }

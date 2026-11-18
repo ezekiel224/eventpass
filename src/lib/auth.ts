@@ -54,6 +54,7 @@ export async function getCurrentUser() {
       username: true,
       name: true,
       role: true,
+      isSuperAdmin: true,
       active: true,
       mustChangePassword: true
     }

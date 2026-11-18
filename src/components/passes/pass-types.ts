@@ -1,9 +1,3 @@
-import type { MotionValue } from "framer-motion";
-
-export type PassTheme = "gala" | "casino" | "ice-cream" | "retro-arcade" | "science" | "biology" | "space" | "minimal";
-export type PassFace = "front" | "back";
-export type PassFinish = "dark" | "light";
-
 export interface EventPassDetails {
   guestName: string;
   ticketType: string;
@@ -17,20 +11,8 @@ export interface EventPassDetails {
   company?: string;
   accessLevel?: string;
   raffleTickets?: number | null;
+  companionName?: string | null;
+  under21Alert?: boolean;
   qrImageUrl?: string | null;
   showMap?: boolean;
-}
-
-export interface PassMotionControls {
-  x: MotionValue<number>;
-  y: MotionValue<number>;
-  rotateX: MotionValue<number>;
-  rotateY: MotionValue<number>;
-  reducedMotion: boolean;
-}
-
-export interface InteractivePassProps extends EventPassDetails {
-  motion: PassMotionControls;
-  face?: PassFace;
-  onFaceChange?: (face: PassFace) => void;
 }

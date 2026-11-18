@@ -4,7 +4,7 @@ import { Building2, CheckCircle2, Clock3, Eraser, History as HistoryIcon, Radio,
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LiquidModal } from "@/components/ui/liquid-modal";
+import { PreviewSheet } from "@/components/ui/preview-sheet";
 import { visibleCheckIns } from "@/lib/check-in-display";
 import { formatDate, formatTime, initials } from "@/lib/utils";
 import { AttendeeSummary, EventSummary } from "@/types/domain";
@@ -235,13 +235,13 @@ export function CheckInDisplay({ initialEventId = "", timeZone }: { initialEvent
         </section>
       </div>
 
-      <LiquidModal open={historyOpen} onClose={() => setHistoryOpen(false)} label="Check-ins" title="Complete history" description="Every scan recorded for the selected event, including duplicates." size="xl">
+      <PreviewSheet open={historyOpen} onOpenChange={setHistoryOpen} title="Complete history" description="Every scan recorded for the selected event, including duplicates." closeLabel="Close check-in history">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-6">
             <div><strong className="block text-3xl font-semibold tabular-nums">{historySummary.totalScans}</strong><span className="text-sm text-muted-foreground">total scans</span></div>
             <div><strong className="block text-3xl font-semibold tabular-nums">{historySummary.admittedGuests}</strong><span className="text-sm text-muted-foreground">guests admitted</span></div>
           </div>
-          <label className="relative w-full sm:max-w-sm"><span className="sr-only">Search check-in history</span><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={historyQuery} onChange={(event) => { setHistoryQuery(event.target.value); setHistoryCursor(null); setHistoryLoading(true); }} className="pl-9" placeholder="Search attendee or guest" /></label>
+          <label className="relative w-full sm:max-w-sm"><span className="sr-only">Search check-in history</span><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={historyQuery} onChange={(event) => { setHistoryQuery(event.target.value); setHistoryCursor(null); setHistoryLoading(true); }} style={{ paddingLeft: "2.25rem" }} placeholder="Search attendee or guest" /></label>
         </div>
         {historyError ? <p className="mt-5 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm font-semibold text-destructive">{historyError}</p> : null}
         {historyLoading ? <p className="mt-6 text-sm text-muted-foreground">Loading complete history…</p> : null}
@@ -260,7 +260,7 @@ export function CheckInDisplay({ initialEventId = "", timeZone }: { initialEvent
           {historyLogs.length === 0 ? <p className="p-8 text-center text-sm text-muted-foreground">{historyQuery ? "No check-ins match this search." : "No check-ins have been recorded."}</p> : null}
         </div> : null}
         {!historyLoading && !historyError && historyLogs.length > 0 ? <div className="mt-4 flex flex-col items-center gap-2"><p className="text-sm text-muted-foreground">Showing {historyLogs.length} of {historySummary.matchingScans} matching scans</p>{historyCursor ? <Button type="button" variant="secondary" disabled={historyLoadingMore} onClick={() => void loadMoreHistory()}>{historyLoadingMore ? "Loading…" : "Load 100 more"}</Button> : null}</div> : null}
-      </LiquidModal>
+      </PreviewSheet>
     </main>
   );
 }

@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBranding } from "@/lib/branding";
 import { sendEmail } from "@/services/email";
+import { authorizeApi } from "@/lib/authorization";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  const access = await authorizeApi(request, "settings:manage");
+  if (!access.ok) return access.response;
   const body = await request.json();
   const to = typeof body.to === "string" ? body.to : "";
 
@@ -13,7 +16,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const branding = await getBranding();
+    const branding = await getBranding(access.authorization.organization.id);
     const result = await sendEmail({
       to,
       subject: `${branding.name} email test`,

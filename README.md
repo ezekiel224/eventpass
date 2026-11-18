@@ -1,4 +1,4 @@
-# EventPass
+# Praxis
 
 A modern event pass management platform for creating events, registering attendees with configurable forms, issuing QR-code passes immediately, optionally emailing them, and checking attendees in from a polished admin dashboard.
 
@@ -17,7 +17,7 @@ Before merging or deploying structural changes, run `npm run verify` and complet
 
 `prisma:setup` applies the local SQLite schema, prepares system roles and permissions, and loads the idempotent demo event data. Run it again whenever you create a fresh local database.
 
-Open `/login` after the first start. When the database has no accounts, EventPass redirects to the one-time `/signup` page so you can choose the initial administrator email, username, and password. No administrator credentials are stored in environment variables or source code.
+Open `/login` after the first start. When the database has no accounts, Praxis redirects to the one-time `/signup` page so you can choose the initial Super Admin email, username, and password. No administrator credentials are stored in environment variables or source code.
 
 For mobile testing over Tailscale, this project trusts `100.88.101.67` in `next.config.ts` for Next.js dev-server requests. Camera access on phones usually still requires a secure context, so use HTTPS through Tailscale Serve/Funnel or another trusted local HTTPS URL if the browser blocks camera permissions over plain HTTP.
 
@@ -73,7 +73,7 @@ The app supports a free Resend setup for owned domains.
 
 ```bash
 EMAIL_PROVIDER="resend"
-EMAIL_FROM="EventPass <passes@yourdomain.com>"
+EMAIL_FROM="Praxis <passes@yourdomain.com>"
 RESEND_API_KEY="re_..."
 APP_URL="https://your-app-domain.com"
 ```

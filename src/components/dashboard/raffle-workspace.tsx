@@ -1,14 +1,14 @@
 "use client";
 
-import { ArrowRight, Copy, Download, FileSignature, Gift, ImagePlus, Pencil, Plus, RefreshCcw, Save, Search, Send, Shuffle, Sparkles, Ticket, Trash2, UserCheck, UserMinus } from "lucide-react";
+import { ArrowRight, Copy, Download, FileSignature, Gift, ImagePlus, Pencil, Plus, RefreshCcw, Save, Search, Send, Shuffle, Sparkles, Ticket, Trash2, UserCheck, UserMinus, Users } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
-import { LiquidModal } from "@/components/ui/liquid-modal";
 import { MarkdownContent } from "@/components/ui/markdown-content";
 import { OperationSelect } from "@/components/ui/operation-select";
+import { PreviewSheet } from "@/components/ui/preview-sheet";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { RollingNumber } from "@/components/ui/rolling-number";
 import { Tabs } from "@/components/tamagui/Tabs";
@@ -24,6 +24,8 @@ type RafflePrize = {
   description: string | null;
   value: string | null;
   imageUrl: string | null;
+  entryMode: "TICKETS" | "ALL_GUESTS";
+  eligibleGuestTotal: number;
   winnerName: string | null;
   drawnAt: string | null;
   rerollCount: number;
@@ -62,6 +64,7 @@ type RaffleData = {
     totalAllocatedTickets: number;
     totalAssignedTickets: number;
     totalPrizeTickets: number;
+    eligibleGuestTotal: number;
   };
   prizes: RafflePrize[];
   attendees: RaffleAttendee[];
@@ -72,6 +75,7 @@ type PrizeDetailsForm = {
   description: string;
   value: string;
   imageUrl: string;
+  entryMode: "TICKETS" | "ALL_GUESTS";
 };
 
 const emptyRaffle: RaffleData = {
@@ -81,7 +85,8 @@ const emptyRaffle: RaffleData = {
     visibleAttendees: 0,
     totalAllocatedTickets: 0,
     totalAssignedTickets: 0,
-    totalPrizeTickets: 0
+    totalPrizeTickets: 0,
+    eligibleGuestTotal: 0
   },
   prizes: [],
   attendees: []
@@ -118,11 +123,12 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
   const [assignment, setAssignment] = useState({ prizeId: "", ticketCount: "1" });
   const [globalTickets, setGlobalTickets] = useState("4");
   const [ticketEdits, setTicketEdits] = useState<Record<string, string>>({});
-  const [prizeForm, setPrizeForm] = useState({ name: "", description: "", value: "", imageUrl: "" });
+  const [prizeForm, setPrizeForm] = useState<PrizeDetailsForm>({ name: "", description: "", value: "", imageUrl: "", entryMode: "TICKETS" });
   const [editingPrize, setEditingPrize] = useState<RafflePrize | null>(null);
-  const [editPrizeForm, setEditPrizeForm] = useState<PrizeDetailsForm>({ name: "", description: "", value: "", imageUrl: "" });
+  const [editPrizeForm, setEditPrizeForm] = useState<PrizeDetailsForm>({ name: "", description: "", value: "", imageUrl: "", entryMode: "TICKETS" });
   const [editPrizeError, setEditPrizeError] = useState("");
   const [savingPrize, setSavingPrize] = useState(false);
+  const [pendingPrizeConversion, setPendingPrizeConversion] = useState(false);
   const [receiptForm, setReceiptForm] = useState({ submitter: "", extension: "", fundingSource: "INSIGHT" });
   const [acceptanceLink, setAcceptanceLink] = useState("");
   const [winner, setWinner] = useState("");
@@ -131,7 +137,8 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
   const [pendingPrizeAction, setPendingPrizeAction] = useState<{ prize: RafflePrize; action: "ARCHIVE" | "DRAW" | "REROLL" | "CLEAR" | "ACCEPTANCE" } | null>(null);
   const loadRequestRef = useRef(0);
 
-  const selectedPrize = useMemo(() => raffle.prizes.find((prize) => prize.id === assignment.prizeId) ?? null, [assignment.prizeId, raffle.prizes]);
+  const ticketPrizes = useMemo(() => raffle.prizes.filter((prize) => prize.entryMode === "TICKETS"), [raffle.prizes]);
+  const selectedPrize = useMemo(() => ticketPrizes.find((prize) => prize.id === assignment.prizeId) ?? null, [assignment.prizeId, ticketPrizes]);
 
   async function loadEvents() {
     setLoading(true);
@@ -164,7 +171,9 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
     setTicketEdits(Object.fromEntries(nextRaffle.attendees.map((attendee: RaffleAttendee) => [attendee.id, String(attendee.raffleTickets)])));
     setAssignment((current) => ({
       ...current,
-      prizeId: current.prizeId || nextRaffle.prizes[0]?.id || ""
+      prizeId: nextRaffle.prizes.some((prize: RafflePrize) => prize.id === current.prizeId && prize.entryMode === "TICKETS")
+        ? current.prizeId
+        : nextRaffle.prizes.find((prize: RafflePrize) => prize.entryMode === "TICKETS")?.id || ""
     }));
     if (selectedAttendee) {
       const refreshedAttendee = nextRaffle.attendees.find((attendee: RaffleAttendee) => attendee.id === selectedAttendee.id);
@@ -205,7 +214,7 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
       return;
     }
 
-    setPrizeForm({ name: "", description: "", value: "", imageUrl: "" });
+    setPrizeForm({ name: "", description: "", value: "", imageUrl: "", entryMode: "TICKETS" });
     setRaffle(data.raffle ?? emptyRaffle);
     setMessage("Raffle prize created.");
   }
@@ -227,8 +236,9 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
 
   function openPrizeEditor(prize: RafflePrize) {
     setEditingPrize(prize);
-    setEditPrizeForm({ name: prize.name, description: prize.description ?? "", value: prize.value ?? "", imageUrl: prize.imageUrl ?? "" });
+    setEditPrizeForm({ name: prize.name, description: prize.description ?? "", value: prize.value ?? "", imageUrl: prize.imageUrl ?? "", entryMode: prize.entryMode });
     setEditPrizeError("");
+    setPendingPrizeConversion(false);
   }
 
   async function importEditedPrizePhoto(file: File | undefined) {
@@ -245,7 +255,17 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
   async function savePrizeDetails(event: FormEvent) {
     event.preventDefault();
     if (!editingPrize || savingPrize) return;
+    if (editPrizeForm.entryMode !== editingPrize.entryMode) {
+      setPendingPrizeConversion(true);
+      return;
+    }
+    await persistPrizeDetails();
+  }
+
+  async function persistPrizeDetails() {
+    if (!editingPrize || savingPrize) return;
     setSavingPrize(true);
+    setPendingPrizeConversion(false);
     setEditPrizeError("");
     try {
       const response = await fetch(`/api/events/${eventId}/raffle/prizes/${editingPrize.id}`, {
@@ -260,7 +280,11 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
       }
       const updatedName = data.prize?.name ?? editPrizeForm.name;
       setEditingPrize(null);
-      setMessage(`${updatedName} updated.`);
+      setMessage(data.converted
+        ? data.releasedTickets > 0
+          ? `${updatedName} converted. ${data.releasedTickets} ticket${data.releasedTickets === 1 ? "" : "s"} returned to guest balances.`
+          : `${updatedName} converted to ${editPrizeForm.entryMode === "ALL_GUESTS" ? "a guest draw" : "a ticket raffle"}.`
+        : `${updatedName} updated.`);
       await loadRaffle();
     } catch {
       setEditPrizeError("Could not reach the server. Check the connection and try again.");
@@ -278,6 +302,8 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
       return;
     }
 
+    setWinner("");
+    setAcceptanceLink("");
     setMessage("Prize removed.");
     if (assignment.prizeId === prizeId) {
       setAssignment((current) => ({ ...current, prizeId: "" }));
@@ -565,7 +591,7 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
           <header className="ep-operation-panel-header"><div><h2>Assign prize entries</h2><p>Final winners are automatically excluded from later drawings.</p></div></header>
           {selectedAttendee ? <div className="ep-selected-guest"><div><strong>{selectedAttendee.name}</strong><span>{selectedAttendee.email}{selectedAttendee.company ? ` · ${selectedAttendee.company}` : ""}</span></div><dl><div><dt>Total</dt><dd>{selectedAttendee.raffleTickets}</dd></div><div><dt>Assigned</dt><dd>{selectedAttendee.assignedTickets}</dd></div><div><dt>Remaining</dt><dd>{selectedAttendee.remainingTickets}</dd></div></dl></div> : <div className="ep-operation-empty"><strong>No guest loaded.</strong><span>Scan a pass or enter fallback credentials to start assigning tickets.</span></div>}
           <form className="ep-assignment-form" onSubmit={assignTickets}>
-            <label><span>Prize</span><OperationSelect value={assignment.prizeId} onValueChange={(nextPrizeId) => setAssignment((current) => ({ ...current, prizeId: nextPrizeId, ticketCount: String(entryCountForPrize(selectedAttendee, nextPrizeId) || 1) }))} disabled={raffle.prizes.length === 0} label="Prize" placeholder="Choose prize" options={raffle.prizes.map((prize) => ({ value: prize.id, label: prize.name }))} compact /></label>
+            <label><span>Prize</span><OperationSelect value={assignment.prizeId} onValueChange={(nextPrizeId) => setAssignment((current) => ({ ...current, prizeId: nextPrizeId, ticketCount: String(entryCountForPrize(selectedAttendee, nextPrizeId) || 1) }))} disabled={ticketPrizes.length === 0} label="Prize" placeholder="Choose prize" options={ticketPrizes.map((prize) => ({ value: prize.id, label: prize.name }))} compact /></label>
             <label><span>Tickets</span><Input type="number" min="0" value={assignment.ticketCount} onChange={(event) => setAssignment((current) => ({ ...current, ticketCount: event.target.value }))} /></label>
             <Button type="submit" disabled={!selectedAttendee || !assignment.prizeId}><Save size={16} /> Save assignment</Button>
             {selectedAttendee && selectedPrize ? <p>Current entry for {selectedPrize.name}: {entryCountForPrize(selectedAttendee, selectedPrize.id)} tickets.</p> : null}
@@ -581,15 +607,15 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
         <div className="ep-prize-layout">
           <section className="ep-operation-panel ep-prize-create">
             <header className="ep-operation-panel-header"><div><h2>Add a prize</h2></div><Gift size={18} /></header>
-            <form onSubmit={createPrize}><Input value={prizeForm.name} onChange={(event) => setPrizeForm((current) => ({ ...current, name: event.target.value }))} placeholder="Prize name" /><div><label>Prize description</label><RichTextEditor value={prizeForm.description} onChange={(description) => setPrizeForm((current) => ({ ...current, description }))} placeholder="What makes this prize special…" maxLength={600} minHeight="min-h-32" /></div><Input type="number" min="0.01" step="0.01" value={prizeForm.value} onChange={(event) => setPrizeForm((current) => ({ ...current, value: event.target.value }))} placeholder="Fair-market value" required /><Input value={prizeForm.imageUrl} onChange={(event) => setPrizeForm((current) => ({ ...current, imageUrl: event.target.value }))} placeholder="Prize photo URL" /><div className="ep-prize-image-import"><div style={prizeForm.imageUrl ? { backgroundImage: `url(${prizeForm.imageUrl})` } : undefined}>{prizeForm.imageUrl ? null : <ImagePlus size={24} />}</div><label>Import prize photo<Input type="file" accept={IMAGE_UPLOAD_ACCEPT} onChange={(event) => void importPrizePhoto(event.target.files?.[0])} /></label></div><Button type="submit" disabled={!eventId}><Plus size={16} /> Add prize</Button></form>
+            <form onSubmit={createPrize}><div className="ep-prize-mode-field"><label>Raffle type</label><OperationSelect value={prizeForm.entryMode} onValueChange={(entryMode) => setPrizeForm((current) => ({ ...current, entryMode: entryMode as PrizeDetailsForm["entryMode"] }))} label="Raffle type" options={[{ value: "TICKETS", label: "Ticket raffle" }, { value: "ALL_GUESTS", label: "Guest draw — automatic" }]} compact /><p>{prizeForm.entryMode === "ALL_GUESTS" ? `All ${raffle.stats.eligibleGuestTotal} registered ${raffle.stats.eligibleGuestTotal === 1 ? "guest" : "guests"} will be entered automatically. No tickets.` : "Guests use allocated tickets to enter this prize."}</p></div><Input value={prizeForm.name} onChange={(event) => setPrizeForm((current) => ({ ...current, name: event.target.value }))} placeholder="Prize name" /><div><label>Prize description</label><RichTextEditor value={prizeForm.description} onChange={(description) => setPrizeForm((current) => ({ ...current, description }))} placeholder="What makes this prize special…" maxLength={600} minHeight="min-h-32" /></div><Input type="number" min="0.01" step="0.01" value={prizeForm.value} onChange={(event) => setPrizeForm((current) => ({ ...current, value: event.target.value }))} placeholder="Fair-market value" required /><Input value={prizeForm.imageUrl} onChange={(event) => setPrizeForm((current) => ({ ...current, imageUrl: event.target.value }))} placeholder="Prize photo URL" /><div className="ep-prize-image-import"><div style={prizeForm.imageUrl ? { backgroundImage: `url(${prizeForm.imageUrl})` } : undefined}>{prizeForm.imageUrl ? null : <ImagePlus size={24} />}</div><label>Import prize photo<Input type="file" accept={IMAGE_UPLOAD_ACCEPT} onChange={(event) => void importPrizePhoto(event.target.files?.[0])} /></label></div><Button type="submit" disabled={!eventId}><Plus size={16} /> Add prize</Button></form>
           </section>
           <section className="ep-operation-panel ep-prize-ledger">
             <header className="ep-operation-panel-header"><div><h2>Prizes</h2></div><span className="ep-count-badge">{raffle.prizes.length} total</span></header>
             <div className="ep-prize-list">
               {raffle.prizes.length === 0 ? <div className="ep-operation-empty"><strong>No prizes yet.</strong><span>Add the first prize to begin collecting entries.</span></div> : raffle.prizes.map((prize) => <article key={prize.id} className="ep-prize-row">
-                <div className="ep-prize-identity"><div className="ep-prize-image" style={prize.imageUrl ? { backgroundImage: `url(${prize.imageUrl})` } : undefined}>{prize.imageUrl ? null : <Gift size={20} />}</div><div><strong>{prize.name}</strong><span>{prize.totalTickets} tickets{prize.value ? ` · $${Number(prize.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</span>{prize.description ? <MarkdownContent value={prize.description} /> : null}{prize.winnerName ? <p><b>Winner: {prize.winnerName}</b><span>{prize.acceptanceStatus === "SIGNED" ? `Signed${prize.acceptanceSignerName ? ` by ${prize.acceptanceSignerName}` : ""}${prize.acceptedAt ? ` · ${formatDate(prize.acceptedAt, timeZone)}` : ""}` : prize.acceptanceStatus === "PENDING" ? "Signing link ready" : "Signature not requested"}</span></p> : null}</div></div>
-                <div className="ep-prize-actions"><Button type="button" variant="secondary" onClick={() => openPrizeEditor(prize)}><Pencil size={15} /> Edit</Button>{prize.winnerName ? <>{prize.acceptanceStatus !== "SIGNED" ? <Button type="button" variant="secondary" onClick={() => setPendingPrizeAction({ prize, action: "ACCEPTANCE" })}><Send size={15} /> Signing link</Button> : null}<Button type="button" variant="secondary" onClick={() => setPendingPrizeAction({ prize, action: "CLEAR" })} title="Testing: remove this result and restore winner eligibility"><UserMinus size={15} /> Clear winner</Button><Button type="button" variant="danger" onClick={() => setPendingPrizeAction({ prize, action: "REROLL" })} disabled={prize.totalTickets === 0}><RefreshCcw size={15} /> Reroll</Button></> : <Button type="button" onClick={() => setPendingPrizeAction({ prize, action: "DRAW" })} disabled={prize.totalTickets === 0}><Shuffle size={15} /> Draw winner</Button>}<Button type="button" variant="ghost" onClick={() => setPendingPrizeAction({ prize, action: "ARCHIVE" })} aria-label={`Remove ${prize.name}`}><Trash2 size={15} /></Button></div>
-                {prize.entries.length ? <footer>{prize.entries.slice(0, 5).map((entry) => <span key={entry.attendeeId}>{entry.attendeeName} · {entry.ticketCount}</span>)}{prize.entries.length > 5 ? <span>+{prize.entries.length - 5} more</span> : null}</footer> : null}
+                <div className="ep-prize-identity"><div className="ep-prize-image" style={prize.imageUrl ? { backgroundImage: `url(${prize.imageUrl})` } : undefined}>{prize.imageUrl ? null : prize.entryMode === "ALL_GUESTS" ? <Users size={20} /> : <Gift size={20} />}</div><div><strong>{prize.name}</strong><span>{prize.entryMode === "ALL_GUESTS" ? `Guest draw · ${prize.eligibleGuestTotal} registered ${prize.eligibleGuestTotal === 1 ? "guest" : "guests"}` : `${prize.totalTickets} tickets`}{prize.value ? ` · $${Number(prize.value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ""}</span>{prize.description ? <MarkdownContent value={prize.description} /> : null}{prize.winnerName ? <p><b>Winner: {prize.winnerName}</b><span>{prize.acceptanceStatus === "SIGNED" ? `Signed${prize.acceptanceSignerName ? ` by ${prize.acceptanceSignerName}` : ""}${prize.acceptedAt ? ` · ${formatDate(prize.acceptedAt, timeZone)}` : ""}` : prize.acceptanceStatus === "PENDING" ? "Signing link ready" : "Signature not requested"}</span></p> : null}</div></div>
+                <div className="ep-prize-actions"><Button type="button" variant="secondary" onClick={() => openPrizeEditor(prize)}><Pencil size={15} /> Edit</Button>{prize.winnerName ? <>{prize.acceptanceStatus !== "SIGNED" ? <Button type="button" variant="secondary" onClick={() => setPendingPrizeAction({ prize, action: "ACCEPTANCE" })}><Send size={15} /> Signing link</Button> : null}<Button type="button" variant="secondary" onClick={() => setPendingPrizeAction({ prize, action: "CLEAR" })} title="Testing: remove this result and restore winner eligibility"><UserMinus size={15} /> Clear winner</Button><Button type="button" variant="danger" onClick={() => setPendingPrizeAction({ prize, action: "REROLL" })} disabled={prize.entryMode === "TICKETS" ? prize.totalTickets === 0 : prize.eligibleGuestTotal === 0}><RefreshCcw size={15} /> Reroll</Button></> : <Button type="button" onClick={() => setPendingPrizeAction({ prize, action: "DRAW" })} disabled={prize.entryMode === "TICKETS" ? prize.totalTickets === 0 : prize.eligibleGuestTotal === 0}><Shuffle size={15} /> Draw winner</Button>}<Button type="button" variant="ghost" onClick={() => setPendingPrizeAction({ prize, action: "ARCHIVE" })} aria-label={`Remove ${prize.name}`}><Trash2 size={15} /></Button></div>
+                {prize.entryMode === "TICKETS" && prize.entries.length ? <footer>{prize.entries.slice(0, 5).map((entry) => <span key={entry.attendeeId}>{entry.attendeeName} · {entry.ticketCount}</span>)}{prize.entries.length > 5 ? <span>+{prize.entries.length - 5} more</span> : null}</footer> : null}
               </article>)}
             </div>
           </section>
@@ -605,15 +631,16 @@ export function RaffleWorkspace({ eventId, timeZone }: { eventId: string; timeZo
         </section>
       </section> : null}
 
-      <ConfirmDialog open={pendingPrizeAction !== null} onOpenChange={(open) => { if (!open) setPendingPrizeAction(null); }} title={pendingPrizeAction?.action === "ARCHIVE" ? `Remove ${pendingPrizeAction.prize.name}?` : pendingPrizeAction?.action === "DRAW" ? `Draw a winner for ${pendingPrizeAction.prize.name}?` : pendingPrizeAction?.action === "REROLL" ? `Replace ${pendingPrizeAction.prize.winnerName ?? "the current winner"}?` : pendingPrizeAction?.action === "CLEAR" ? `Clear ${pendingPrizeAction.prize.winnerName ?? "the current winner"}?` : `Email ${pendingPrizeAction?.prize.winnerName ?? "the winner"}?`} description={pendingPrizeAction?.action === "ARCHIVE" ? "The prize and its current entries will be removed from this raffle." : pendingPrizeAction?.action === "DRAW" ? "One eligible entry will become the final winner. Confirm the prize pool is ready before continuing." : pendingPrizeAction?.action === "REROLL" ? "The current winner will be overridden and a new final winner will be drawn from eligible entries." : pendingPrizeAction?.action === "CLEAR" ? "This testing action removes the result and any signature data, then makes the attendee eligible to win again." : "A new secure signing link will be created and emailed. Only continue after the winner is final."} confirmLabel={pendingPrizeAction?.action === "ARCHIVE" ? "Remove prize" : pendingPrizeAction?.action === "DRAW" ? "Draw winner" : pendingPrizeAction?.action === "REROLL" ? "Override and reroll" : pendingPrizeAction?.action === "CLEAR" ? "Clear winner" : "Email signing link"} destructive={pendingPrizeAction?.action === "ARCHIVE" || pendingPrizeAction?.action === "REROLL" || pendingPrizeAction?.action === "CLEAR"} onConfirm={() => { if (!pendingPrizeAction) return; if (pendingPrizeAction.action === "ARCHIVE") void archivePrize(pendingPrizeAction.prize.id); if (pendingPrizeAction.action === "DRAW") void drawWinner(pendingPrizeAction.prize); if (pendingPrizeAction.action === "REROLL") void drawWinner(pendingPrizeAction.prize, true); if (pendingPrizeAction.action === "CLEAR") void clearWinner(pendingPrizeAction.prize); if (pendingPrizeAction.action === "ACCEPTANCE") void requestAcceptance(pendingPrizeAction.prize); setPendingPrizeAction(null); }} />
-      <LiquidModal open={Boolean(editingPrize)} onClose={() => !savingPrize && setEditingPrize(null)} label="Prize details" title={editingPrize ? `Edit ${editingPrize.name}` : "Edit prize"} description="Update the prize shown to operators, guests, and paired displays. Existing entries and winner details stay attached." size="sm">
+      <ConfirmDialog open={pendingPrizeAction !== null} onOpenChange={(open) => { if (!open) setPendingPrizeAction(null); }} title={pendingPrizeAction?.action === "ARCHIVE" ? `Remove ${pendingPrizeAction.prize.name}?` : pendingPrizeAction?.action === "DRAW" ? `Draw a winner for ${pendingPrizeAction.prize.name}?` : pendingPrizeAction?.action === "REROLL" ? `Replace ${pendingPrizeAction.prize.winnerName ?? "the current winner"}?` : pendingPrizeAction?.action === "CLEAR" ? `Clear ${pendingPrizeAction.prize.winnerName ?? "the current winner"}?` : `Email ${pendingPrizeAction?.prize.winnerName ?? "the winner"}?`} description={pendingPrizeAction?.action === "ARCHIVE" ? "The prize and its current entries will be removed from this raffle." : pendingPrizeAction?.action === "DRAW" ? pendingPrizeAction.prize.entryMode === "ALL_GUESTS" ? "One registered guest will be selected at random. No tickets are used." : "One eligible ticket entry will become the final winner. Confirm the prize pool is ready." : pendingPrizeAction?.action === "REROLL" ? pendingPrizeAction.prize.entryMode === "ALL_GUESTS" ? "The current winner will be replaced by another eligible registered guest." : "The current winner will be replaced by a new winner from eligible ticket entries." : pendingPrizeAction?.action === "CLEAR" ? "This testing action removes the result and any signature data, then makes the attendee eligible to win again." : "A new secure signing link will be created and emailed. Only continue after the winner is final."} confirmLabel={pendingPrizeAction?.action === "ARCHIVE" ? "Remove prize" : pendingPrizeAction?.action === "DRAW" ? "Draw winner" : pendingPrizeAction?.action === "REROLL" ? "Override and reroll" : pendingPrizeAction?.action === "CLEAR" ? "Clear winner" : "Email signing link"} destructive={pendingPrizeAction?.action === "ARCHIVE" || pendingPrizeAction?.action === "REROLL" || pendingPrizeAction?.action === "CLEAR"} onConfirm={() => { if (!pendingPrizeAction) return; if (pendingPrizeAction.action === "ARCHIVE") void archivePrize(pendingPrizeAction.prize.id); if (pendingPrizeAction.action === "DRAW") void drawWinner(pendingPrizeAction.prize); if (pendingPrizeAction.action === "REROLL") void drawWinner(pendingPrizeAction.prize, true); if (pendingPrizeAction.action === "CLEAR") void clearWinner(pendingPrizeAction.prize); if (pendingPrizeAction.action === "ACCEPTANCE") void requestAcceptance(pendingPrizeAction.prize); setPendingPrizeAction(null); }} />
+      <ConfirmDialog open={pendingPrizeConversion} onOpenChange={setPendingPrizeConversion} title={editingPrize ? `Convert ${editingPrize.name} to ${editPrizeForm.entryMode === "ALL_GUESTS" ? "a guest draw" : "a ticket raffle"}?` : "Convert raffle type?"} description={editPrizeForm.entryMode === "ALL_GUESTS" ? `${editingPrize?.totalTickets ?? 0} assigned ticket${editingPrize?.totalTickets === 1 ? "" : "s"} will be removed and returned to guest balances. The current winner and receipt details will stay attached.` : "This prize will start with an empty ticket pool. The current winner and receipt details will stay attached."} confirmLabel={editPrizeForm.entryMode === "ALL_GUESTS" ? "Convert to guest draw" : "Convert to ticket raffle"} destructive={editPrizeForm.entryMode === "ALL_GUESTS" && Boolean(editingPrize?.totalTickets)} onConfirm={() => void persistPrizeDetails()} />
+      <PreviewSheet open={Boolean(editingPrize)} onOpenChange={(open) => { if (!open && !savingPrize) { setPendingPrizeConversion(false); setEditingPrize(null); } }} title={editingPrize ? `Edit ${editingPrize.name}` : "Edit prize"} description="Update prize details and raffle type. Winner and receipt details stay attached." closeLabel="Close prize editor">
         <form className="grid gap-5" onSubmit={savePrizeDetails}>
           <div className="grid gap-4 sm:grid-cols-[9rem_minmax(0,1fr)] sm:items-start"><div className="flex aspect-[4/3] items-center justify-center rounded-xl bg-primary/10 bg-cover bg-center text-primary shadow-[inset_0_0_0_1px_hsl(var(--border))]" style={editPrizeForm.imageUrl ? { backgroundImage: `url(${editPrizeForm.imageUrl})` } : undefined} aria-label={editPrizeForm.imageUrl ? "Prize photo preview" : "No prize photo"} role="img">{editPrizeForm.imageUrl ? null : <ImagePlus size={28} />}</div><div className="grid gap-3"><label className="grid gap-2 text-sm font-semibold">Prize photo URL<Input value={editPrizeForm.imageUrl} onChange={(event) => setEditPrizeForm((current) => ({ ...current, imageUrl: event.target.value }))} placeholder="https://…" /></label><label className="grid gap-2 text-sm font-semibold">Upload a photo<Input type="file" accept={IMAGE_UPLOAD_ACCEPT} onChange={(event) => void importEditedPrizePhoto(event.target.files?.[0])} /></label>{editPrizeForm.imageUrl ? <Button type="button" variant="ghost" className="justify-self-start" onClick={() => setEditPrizeForm((current) => ({ ...current, imageUrl: "" }))}>Remove photo</Button> : null}</div></div>
-          <div className="grid gap-4"><label className="grid gap-2 text-sm font-semibold">Prize name<Input required minLength={2} maxLength={120} value={editPrizeForm.name} onChange={(event) => setEditPrizeForm((current) => ({ ...current, name: event.target.value }))} /></label><label className="grid gap-2 text-sm font-semibold">Description<RichTextEditor value={editPrizeForm.description} onChange={(description) => setEditPrizeForm((current) => ({ ...current, description }))} placeholder="Optional prize details" maxLength={600} minHeight="min-h-28" /></label><label className="grid gap-2 text-sm font-semibold">Fair-market value<Input required type="number" min="0.01" step="0.01" inputMode="decimal" value={editPrizeForm.value} onChange={(event) => setEditPrizeForm((current) => ({ ...current, value: event.target.value }))} /></label></div>
+          <div className="grid gap-4"><label className="grid gap-2 text-sm font-semibold">Raffle type<OperationSelect value={editPrizeForm.entryMode} onValueChange={(entryMode) => setEditPrizeForm((current) => ({ ...current, entryMode: entryMode as PrizeDetailsForm["entryMode"] }))} label="Raffle type" options={[{ value: "TICKETS", label: "Ticket raffle" }, { value: "ALL_GUESTS", label: "Guest draw — automatic" }]} compact /></label>{editingPrize && editPrizeForm.entryMode !== editingPrize.entryMode ? <p className="-mt-2 rounded-xl border border-border bg-muted/50 p-3 text-xs text-foreground">{editPrizeForm.entryMode === "ALL_GUESTS" ? `${editingPrize.totalTickets} assigned ticket${editingPrize.totalTickets === 1 ? "" : "s"} will be removed and returned to guest balances.` : "This prize will start with an empty ticket pool."} {editingPrize.winnerName ? `The current winner, ${editingPrize.winnerName}, stays attached.` : ""}</p> : <p className="-mt-2 text-xs text-muted-foreground">Guest draws include every registered guest automatically.</p>}<label className="grid gap-2 text-sm font-semibold">Prize name<Input required minLength={2} maxLength={120} value={editPrizeForm.name} onChange={(event) => setEditPrizeForm((current) => ({ ...current, name: event.target.value }))} /></label><label className="grid gap-2 text-sm font-semibold">Description<RichTextEditor value={editPrizeForm.description} onChange={(description) => setEditPrizeForm((current) => ({ ...current, description }))} placeholder="Optional prize details" maxLength={600} minHeight="min-h-28" /></label><label className="grid gap-2 text-sm font-semibold">Fair-market value<Input required type="number" min="0.01" step="0.01" inputMode="decimal" value={editPrizeForm.value} onChange={(event) => setEditPrizeForm((current) => ({ ...current, value: event.target.value }))} /></label></div>
           {editPrizeError ? <p role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{editPrizeError}</p> : null}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button type="button" variant="ghost" onClick={() => setEditingPrize(null)} disabled={savingPrize}>Cancel</Button><Button type="submit" disabled={savingPrize || !editPrizeForm.name.trim() || !editPrizeForm.value} loading={savingPrize} loadingLabel="Saving…"><Save size={16} /> Save changes</Button></div>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><Button type="button" variant="ghost" onClick={() => setEditingPrize(null)} disabled={savingPrize}>Cancel</Button><Button type="submit" disabled={savingPrize || !editPrizeForm.name.trim() || !editPrizeForm.value} loading={savingPrize} loadingLabel="Saving…"><Save size={16} /> {editingPrize && editPrizeForm.entryMode !== editingPrize.entryMode ? "Review conversion" : "Save changes"}</Button></div>
         </form>
-      </LiquidModal>
+      </PreviewSheet>
     </div>
   );
 }

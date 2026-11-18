@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { hashEmployeeNumber, normalizeEmployeeNumber, votingEmployeeIdSchema } from "@/lib/voting";
+import { authorizeApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ ballotId: string; participantId: string }> };
 
 export async function PATCH(request: NextRequest, { params }: Params) {
+  const access = await authorizeApi(request, "voting:manage");
+  if (!access.ok) return access.response;
   const { ballotId, participantId } = await params;
   const parsed = votingEmployeeIdSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
@@ -12,7 +15,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   }
 
   const participant = await prisma.votingParticipant.findFirst({
-    where: { id: participantId, ballotId },
+    where: { id: participantId, ballotId, ballot: { event: { organizationId: access.authorization.organization.id } } },
     select: { id: true, firstName: true, lastName: true }
   });
   if (!participant) return NextResponse.json({ error: "Employee not found." }, { status: 404 });

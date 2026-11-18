@@ -17,7 +17,8 @@ export async function getDefaultOrganization() {
     update: {},
     create: {
       id: "org_default",
-      name: "Northstar Labs"
+      name: "Insight",
+      slug: "insight"
     }
   });
 }
@@ -62,7 +63,6 @@ export function serializeEvent(event: Prisma.EventGetPayload<{ include: typeof e
     organizer: event.organizer,
     contactEmail: event.contactEmail,
     contactPhone: event.contactPhone,
-    passTheme: event.passTheme,
     status: event.status,
     registrationEnabled: event.registrationEnabled,
     qrPassesEnabled: event.qrPassesEnabled,

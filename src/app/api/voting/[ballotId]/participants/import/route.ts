@@ -3,14 +3,17 @@ import { prisma } from "@/lib/db";
 import { normalizeCsvHeader, parseCsv } from "@/lib/csv";
 import { normalizePersonName } from "@/lib/text";
 import { hashEmployeeNumber, normalizeEmployeeNumber } from "@/lib/voting";
+import { authorizeApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ ballotId: string }> };
 
 export async function POST(request: NextRequest, { params }: Params) {
+  const access = await authorizeApi(request, "voting:manage");
+  if (!access.ok) return access.response;
   const { ballotId } = await params;
   const body = await request.json().catch(() => null) as { csv?: string } | null;
   if (!body?.csv || body.csv.length > 2_000_000) return NextResponse.json({ error: "Choose a CSV file under 2 MB." }, { status: 400 });
-  const ballot = await prisma.votingBallot.findUnique({ where: { id: ballotId }, select: { id: true } });
+  const ballot = await prisma.votingBallot.findFirst({ where: { id: ballotId, event: { organizationId: access.authorization.organization.id } }, select: { id: true } });
   if (!ballot) return NextResponse.json({ error: "Ballot not found." }, { status: 404 });
 
   const rows = parseCsv(body.csv);

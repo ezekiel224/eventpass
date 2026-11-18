@@ -8,7 +8,6 @@ import { AttendeeCsvImport } from "@/components/dashboard/attendee-csv-import";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
-import { LiquidModal } from "@/components/ui/liquid-modal";
 import { OperationSelect } from "@/components/ui/operation-select";
 import { PreviewSheet } from "@/components/ui/preview-sheet";
 import { formatTime, initials } from "@/lib/utils";
@@ -374,7 +373,7 @@ export function AttendeesManager({ eventId, initialQuery = "", timeZone }: { eve
       </section>
       {!addingAttendee && message ? <p className="liquid-notice" role="status">{message}</p> : null}
       <AttendeeCsvImport event={selectedEvent} onImported={() => loadData(selectedEventId)} />
-      <LiquidModal open={addingAttendee} onClose={() => setAddingAttendee(false)} title="Add attendee" description={selectedEvent ? `Add to ${selectedEvent.name}.` : "Select an event first."} size="lg">
+      <PreviewSheet open={addingAttendee} onOpenChange={setAddingAttendee} title="Add attendee" description={selectedEvent ? `Add to ${selectedEvent.name}.` : "Select an event first."} closeLabel="Close attendee form">
       <div>
         <form className="mt-5 grid gap-3" onSubmit={addAttendee}>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -461,7 +460,7 @@ export function AttendeesManager({ eventId, initialQuery = "", timeZone }: { eve
           <Button type="submit" disabled={!selectedEvent}><UserPlus className="h-4 w-4" /> Add attendee</Button>
         </form>
       </div>
-      </LiquidModal>
+      </PreviewSheet>
       <section className="ep-roster-panel" aria-labelledby="attendee-directory-title">
         <header className="ep-roster-header">
           <div><h2 id="attendee-directory-title">Attendees</h2></div>

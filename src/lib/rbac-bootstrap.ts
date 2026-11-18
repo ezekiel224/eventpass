@@ -8,7 +8,7 @@ const systemRoles = [
     name: "Admin",
     slug: "admin",
     description: "Full access to every administrative capability.",
-    permissionSlugs: permissionCatalog.map(({ slug }) => slug)
+    permissionSlugs: permissionCatalog.filter((permission) => !("superAdminOnly" in permission && permission.superAdminOnly)).map(({ slug }) => slug)
   },
   {
     name: "Moderator",

@@ -59,7 +59,8 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(100, Math.max(20, Number.parseInt(search.get("limit") ?? "50", 10) || 50));
   const from = search.get("from");
   const to = search.get("to");
-  const branding = await getBranding();
+  const organizationId = access.authorization.organization.id;
+  const branding = await getBranding(organizationId);
   const createdAt: Prisma.DateTimeFilter = {};
   if ((from && !/^\d{4}-\d{2}-\d{2}$/.test(from)) || (to && !/^\d{4}-\d{2}-\d{2}$/.test(to))) {
     return NextResponse.json({ error: "Choose valid audit date boundaries." }, { status: 400 });
@@ -72,6 +73,7 @@ export async function GET(request: NextRequest) {
   }
 
   const where: Prisma.AuditLogWhereInput = {
+    organizationId,
     ...(action ? { action } : {}),
     ...(targetType ? { targetType } : {}),
     ...(Object.keys(createdAt).length ? { createdAt } : {}),
@@ -123,12 +125,12 @@ export async function GET(request: NextRequest) {
   const [logs, total, totalAll, last24Hours, securityEvents, actors, actionRows, targetRows] = await Promise.all([
     prisma.auditLog.findMany({ where, skip: (page - 1) * limit, take: limit, orderBy: { createdAt: "desc" }, include }),
     prisma.auditLog.count({ where }),
-    prisma.auditLog.count(),
-    prisma.auditLog.count({ where: { createdAt: { gte: dayAgo } } }),
-    prisma.auditLog.count({ where: { action: { startsWith: "auth." }, createdAt: { gte: dayAgo } } }),
-    prisma.auditLog.findMany({ select: { actorUserId: true, actorEmail: true, actorName: true, actor: { select: { email: true, name: true } } }, distinct: ["actorUserId", "actorEmail"], take: 500 }),
-    prisma.auditLog.findMany({ select: { action: true }, distinct: ["action"], orderBy: { action: "asc" } }),
-    prisma.auditLog.findMany({ select: { targetType: true }, distinct: ["targetType"], orderBy: { targetType: "asc" } })
+    prisma.auditLog.count({ where: { organizationId } }),
+    prisma.auditLog.count({ where: { organizationId, createdAt: { gte: dayAgo } } }),
+    prisma.auditLog.count({ where: { organizationId, action: { startsWith: "auth." }, createdAt: { gte: dayAgo } } }),
+    prisma.auditLog.findMany({ where: { organizationId }, select: { actorUserId: true, actorEmail: true, actorName: true, actor: { select: { email: true, name: true } } }, distinct: ["actorUserId", "actorEmail"], take: 500 }),
+    prisma.auditLog.findMany({ where: { organizationId }, select: { action: true }, distinct: ["action"], orderBy: { action: "asc" } }),
+    prisma.auditLog.findMany({ where: { organizationId }, select: { targetType: true }, distinct: ["targetType"], orderBy: { targetType: "asc" } })
   ]);
 
   const actorOptions = actors

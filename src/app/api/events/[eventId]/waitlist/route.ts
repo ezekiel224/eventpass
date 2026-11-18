@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auditLogData } from "@/lib/audit";
-import { authorizeApi } from "@/lib/authorization";
+import { authorizeEventApi } from "@/lib/authorization";
 import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
 import { attendeeInclude, createPassForAttendee, serializeAttendee } from "@/lib/prisma-helpers";
@@ -8,9 +8,9 @@ import { getPublicAppBaseUrl } from "@/lib/public-url";
 import { renderActionEmail, sendEmail } from "@/services/email";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ eventId: string }> }) {
-  const access = await authorizeApi(request, "attendees:manage");
-  if (!access.ok) return access.response;
   const { eventId } = await params;
+  const access = await authorizeEventApi(request, eventId, "attendees:manage");
+  if (!access.ok) return access.response;
   const [event, attendees] = await Promise.all([
     prisma.event.findUnique({ where: { id: eventId }, select: { id: true, name: true, capacity: true } }),
     prisma.attendee.findMany({ where: { eventId, status: "WAITLIST" }, orderBy: { createdAt: "asc" }, include: attendeeInclude })
@@ -21,9 +21,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ eventId: string }> }) {
-  const access = await authorizeApi(request, "attendees:manage");
-  if (!access.ok) return access.response;
   const { eventId } = await params;
+  const access = await authorizeEventApi(request, eventId, "attendees:manage");
+  if (!access.ok) return access.response;
   const body = await request.json().catch(() => null) as { attendeeId?: string; action?: string } | null;
   if (!body?.attendeeId || !["PROMOTE", "REMOVE"].includes(body.action ?? "")) return NextResponse.json({ error: "Choose a valid waitlist action." }, { status: 400 });
   const attendee = await prisma.attendee.findFirst({ where: { id: body.attendeeId, eventId, status: "WAITLIST" }, include: { event: true } });
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (body.action === "REMOVE") {
     await prisma.$transaction(async (transaction) => {
       await transaction.attendee.update({ where: { id: attendee.id }, data: { status: "CANCELLED" } });
-      await transaction.auditLog.create({ data: auditLogData({ request, actorUserId: access.authorization.user.id, actor: access.authorization.user, action: "waitlist.removed", targetType: "Attendee", targetId: attendee.id, metadata: { eventId, attendeeEmail: attendee.email } }) });
+      await transaction.auditLog.create({ data: auditLogData({ request, actorUserId: access.authorization.user.id, actor: access.authorization.user, organizationId: access.authorization.organization.id, action: "waitlist.removed", targetType: "Attendee", targetId: attendee.id, metadata: { eventId, attendeeEmail: attendee.email } }) });
     });
     return NextResponse.json({ ok: true });
   }
@@ -43,12 +43,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   await prisma.$transaction(async (transaction) => {
     await transaction.attendee.update({ where: { id: attendee.id }, data: { status: "REGISTERED" } });
-    await transaction.auditLog.create({ data: auditLogData({ request, actorUserId: access.authorization.user.id, actor: access.authorization.user, action: "waitlist.promoted", targetType: "Attendee", targetId: attendee.id, metadata: { eventId, eventName: attendee.event.name, attendeeEmail: attendee.email } }) });
+    await transaction.auditLog.create({ data: auditLogData({ request, actorUserId: access.authorization.user.id, actor: access.authorization.user, organizationId: access.authorization.organization.id, action: "waitlist.promoted", targetType: "Attendee", targetId: attendee.id, metadata: { eventId, eventName: attendee.event.name, attendeeEmail: attendee.email } }) });
   });
   const pass = await createPassForAttendee(attendee.id, eventId);
   let emailStatus = "QUEUED";
   {
-    const branding = await getBranding();
+    const branding = await getBranding(access.authorization.organization.id);
     const appBaseUrl = getPublicAppBaseUrl(request);
     const passUrl = `${appBaseUrl}/pass/${encodeURIComponent(attendee.id)}`;
     try {

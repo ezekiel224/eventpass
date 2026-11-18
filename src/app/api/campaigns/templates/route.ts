@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { communicationTemplateDefinitions, eventCommunicationTemplateKey, getCommunicationTemplate, isCommunicationTemplateKey, unsupportedTemplateVariables } from "@/lib/communication-templates";
 import { prisma } from "@/lib/db";
-import { getDefaultOrganization } from "@/lib/prisma-helpers";
 import { authorizeApi } from "@/lib/authorization";
 import { auditLogData } from "@/lib/audit";
 
@@ -19,8 +18,8 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const access = await authorizeApi(request, "settings:manage");
   if (!access.ok) return access.response;
-  const organization = await getDefaultOrganization();
-  const events = await prisma.event.findMany({ where: { status: { not: "ARCHIVED" } }, orderBy: { startsAt: "asc" }, select: { id: true, name: true } });
+  const organization = access.authorization.organization;
+  const events = await prisma.event.findMany({ where: { organizationId: organization.id, status: { not: "ARCHIVED" } }, orderBy: { startsAt: "asc" }, select: { id: true, name: true } });
   const registrationTemplates = await Promise.all(events.map(async (event) => ({
     ...await getCommunicationTemplate(organization.id, "PASS_CONFIRMATION", event.id),
     eventId: event.id,
@@ -41,7 +40,7 @@ export async function PATCH(request: NextRequest) {
   const unsupported = unsupportedTemplateVariables(parsed.data.key, parsed.data.subject, parsed.data.body, parsed.data.actionLabel);
   if (unsupported.length) return NextResponse.json({ error: `Unsupported variable${unsupported.length === 1 ? "" : "s"}: ${unsupported.map((variable) => `{{${variable}}}`).join(", ")}` }, { status: 400 });
 
-  const organization = await getDefaultOrganization();
+  const organization = access.authorization.organization;
   if (parsed.data.eventId) {
     const event = await prisma.event.findFirst({ where: { id: parsed.data.eventId, organizationId: organization.id }, select: { id: true } });
     if (!event) return NextResponse.json({ error: "Event not found." }, { status: 404 });
@@ -53,8 +52,8 @@ export async function PATCH(request: NextRequest) {
       update: { subject: parsed.data.subject, body: parsed.data.body, actionLabel: parsed.data.actionLabel },
       create: { organizationId: organization.id, key: storageKey, subject: parsed.data.subject, body: parsed.data.body, actionLabel: parsed.data.actionLabel }
     });
-    await transaction.auditLog.create({ data: auditLogData({ request, actorUserId: access.authorization.user.id, actor: access.authorization.user, action: "campaign.template.updated", targetType: "CommunicationTemplate", targetId: storageKey, metadata: { key: parsed.data.key, eventId: parsed.data.eventId ?? null } }) });
+    await transaction.auditLog.create({ data: auditLogData({ request, actorUserId: access.authorization.user.id, actor: access.authorization.user, organizationId: organization.id, action: "campaign.template.updated", targetType: "CommunicationTemplate", targetId: storageKey, metadata: { key: parsed.data.key, eventId: parsed.data.eventId ?? null } }) });
   });
   const definition = communicationTemplateDefinitions[parsed.data.key];
-  return NextResponse.json({ template: { ...await getCommunicationTemplate(organization.id, parsed.data.key, parsed.data.eventId ?? undefined), eventId: parsed.data.eventId ?? null, eventName: parsed.data.eventId ? (await prisma.event.findUnique({ where: { id: parsed.data.eventId }, select: { name: true } }))?.name ?? "Event" : "All events", variables: definition.variables } });
+  return NextResponse.json({ template: { ...await getCommunicationTemplate(organization.id, parsed.data.key, parsed.data.eventId ?? undefined), eventId: parsed.data.eventId ?? null, eventName: parsed.data.eventId ? (await prisma.event.findFirst({ where: { id: parsed.data.eventId, organizationId: organization.id }, select: { name: true } }))?.name ?? "Event" : "All events", variables: definition.variables } });
 }

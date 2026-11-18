@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseStringArray } from "@/lib/prisma-helpers";
 import { parseRegistrationFields } from "@/lib/registration-fields";
+import { authorizeEventApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ eventId: string }> };
 
@@ -11,8 +12,10 @@ function csvCell(value: unknown) {
   return `"${String(value ?? "").replaceAll('"', '""')}"`;
 }
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
   const { eventId } = await params;
+  const access = await authorizeEventApi(request, eventId, "attendees:manage");
+  if (!access.ok) return access.response;
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     include: {

@@ -3,9 +3,9 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Check, Copy, KeyRound, RefreshCw, Save, ShieldCheck, Trash2, UserPlus, Users } from "lucide-react";
 import { Checkbox, Label } from "tamagui";
+import { AlertDialogPanel } from "@/components/ui/alert-dialog-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LiquidModal } from "@/components/ui/liquid-modal";
 import { OperationSelect } from "@/components/ui/operation-select";
 import { PreviewSheet } from "@/components/ui/preview-sheet";
 import { useCsrfToken } from "@/hooks/useCsrfToken";
@@ -19,6 +19,7 @@ type User = {
   email: string;
   username: string | null;
   name: string | null;
+  isSuperAdmin: boolean;
   active: boolean;
   mustChangePassword: boolean;
   createdAt: string;
@@ -33,7 +34,7 @@ function generatedPassword() {
   return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("") + symbols[bytes[0] % symbols.length] + "aA1";
 }
 
-export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentUserId: string; canDeleteAccounts: boolean }) {
+export function AccountsManager({ currentUserId, canDeleteAccounts, canManageSuperAdmins }: { currentUserId: string; canDeleteAccounts: boolean; canManageSuperAdmins: boolean }) {
   const csrf = useCsrfToken();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -48,6 +49,7 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editRoleIds, setEditRoleIds] = useState<string[]>([]);
   const [editActive, setEditActive] = useState(true);
+  const [editIsSuperAdmin, setEditIsSuperAdmin] = useState(false);
   const [editOverrides, setEditOverrides] = useState<Record<string, "inherit" | "allow" | "deny">>({});
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
@@ -112,9 +114,11 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
       if (response.status === 403) await csrf.refresh();
       return;
     }
-    setTemporaryPassword(data.temporaryPassword ?? suppliedPassword);
+    setTemporaryPassword(data.linkedExisting ? "" : data.temporaryPassword ?? suppliedPassword);
     setTemporaryPasswordAccount(data.user.email);
-    setMessage(`Account created for ${data.user.email}. Copy the temporary password now; it will not be shown again.`);
+    setMessage(data.linkedExisting
+      ? `${data.user.email} was added to this client.`
+      : `Account created for ${data.user.email}. Copy the temporary password now; it will not be shown again.`);
     event.currentTarget.reset();
     await load();
   }
@@ -123,6 +127,7 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
     setEditingUser(user);
     setEditRoleIds(user.roles.map((role) => role.id));
     setEditActive(user.active);
+    setEditIsSuperAdmin(user.isSuperAdmin);
     setEditOverrides(Object.fromEntries(user.overrides.map((override) => [
       override.permissionId,
       override.allowed ? "allow" : "deny"
@@ -145,6 +150,7 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
         userId: editingUser.id,
         roleIds: editRoleIds,
         active: editActive,
+        ...(canManageSuperAdmins ? { isSuperAdmin: editIsSuperAdmin } : {}),
         overrides
       })
     });
@@ -177,7 +183,9 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
       if (response.status === 403) await csrf.refresh();
       return;
     }
-    setMessage(`Account ${data.deletedEmail} was permanently deleted. Its audit history was retained.`);
+    setMessage(data.removedFromClient
+      ? `${data.deletedEmail} was removed from this client.`
+      : `Account ${data.deletedEmail} was permanently deleted. Its audit history was retained.`);
     setDeletingUser(null);
     setDeleteConfirmation("");
     await load();
@@ -280,10 +288,10 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
               {!loading && users.map((user) => (
                 <tr key={user.id}>
                   <td><b>{user.name ?? user.username ?? user.email}</b><span>{user.email}</span></td>
-                  <td>{user.roles.map((role) => role.name).join(", ") || "No role"}</td>
+                  <td>{user.isSuperAdmin ? "Super Admin" : user.roles.map((role) => role.name).join(", ") || "No role"}</td>
                   <td><span className="ep-admin-status" data-status={user.active ? "ready" : "disabled"}>{user.active ? "Active" : "Disabled"}</span></td>
                   <td>{user.mustChangePassword ? "Reset required" : "Complete"}</td>
-                  <td><Button type="button" variant="secondary" disabled={user.id === currentUserId} onClick={() => startEdit(user)}><ShieldCheck className="h-4 w-4" /> Edit access</Button></td>
+                  <td><Button type="button" variant="secondary" disabled={user.id === currentUserId || (user.isSuperAdmin && !canManageSuperAdmins)} onClick={() => startEdit(user)}><ShieldCheck className="h-4 w-4" /> Edit access</Button></td>
                 </tr>
               ))}
             </tbody>
@@ -301,6 +309,7 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
               </div>
             </section>
             <section className="ep-account-status-row" aria-labelledby="account-status-heading"><div><h3 id="account-status-heading">Account status</h3><p>Disabled accounts cannot sign in or use existing sessions.</p></div><div className="ep-account-active-control"><Checkbox id="edit-account-active" size="sm" checked={editActive} onCheckedChange={(checked) => setEditActive(checked === true)}><Checkbox.Indicator><Check size={13} /></Checkbox.Indicator></Checkbox><Label htmlFor="edit-account-active">Active</Label></div></section>
+            {canManageSuperAdmins ? <section className="ep-account-status-row" aria-labelledby="platform-access-heading"><div><h3 id="platform-access-heading">Platform access</h3><p>Super Admins can open every client and create new client workspaces.</p></div><div className="ep-account-active-control"><Checkbox id="edit-super-admin" size="sm" checked={editIsSuperAdmin} onCheckedChange={(checked) => setEditIsSuperAdmin(checked === true)}><Checkbox.Indicator><Check size={13} /></Checkbox.Indicator></Checkbox><Label htmlFor="edit-super-admin">Super Admin</Label></div></section> : null}
             <section className="ep-account-editor-section" aria-labelledby="permission-override-heading">
               <div className="ep-account-editor-heading"><h3 id="permission-override-heading">Direct permission overrides</h3><p>Use sparingly. A direct choice wins over every assigned role.</p></div>
               <div className="ep-account-permission-grid">
@@ -317,7 +326,7 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
               <Button type="button" variant="secondary" disabled={saving || !csrf.token || editingUser.id === currentUserId} loading={saving} loadingLabel="Resetting password…" onClick={() => void resetPassword()}><KeyRound className="h-4 w-4" /> Reset password</Button>
             </section>
             {canDeleteAccounts ? <section className="ep-account-danger-zone">
-              <div><h3>Permanent account deletion</h3><p>Deletes credentials, role assignments, and permission overrides. Historical audit evidence remains.</p></div>
+              <div><h3>Remove account</h3><p>Removes this client’s access. If the account has no other clients, its credentials are deleted. Audit history remains.</p></div>
               <Button type="button" variant="danger" onClick={() => { setError(""); setDeletingUser(editingUser); setDeleteConfirmation(""); setEditingUser(null); }}><Trash2 className="h-4 w-4" /> Delete account</Button>
             </section> : null}
             <div className="ep-account-editor-actions">
@@ -328,7 +337,7 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
         ) : null}
       </PreviewSheet>
 
-      <LiquidModal open={Boolean(deletingUser)} onClose={() => { if (!saving) { setDeletingUser(null); setDeleteConfirmation(""); setError(""); } }} title="Delete this account permanently?" description="This security-sensitive action cannot be undone. Event and audit records are retained, but this person will no longer be able to sign in." size="sm" label={null}>
+      <AlertDialogPanel open={Boolean(deletingUser)} onOpenChange={(open) => { if (!open && !saving) { setDeletingUser(null); setDeleteConfirmation(""); setError(""); } }} title="Remove this account?" description="Access to this client will be removed. Accounts without another client are deleted; audit records remain.">
         {deletingUser ? (
           <div className="grid gap-5">
             <div className="rounded-[14px] border border-border/80 bg-background/70 p-4 text-sm">
@@ -340,11 +349,11 @@ export function AccountsManager({ currentUserId, canDeleteAccounts }: { currentU
             <p className="text-xs leading-5 text-muted-foreground">You cannot delete your own account or the final active administrator. Deletions appear in the audit log.</p>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="secondary" disabled={saving} onClick={() => { setDeletingUser(null); setDeleteConfirmation(""); }}>Cancel</Button>
-              <Button type="button" variant="danger" disabled={deleteConfirmation.trim().toLowerCase() !== deletingUser.email.toLowerCase()} loading={saving} loadingLabel="Deleting account…" onClick={() => void deleteAccount()}><Trash2 className="h-4 w-4" /> Delete permanently</Button>
+              <Button type="button" variant="danger" disabled={deleteConfirmation.trim().toLowerCase() !== deletingUser.email.toLowerCase()} loading={saving} loadingLabel="Removing account…" onClick={() => void deleteAccount()}><Trash2 className="h-4 w-4" /> Remove access</Button>
             </div>
           </div>
         ) : null}
-      </LiquidModal>
+      </AlertDialogPanel>
     </div>
   );
 }

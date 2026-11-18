@@ -18,7 +18,7 @@ export async function sendEmail(message: EmailMessage) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        from: message.from ?? process.env.EMAIL_FROM ?? "EventPass <passes@example.com>",
+        from: message.from ?? process.env.EMAIL_FROM ?? "Praxis <passes@example.com>",
         to: [message.to],
         subject: message.subject,
         html: message.html
@@ -100,7 +100,7 @@ export function renderPassEmail({
   fallbackCode,
   messageHtml,
   actionLabel = "Open digital pass",
-  organizationName = "EventPass",
+  organizationName = "Praxis",
   primaryColor = SYSTEM_ACCENT_COLOR
 }: {
   name: string;

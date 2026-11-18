@@ -6,6 +6,8 @@ import { getCurrentUser, setSessionCookie } from "@/lib/auth";
 import { validateCsrf } from "@/lib/csrf";
 import { prisma } from "@/lib/db";
 import { rateLimit } from "@/services/rate-limit";
+import { getAuthorizationForUser } from "@/lib/authorization";
+import { CLIENT_COOKIE } from "@/lib/client-context";
 
 export async function POST(request: NextRequest) {
   const csrfFailure = validateCsrf(request);
@@ -30,6 +32,7 @@ export async function POST(request: NextRequest) {
   }
 
   const passwordHash = await hash(parsed.data.newPassword, 12);
+  const authorization = await getAuthorizationForUser(user.id, request.cookies.get(CLIENT_COOKIE)?.value);
   const updated = await prisma.$transaction(async (transaction) => {
     const nextUser = await transaction.user.update({
       where: { id: user.id },
@@ -43,6 +46,7 @@ export async function POST(request: NextRequest) {
       data: auditLogData({
         request,
         actorUserId: user.id,
+        organizationId: authorization?.organization.id,
         action: "auth.password_changed",
         targetType: "User",
         targetId: user.id

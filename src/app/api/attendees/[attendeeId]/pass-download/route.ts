@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
 import { formatDate, formatTime } from "@/lib/utils";
 import { createQrDataUrl } from "@/services/qr";
+import { authorizeAttendeeApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ attendeeId: string }> };
 
@@ -21,8 +22,10 @@ function slugify(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "event-pass";
 }
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
   const { attendeeId } = await params;
+  const access = await authorizeAttendeeApi(request, attendeeId, "passes:manage");
+  if (!access.ok) return access.response;
   const attendee = await prisma.attendee.findUnique({
     where: { id: attendeeId },
     include: { event: true, pass: true }
@@ -31,7 +34,7 @@ export async function GET(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Pass not found" }, { status: 404 });
   }
 
-  const branding = await getBranding();
+  const branding = await getBranding(access.authorization.organization.id);
   const name = `${attendee.firstName} ${attendee.lastName}`;
   const qrDataUrl = await createQrDataUrl(JSON.parse(attendee.pass.qrPayload));
   const eventTime = `${formatTime(attendee.event.startsAt, branding.timezone)} - ${formatTime(attendee.event.endsAt, branding.timezone)}`;

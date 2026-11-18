@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { hasTrustedRequestOrigin } from "@/lib/csrf";
 import { permissionForRequest } from "@/lib/permissions";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
+import { CLIENT_COOKIE } from "@/lib/client-context";
 
 const PUBLIC_API_PATHS = ["/api/auth/login", "/api/auth/logout", "/api/auth/setup", "/api/register", "/api/health", "/api/auth/csrf"];
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
@@ -18,10 +19,11 @@ export async function proxy(request: NextRequest) {
   const isPublicPassCalendar = /^\/api\/attendees\/[^/]+\/calendar$/.test(pathname);
   const isPublicPassDownload = /^\/api\/attendees\/[^/]+\/pass-download$/.test(pathname);
   const isPublicPassQr = /^\/api\/pass\/[^/]+\/qr$/.test(pathname);
+  const isPublicPassLive = /^\/api\/pass\/[^/]+\/raffle-tickets$/.test(pathname);
   const isPublicPrizeAcceptance = /^\/api\/prize-acceptance\/[^/]+$/.test(pathname);
   const isPublicRaffleDisplay = pathname === "/api/raffle-display/pair" || pathname === "/api/raffle-display/session";
   const isPublicVoting = pathname.startsWith("/api/public/voting/");
-  const isPublicApi = isPublicPassCalendar || isPublicPassDownload || isPublicPassQr || isPublicPrizeAcceptance || isPublicRaffleDisplay || isPublicVoting || PUBLIC_API_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  const isPublicApi = isPublicPassCalendar || isPublicPassDownload || isPublicPassQr || isPublicPassLive || isPublicPrizeAcceptance || isPublicRaffleDisplay || isPublicVoting || PUBLIC_API_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
   const requiresAuth = pathname.startsWith("/dashboard")
     || pathname.startsWith("/admin")
     || pathname === "/scan"
@@ -44,7 +46,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const authorization = await getAuthorizationForUser(session.userId);
+  const authorization = await getAuthorizationForUser(session.userId, request.cookies.get(CLIENT_COOKIE)?.value);
   if (!authorization) {
     if (pathname.startsWith("/api")) {
       return NextResponse.json({ error: "Account disabled or unavailable" }, { status: 403 });
@@ -87,6 +89,7 @@ export async function proxy(request: NextRequest) {
         request,
         actorUserId: authorization.user.id,
         actor: authorization.user,
+        organizationId: authorization.organization.id,
         action,
         targetType: pathname.startsWith("/api") ? "API route" : "Page",
         targetId: pathname,

@@ -3,5 +3,23 @@
   max-width: 460px !important;
   padding: 20px !important;
   gap: 16px !important;
-  box-shadow: 0 24px 64px rgb(15 23 42 / 24%) !important;
+  box-shadow: 0 24px 64px rgb(2 14 9 / 24%) !important;
+}
+
+.ep-alert-dialog-heading,
+.ep-alert-dialog-body {
+  display: grid;
+  gap: 12px;
+}
+
+.ep-alert-dialog-body {
+  color: var(--color);
+}
+
+.ep-alert-dialog-body .text-foreground {
+  color: var(--color);
+}
+
+.ep-alert-dialog-body .text-muted-foreground {
+  color: var(--color-10);
 }

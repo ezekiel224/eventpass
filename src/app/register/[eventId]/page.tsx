@@ -13,14 +13,12 @@ export const dynamic = "force-dynamic";
 
 export default async function RegisterPage({ params }: { params: Promise<{ eventId: string }> }) {
   const { eventId } = await params;
-  const [event, branding] = await Promise.all([
-    prisma.event.findUnique({ where: { id: eventId }, include: { _count: { select: { attendees: { where: { status: "REGISTERED" } } } } } }),
-    getBranding()
-  ]);
+  const event = await prisma.event.findUnique({ where: { id: eventId }, include: { _count: { select: { attendees: { where: { status: "REGISTERED" } } } } } });
 
   if (!event || event.status === "ARCHIVED") {
     notFound();
   }
+  const branding = await getBranding(event.organizationId);
   const deadlinePassed = Boolean(event.registrationDeadline && event.registrationDeadline < new Date());
   const atCapacity = event._count.attendees >= event.capacity;
   const registrationOpen = event.status === "PUBLISHED" && event.registrationEnabled && !deadlinePassed && (!atCapacity || event.waitlistEnabled);

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
   if (!access.ok) return access.response;
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid station details" }, { status: 400 });
-  const event = await prisma.event.findUnique({ where: { id: parsed.data.eventId }, select: { id: true } });
+  const event = await prisma.event.findFirst({ where: { id: parsed.data.eventId, organizationId: access.authorization.organization.id }, select: { id: true } });
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
   const station = await prisma.checkInStation.upsert({
     where: { eventId_deviceKey: { eventId: parsed.data.eventId, deviceKey: parsed.data.deviceKey } },

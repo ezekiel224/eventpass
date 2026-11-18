@@ -60,7 +60,7 @@ export async function issuePrizeAcceptance(
   if (emailWinner && attendee.email) {
     let subject = `Signature required for your ${prize.name} prize`;
     try {
-      const branding = await getBranding();
+      const branding = await getBranding(prize.event.organizationId);
       const template = await getCommunicationTemplate(prize.event.organizationId, "PRIZE_ACCEPTANCE");
       const rendered = renderCommunicationTemplate(template, {
         name: `${attendee.firstName} ${attendee.lastName}`,

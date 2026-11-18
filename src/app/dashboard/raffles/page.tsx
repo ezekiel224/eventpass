@@ -4,10 +4,11 @@ import { RaffleWorkspace } from "@/components/dashboard/raffle-workspace";
 import { MonitorCog, MonitorUp, ScanLine } from "lucide-react";
 import { getBranding } from "@/lib/branding";
 import { DashboardActions, DashboardLinkButton } from "@/components/dashboard/dashboard-surface";
+import { requirePermission } from "@/lib/authorization";
 
 export default async function RafflesPage({ searchParams }: { searchParams: Promise<{ eventId?: string }> }) {
-  const { eventId } = await searchParams;
-  const branding = await getBranding();
+  const [{ eventId }, authorization] = await Promise.all([searchParams, requirePermission("raffles:manage")]);
+  const branding = await getBranding(authorization.organization.id);
   return (
     <AppShell active="Raffles">
       <PageTitle title="Raffles" />

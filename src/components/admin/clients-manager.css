@@ -1,0 +1,30 @@
+.ep-client-actions { display: flex; align-items: center; gap: 8px; }
+.ep-client-table { min-width: 760px; }
+.ep-client-table th:last-child,
+.ep-client-table td:last-child { text-align: right; }
+.ep-client-table .ep-admin-status { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; }
+.ep-client-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.ep-client-create-form { width: min(680px, 100%); display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin: 0 auto; padding: 8px 0 40px; }
+.ep-client-create-form label { display: grid; gap: 7px; color: var(--color); font-size: 11px; font-weight: 750; }
+.ep-client-create-form label:first-child,
+.ep-client-create-note,
+.ep-client-create-form footer { grid-column: 1 / -1; }
+.ep-client-create-note { display: grid; gap: 4px; padding: 14px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--background-hover); }
+.ep-client-create-note b { font-size: 14px; }
+.ep-client-create-note span { color: var(--color-8); font-size: 14px; line-height: 21px; }
+.ep-client-create-form footer { display: flex; justify-content: flex-end; padding-top: 4px; }
+.ep-client-delete-dialog { display: grid; gap: 18px; }
+.ep-client-delete-dialog > p { margin: 0; color: var(--color-10); font-size: 14px; line-height: 21px; }
+.ep-client-delete-summary { display: grid; gap: 4px; padding: 14px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--background-hover); }
+.ep-client-delete-summary strong { color: var(--color); font-size: 14px; overflow-wrap: anywhere; }
+.ep-client-delete-summary span { color: var(--color-10); font-size: 14px; }
+.ep-client-delete-dialog label { display: grid; gap: 8px; color: var(--color); font-size: 14px; }
+.ep-client-delete-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+@media (max-width: 620px) {
+  .ep-client-actions { align-items: stretch; flex-direction: column-reverse; }
+  .ep-client-create-form { grid-template-columns: 1fr; }
+  .ep-client-create-form label { grid-column: 1; }
+  .ep-client-row-actions { align-items: stretch; flex-direction: column; }
+  .ep-client-delete-actions { align-items: stretch; flex-direction: column-reverse; }
+}

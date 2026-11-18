@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
+import { authorizeEventApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ eventId: string }> };
 
@@ -14,6 +15,8 @@ const entrySchema = z.object({
 
 export async function PUT(request: NextRequest, { params }: Params) {
   const { eventId } = await params;
+  const access = await authorizeEventApi(request, eventId, "raffles:manage");
+  if (!access.ok) return access.response;
   const parsed = entrySchema.safeParse(await request.json());
 
   if (!parsed.success) {
@@ -45,6 +48,10 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
   if (!prize) {
     return NextResponse.json({ error: "Prize not found" }, { status: 404 });
+  }
+
+  if (prize.entryMode !== "TICKETS") {
+    return NextResponse.json({ error: "Guest draws do not accept ticket entries." }, { status: 400 });
   }
 
   const assignedElsewhere = attendee.raffleEntries

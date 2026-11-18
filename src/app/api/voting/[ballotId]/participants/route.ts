@@ -2,12 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { foldForSearch } from "@/lib/text";
 import { hashEmployeeNumber, normalizeEmployeeNumber, votingParticipantSchema } from "@/lib/voting";
+import { authorizeApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ ballotId: string }> };
 
 export async function GET(request: NextRequest, { params }: Params) {
+  const access = await authorizeApi(request, "voting:manage");
+  if (!access.ok) return access.response;
   const { ballotId } = await params;
-  const ballot = await prisma.votingBallot.findUnique({ where: { id: ballotId }, select: { id: true } });
+  const ballot = await prisma.votingBallot.findFirst({ where: { id: ballotId, event: { organizationId: access.authorization.organization.id } }, select: { id: true } });
   if (!ballot) return NextResponse.json({ error: "Ballot not found." }, { status: 404 });
 
   const query = foldForSearch(request.nextUrl.searchParams.get("search") ?? "");
@@ -26,13 +29,15 @@ export async function GET(request: NextRequest, { params }: Params) {
 }
 
 export async function POST(request: NextRequest, { params }: Params) {
+  const access = await authorizeApi(request, "voting:manage");
+  if (!access.ok) return access.response;
   const { ballotId } = await params;
   const parsed = votingParticipantSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Review the employee details." }, { status: 400 });
   }
 
-  const ballot = await prisma.votingBallot.findUnique({ where: { id: ballotId }, select: { id: true } });
+  const ballot = await prisma.votingBallot.findFirst({ where: { id: ballotId, event: { organizationId: access.authorization.organization.id } }, select: { id: true } });
   if (!ballot) return NextResponse.json({ error: "Ballot not found." }, { status: 404 });
 
   const employeeNumberHash = hashEmployeeNumber(normalizeEmployeeNumber(parsed.data.employeeNumber));

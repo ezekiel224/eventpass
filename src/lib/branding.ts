@@ -1,6 +1,7 @@
 import { getDefaultOrganization } from "@/lib/prisma-helpers";
 import { cache } from "react";
 import { isValidTimeZone } from "@/lib/utils";
+import { prisma } from "@/lib/db";
 
 export const SYSTEM_ACCENT_COLOR = "#0FC56A";
 
@@ -13,16 +14,18 @@ export type Branding = {
 };
 
 const fallbackBranding: Branding = {
-  name: "EventPass",
+  name: "Praxis",
   logoUrl: null,
   primaryColor: SYSTEM_ACCENT_COLOR,
   accentColor: SYSTEM_ACCENT_COLOR,
   timezone: "America/Chicago"
 };
 
-export const getBranding = cache(async (): Promise<Branding> => {
+export const getBranding = cache(async (organizationId?: string): Promise<Branding> => {
   try {
-    const organization = await getDefaultOrganization();
+    const organization = organizationId
+      ? await prisma.organization.findUniqueOrThrow({ where: { id: organizationId } })
+      : await getDefaultOrganization();
 
     return {
       name: organization.name,

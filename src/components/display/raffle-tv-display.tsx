@@ -12,6 +12,8 @@ type Prize = {
   description: string | null;
   value: string | null;
   imageUrl: string | null;
+  entryMode: "TICKETS" | "ALL_GUESTS";
+  eligibleGuestTotal: number;
   totalTickets: number;
   entrantCount: number;
   winnerName: string | null;
@@ -34,7 +36,7 @@ type DisplaySession = {
   coordination: { slotIndex: number; displayCount: number };
   content: {
     event: { id: string; name: string; venue: string; startsAt: string; logoUrl: string | null };
-    stats: { prizeCount: number; totalPrizeTickets: number };
+    stats: { prizeCount: number; totalPrizeTickets: number; guestDrawCount: number };
     latestDraw: { id: string; prizeId: string; prizeName: string; winnerName: string; drawnAt: string } | null;
     prizes: Prize[];
   };
@@ -59,6 +61,14 @@ function formatValue(value: string | null) {
   return Number.isFinite(amount)
     ? amount.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 })
     : value;
+}
+
+function entryCount(prize: Prize) {
+  return prize.entryMode === "ALL_GUESTS" ? prize.eligibleGuestTotal : prize.totalTickets;
+}
+
+function entryLabel(prize: Prize) {
+  return prize.entryMode === "ALL_GUESTS" ? "Registered guests" : "Tickets entered";
 }
 
 function PrizeArtwork({ prize, className = "" }: { prize: Prize; className?: string }) {
@@ -86,9 +96,9 @@ function WallScene({ prizes, pageStart, total }: { prizes: Prize[]; pageStart: n
             <div className="flex items-end justify-between gap-4 border-t border-foreground/10 pt-[1.2vmin]">
               <div>
                 {formatValue(prize.value) ? <p className="text-[clamp(.85rem,1.55vmin,1.35rem)] font-semibold text-muted-foreground">{formatValue(prize.value)}</p> : null}
-                <p className="mt-1 text-[clamp(.7rem,1.2vmin,1rem)] uppercase tracking-[0.16em] text-muted-foreground">Tickets entered</p>
+                <p className="mt-1 text-[clamp(.7rem,1.2vmin,1rem)] uppercase tracking-[0.16em] text-muted-foreground">{entryLabel(prize)}</p>
               </div>
-              <motion.p key={prize.totalTickets} initial={{ y: -8, opacity: 0.4 }} animate={{ y: 0, opacity: 1 }} className="text-[clamp(3.2rem,8.8vmin,8rem)] font-semibold leading-[0.74] tabular-nums text-primary">{prize.totalTickets}</motion.p>
+              <motion.p key={entryCount(prize)} initial={{ y: -8, opacity: 0.4 }} animate={{ y: 0, opacity: 1 }} className="text-[clamp(3.2rem,8.8vmin,8rem)] font-semibold leading-[0.74] tabular-nums text-primary">{entryCount(prize)}</motion.p>
             </div>
           </div>
         </article>
@@ -114,8 +124,8 @@ function SpotlightScene({ prize, position, total }: { prize?: Prize; position: n
             <p className="mt-1 text-[clamp(.75rem,1.3vmin,1.1rem)] uppercase tracking-[0.2em] text-muted-foreground">Prize value</p>
           </div>
           <div className="text-right">
-            <motion.p key={prize.totalTickets} initial={{ scale: 1.08 }} animate={{ scale: 1 }} className="text-[clamp(4.5rem,14vmin,13rem)] font-semibold leading-[0.7] tabular-nums text-primary">{prize.totalTickets}</motion.p>
-            <p className="mt-[1.5vmin] text-[clamp(.9rem,1.8vmin,1.6rem)] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Tickets entered</p>
+            <motion.p key={entryCount(prize)} initial={{ scale: 1.08 }} animate={{ scale: 1 }} className="text-[clamp(4.5rem,14vmin,13rem)] font-semibold leading-[0.7] tabular-nums text-primary">{entryCount(prize)}</motion.p>
+            <p className="mt-[1.5vmin] text-[clamp(.9rem,1.8vmin,1.6rem)] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{entryLabel(prize)}</p>
           </div>
         </div>
       </div>
@@ -124,6 +134,7 @@ function SpotlightScene({ prize, position, total }: { prize?: Prize; position: n
 }
 
 function RaceScene({ prizes, maxTickets }: { prizes: Prize[]; maxTickets: number }) {
+  if (prizes.length === 0) return <EmptyScene />;
   return (
     <div className="raffle-tv-panel flex h-full min-h-0 flex-col p-[clamp(1.25rem,3vmin,3.25rem)]">
       <div className="mb-[2vmin] flex items-end justify-between gap-5 border-b border-foreground/10 pb-[1.7vmin]">
@@ -361,7 +372,7 @@ export function RaffleTvDisplay() {
   const forcedPrize = session.profile.forcedPrizeId ? session.content.prizes.find((prize) => prize.id === session.profile.forcedPrizeId) : null;
   const mode = forcedPrize ? "SPOTLIGHT" : session.profile.mode;
   const pageSize = mode === "WALL" ? (portrait ? 2 : 4) : mode === "RACE" ? (portrait ? 4 : 6) : mode === "WINNERS" ? (portrait ? 4 : 6) : 1;
-  const sourcePrizes = forcedPrize ? [forcedPrize] : mode === "WINNERS" ? drawnPrizes : activePrizes;
+  const sourcePrizes = forcedPrize ? [forcedPrize] : mode === "WINNERS" ? drawnPrizes : mode === "RACE" ? activePrizes.filter((prize) => prize.entryMode === "TICKETS") : activePrizes;
   const pages = chunk(sourcePrizes, pageSize);
   const coordination = session.coordination;
   const offset = Math.floor((coordination.slotIndex * pages.length) / Math.max(1, coordination.displayCount));
@@ -384,7 +395,7 @@ export function RaffleTvDisplay() {
         <div className="min-w-0">
           <p className="raffle-tv-kicker"><span className={`h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-primary"}`} /> {online ? "Live raffle" : "Reconnecting"}</p>
           <h1 className="mt-[0.5vmin] truncate text-[clamp(1.4rem,3.2vmin,3.5rem)] font-semibold leading-none tracking-[-0.045em]">{session.content.event.name}</h1>
-          <p className="mt-[0.7vmin] truncate text-[clamp(.75rem,1.25vmin,1.1rem)] text-muted-foreground">{session.content.event.venue} · {session.content.stats.prizeCount} active prizes · {session.content.stats.totalPrizeTickets} tickets entered</p>
+          <p className="mt-[0.7vmin] truncate text-[clamp(.75rem,1.25vmin,1.1rem)] text-muted-foreground">{session.content.event.venue} · {session.content.stats.prizeCount} active prizes · {session.content.stats.totalPrizeTickets} tickets{session.content.stats.guestDrawCount ? ` · ${session.content.stats.guestDrawCount} guest draw${session.content.stats.guestDrawCount === 1 ? "" : "s"}` : ""}</p>
         </div>
         <div className="flex shrink-0 items-center gap-[1.2vmin]">
           <div className="hidden text-right sm:block"><p className="raffle-tv-kicker justify-end">{session.profile.name}</p><p className="mt-1 text-[clamp(.7rem,1.1vmin,.95rem)] text-muted-foreground">{mode.toLowerCase()} · screen {coordination.slotIndex + 1} of {coordination.displayCount}</p></div>

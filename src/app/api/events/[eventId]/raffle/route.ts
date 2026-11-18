@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { storedImageSchema } from "@/lib/image-schema";
 import { sortPrizesByName } from "@/lib/prize-order";
 import { serializeRaffleAttendee } from "@/lib/raffle-attendee";
+import { authorizeApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ eventId: string }> };
 
@@ -13,10 +14,11 @@ const prizeSchema = z.object({
   name: z.string().min(2).max(120),
   description: z.string().max(600).optional(),
   value: z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/, "Enter a fair-market value with up to two decimal places."),
-  imageUrl: storedImageSchema.optional()
+  imageUrl: storedImageSchema.optional(),
+  entryMode: z.enum(["TICKETS", "ALL_GUESTS"]).default("TICKETS")
 });
 
-function serializeRaffle(prizes: Awaited<ReturnType<typeof getPrizes>>, attendees: Awaited<ReturnType<typeof getAttendees>>, attendeeTotal: number) {
+function serializeRaffle(prizes: Awaited<ReturnType<typeof getPrizes>>, attendees: Awaited<ReturnType<typeof getAttendees>>, attendeeTotal: number, eligibleGuestTotal: number) {
   const totalPrizeTickets = prizes.reduce((sum, prize) => sum + prize.entries.reduce((entrySum, entry) => entrySum + entry.ticketCount, 0), 0);
   const totalAllocatedTickets = attendees.reduce((sum, attendee) => sum + attendee.raffleTickets, 0);
   const totalAssignedTickets = attendees.reduce((sum, attendee) => sum + attendee.raffleEntries.reduce((entrySum, entry) => entrySum + entry.ticketCount, 0), 0);
@@ -32,7 +34,8 @@ function serializeRaffle(prizes: Awaited<ReturnType<typeof getPrizes>>, attendee
       visibleAttendees: attendees.length,
       totalAllocatedTickets,
       totalAssignedTickets,
-      totalPrizeTickets
+      totalPrizeTickets,
+      eligibleGuestTotal
     },
     latestDraw: latestPrizeDraw ? {
       id: `${latestPrizeDraw.id}:${latestPrizeDraw.drawnAt?.toISOString()}`,
@@ -48,6 +51,8 @@ function serializeRaffle(prizes: Awaited<ReturnType<typeof getPrizes>>, attendee
       description: prize.description,
       value: prize.value,
       imageUrl: prize.imageUrl,
+      entryMode: prize.entryMode,
+      eligibleGuestTotal,
       status: prize.status,
       winnerName: prize.winnerName,
       winnerAttendeeId: prize.winnerAttendeeId,
@@ -133,24 +138,29 @@ function getAttendees(eventId: string, search = "", limit = 100) {
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
+  const access = await authorizeApi(request, "raffles:manage");
+  if (!access.ok) return access.response;
   const { eventId } = await params;
   const search = request.nextUrl.searchParams.get("search") ?? "";
   const limit = Math.min(Math.max(Number(request.nextUrl.searchParams.get("limit") ?? 100), 1), 500);
-  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
+  const event = await prisma.event.findFirst({ where: { id: eventId, organizationId: access.authorization.organization.id }, select: { id: true } });
 
   if (!event) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
 
-  const [prizes, attendees, attendeeTotal] = await Promise.all([
+  const [prizes, attendees, attendeeTotal, eligibleGuestTotal] = await Promise.all([
     getPrizes(eventId),
     getAttendees(eventId, search, limit),
-    prisma.attendee.count({ where: { eventId } })
+    prisma.attendee.count({ where: { eventId } }),
+    prisma.attendee.count({ where: { eventId, status: "REGISTERED" } })
   ]);
-  return NextResponse.json({ raffle: serializeRaffle(prizes, attendees, attendeeTotal) });
+  return NextResponse.json({ raffle: serializeRaffle(prizes, attendees, attendeeTotal, eligibleGuestTotal) });
 }
 
 export async function POST(request: NextRequest, { params }: Params) {
+  const access = await authorizeApi(request, "raffles:manage");
+  if (!access.ok) return access.response;
   const { eventId } = await params;
   const parsed = prizeSchema.safeParse(await request.json());
 
@@ -158,7 +168,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Review the prize details." }, { status: 400 });
   }
 
-  const event = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true } });
+  const event = await prisma.event.findFirst({ where: { id: eventId, organizationId: access.authorization.organization.id }, select: { id: true } });
   if (!event) {
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
@@ -168,7 +178,8 @@ export async function POST(request: NextRequest, { params }: Params) {
       eventId,
       name: parsed.data.name,
       description: parsed.data.description || undefined,
-      value: parsed.data.value || undefined
+      value: parsed.data.value || undefined,
+      entryMode: parsed.data.entryMode
     }
   });
   if (parsed.data.imageUrl) {
@@ -177,10 +188,11 @@ export async function POST(request: NextRequest, { params }: Params) {
     `;
   }
 
-  const [prizes, attendees, attendeeTotal] = await Promise.all([
+  const [prizes, attendees, attendeeTotal, eligibleGuestTotal] = await Promise.all([
     getPrizes(eventId),
     getAttendees(eventId),
-    prisma.attendee.count({ where: { eventId } })
+    prisma.attendee.count({ where: { eventId } }),
+    prisma.attendee.count({ where: { eventId, status: "REGISTERED" } })
   ]);
-  return NextResponse.json({ raffle: serializeRaffle(prizes, attendees, attendeeTotal) }, { status: 201 });
+  return NextResponse.json({ raffle: serializeRaffle(prizes, attendees, attendeeTotal, eligibleGuestTotal) }, { status: 201 });
 }

@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "EventPass Scanner",
+    name: "Praxis Scanner",
     short_name: "Scanner",
     description: "Full-screen event check-in and raffle ticket scanner.",
     start_url: "/scan",

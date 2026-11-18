@@ -5,6 +5,7 @@ import { sortPrizesByName } from "@/lib/prize-order";
 import { serializeRaffleAttendee } from "@/lib/raffle-attendee";
 import { qrValidationSchema } from "@/lib/validation";
 import { verifyQrPayload } from "@/services/qr";
+import { authorizeApi } from "@/lib/authorization";
 
 export const dynamic = "force-dynamic";
 
@@ -43,10 +44,13 @@ function fallbackCodeFromPayload(payload: string | undefined) {
 }
 
 export async function GET(request: NextRequest) {
+  const access = await authorizeApi(request, "checkins:manage");
+  if (!access.ok) return access.response;
+  const organizationId = access.authorization.organization.id;
   const requestedEventId = request.nextUrl.searchParams.get("eventId") ?? "";
   const query = request.nextUrl.searchParams.get("q")?.trim() ?? "";
   const events = await prisma.event.findMany({
-    where: { status: "PUBLISHED" },
+    where: { organizationId, status: "PUBLISHED" },
     orderBy: { startsAt: "asc" },
     select: { id: true, name: true, startsAt: true }
   });
@@ -89,19 +93,22 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const access = await authorizeApi(request, "checkins:manage");
+  if (!access.ok) return access.response;
+  const organizationId = access.authorization.organization.id;
   const parsed = lookupSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "Scan a pass or choose an attendee." }, { status: 400 });
 
   const attendeeId = parsed.data.attendeeId || attendeeIdFromPayload(parsed.data.qrPayload, parsed.data.eventId);
   const fallbackCode = parsed.data.fallbackCode?.trim() || fallbackCodeFromPayload(parsed.data.qrPayload);
   const pass = fallbackCode ? await prisma.pass.findFirst({
-    where: { OR: [{ fallbackCode }, { id: fallbackCode }] }
+    where: { attendee: { event: { organizationId } }, OR: [{ fallbackCode }, { id: fallbackCode }] }
   }) : null;
   const resolvedId = attendeeId || pass?.attendeeId;
   if (!resolvedId) return NextResponse.json({ error: "No matching pass was found." }, { status: 404 });
 
   const attendee = await prisma.attendee.findFirst({
-    where: { id: resolvedId, eventId: parsed.data.eventId },
+    where: { id: resolvedId, eventId: parsed.data.eventId, event: { organizationId } },
     include: { pass: true, raffleEntries: { where: { prize: { status: "ACTIVE" } } } }
   });
   if (!attendee) return NextResponse.json({ error: "This pass belongs to a different event." }, { status: 409 });
@@ -109,6 +116,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const access = await authorizeApi(request, "checkins:manage");
+  if (!access.ok) return access.response;
+  const organizationId = access.authorization.organization.id;
   const parsed = allocationSchema.safeParse(await request.json());
   if (!parsed.success) return NextResponse.json({ error: "The raffle ticket selection is invalid." }, { status: 400 });
   const uniquePrizeIds = new Set(parsed.data.entries.map((entry) => entry.prizeId));
@@ -116,8 +126,8 @@ export async function PUT(request: NextRequest) {
 
   const result = await prisma.$transaction(async (transaction) => {
     const [attendee, prizes] = await Promise.all([
-      transaction.attendee.findFirst({ where: { id: parsed.data.attendeeId, eventId: parsed.data.eventId } }),
-      transaction.rafflePrize.findMany({ where: { eventId: parsed.data.eventId, status: "ACTIVE" }, select: { id: true } })
+      transaction.attendee.findFirst({ where: { id: parsed.data.attendeeId, eventId: parsed.data.eventId, event: { organizationId } } }),
+      transaction.rafflePrize.findMany({ where: { eventId: parsed.data.eventId, event: { organizationId }, status: "ACTIVE" }, select: { id: true } })
     ]);
     if (!attendee) return { error: "Attendee not found.", status: 404 as const };
     const activeIds = new Set(prizes.map((prize) => prize.id));

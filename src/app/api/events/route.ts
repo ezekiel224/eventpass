@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eventSchema } from "@/lib/validation";
 import { prisma } from "@/lib/db";
-import { eventQueryInclude, getDefaultOrganization, serializeEvent, stringifyStringArray } from "@/lib/prisma-helpers";
+import { eventQueryInclude, serializeEvent, stringifyStringArray } from "@/lib/prisma-helpers";
 import { rateLimit } from "@/services/rate-limit";
 import { communicationTemplateDefinitions, eventCommunicationTemplateKey } from "@/lib/communication-templates";
+import { authorizeApi } from "@/lib/authorization";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  await getDefaultOrganization();
+  const access = await authorizeApi(request, "events:manage");
+  if (!access.ok) return access.response;
+  const organizationId = access.authorization.organization.id;
   const includeArchived = request.nextUrl.searchParams.get("includeArchived") === "true";
   const events = await prisma.event.findMany({
-    where: includeArchived ? undefined : { status: { not: "ARCHIVED" } },
+    where: { organizationId, ...(includeArchived ? {} : { status: { not: "ARCHIVED" } }) },
     include: eventQueryInclude(),
     orderBy: {
       startsAt: "asc"
@@ -22,6 +25,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const access = await authorizeApi(request, "events:manage");
+  if (!access.ok) return access.response;
   const limited = rateLimit(`events:${request.headers.get("x-forwarded-for") ?? "local"}`, 20);
   if (!limited.ok) {
     return NextResponse.json({ error: "Too many event requests. Wait a moment and try again." }, { status: 429, headers: { "Retry-After": "60" } });
@@ -43,7 +48,7 @@ export async function POST(request: NextRequest) {
   const requestedStatus = typeof body === "object" && body && "status" in body && body.status === "DRAFT" ? "DRAFT" : "PUBLISHED";
 
   try {
-    const organization = await getDefaultOrganization();
+    const organization = access.authorization.organization;
     const event = await prisma.$transaction(async (transaction) => {
       const created = await transaction.event.create({ data: {
         ...parsed.data,

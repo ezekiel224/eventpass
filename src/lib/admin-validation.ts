@@ -27,6 +27,7 @@ export const updateAdminUserSchema = z.object({
   userId: z.string().min(1),
   roleIds: z.array(z.string().min(1)).min(1).max(10),
   active: z.boolean(),
+  isSuperAdmin: z.boolean().optional(),
   overrides: z.array(z.object({
     permissionId: z.string().min(1),
     allowed: z.boolean()
@@ -60,4 +61,20 @@ export const permissionMutationSchema = z.object({
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1).max(128),
   newPassword: passwordSchema
+}).strict();
+
+export const createClientSchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  slug: z.string().trim().min(2).max(80).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  timezone: z.string().trim().min(1).max(100).default("America/Chicago"),
+  domain: z.string().trim().max(253).optional()
+}).strict();
+
+export const selectClientSchema = z.object({
+  organizationId: z.string().min(1)
+}).strict();
+
+export const deleteClientSchema = z.object({
+  organizationId: z.string().min(1),
+  confirmation: z.string().trim().min(1).max(100)
 }).strict();

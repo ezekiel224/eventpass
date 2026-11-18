@@ -1,19 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { DISPLAY_PAIRING_WINDOW_MS, hashDisplaySecret } from "@/lib/raffle-display";
+import { authorizeApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ displayId: string }> };
 
 const pairingSchema = z.object({ code: z.string().trim().regex(/^[A-Z0-9]{6}$/) });
 
-export async function POST(request: Request, { params }: Params) {
+export async function POST(request: NextRequest, { params }: Params) {
+  const access = await authorizeApi(request, "raffles:manage");
+  if (!access.ok) return access.response;
   const { displayId } = await params;
   const parsed = pairingSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Enter the six-character code shown on the display." }, { status: 400 });
 
   const display = await prisma.raffleDisplay.updateMany({
-    where: { id: displayId },
+    where: { id: displayId, event: { organizationId: access.authorization.organization.id } },
     data: {
       pairingCodeHash: hashDisplaySecret(parsed.data.code.toUpperCase()),
       pairingExpiresAt: new Date(Date.now() + DISPLAY_PAIRING_WINDOW_MS)

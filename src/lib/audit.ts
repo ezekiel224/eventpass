@@ -18,6 +18,7 @@ export async function writeAuditLog({
   request,
   actorUserId,
   actor,
+  organizationId,
   action,
   targetType,
   targetId,
@@ -26,13 +27,14 @@ export async function writeAuditLog({
   request: NextRequest;
   actorUserId: string;
   actor?: AuditActorSnapshot | null;
+  organizationId?: string | null;
   action: string;
   targetType: string;
   targetId?: string | null;
   metadata?: Record<string, unknown>;
 }) {
   return prisma.auditLog.create({
-    data: auditLogData({ request, actorUserId, actor, action, targetType, targetId, metadata })
+    data: auditLogData({ request, actorUserId, actor, organizationId, action, targetType, targetId, metadata })
   });
 }
 
@@ -40,6 +42,7 @@ export function auditLogData({
   request,
   actorUserId,
   actor,
+  organizationId,
   action,
   targetType,
   targetId,
@@ -48,6 +51,7 @@ export function auditLogData({
   request: NextRequest;
   actorUserId?: string | null;
   actor?: AuditActorSnapshot | null;
+  organizationId?: string | null;
   action: string;
   targetType: string;
   targetId?: string | null;
@@ -57,6 +61,7 @@ export function auditLogData({
     actorUserId,
     actorEmail: actor?.email ?? null,
     actorName: actor?.name ?? null,
+    organizationId: organizationId ?? null,
     action,
     targetType,
     targetId: targetId ?? null,

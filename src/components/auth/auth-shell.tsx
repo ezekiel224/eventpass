@@ -1,7 +1,7 @@
 import { Gauge, ScanLine, ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
-export function AuthShell({ children, productName = "EventPass" }: { children: React.ReactNode; productName?: string }) {
+export function AuthShell({ children, productName = "Praxis" }: { children: React.ReactNode; productName?: string }) {
   return (
     <main className="relative grid min-h-dvh overflow-hidden lg:grid-cols-[minmax(28rem,0.95fr)_minmax(32rem,1.05fr)]">
       <section className="relative hidden flex-col justify-between overflow-hidden border-r border-border/60 bg-foreground px-10 py-12 text-background dark:bg-card dark:text-foreground lg:flex xl:px-16 xl:py-16">

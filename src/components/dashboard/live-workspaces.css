@@ -229,6 +229,9 @@
 .ep-prize-create { align-self: start; }
 .ep-prize-create > form > div > label,
 .ep-prize-image-import > label { display: block; margin-bottom: 7px; color: var(--color); font-size: 11px; font-weight: 750; }
+.ep-prize-mode-field { padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--background-hover); }
+.ep-prize-mode-field .ep-operation-select { margin-top: 0; }
+.ep-prize-mode-field > p { margin: 8px 1px 0; color: var(--color-8); font-size: 10px; line-height: 15px; }
 .ep-prize-image-import { display: grid; grid-template-columns: 96px minmax(0,1fr); align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--background-hover); }
 .ep-prize-image-import > div { aspect-ratio: 4/3; display: grid; place-items: center; border: 1px solid var(--border-color); border-radius: 10px; color: var(--c-color-brand-700); background-color: var(--background); background-position: center; background-size: cover; }
 .ep-prize-list { max-height: 720px; overflow-y: auto; }

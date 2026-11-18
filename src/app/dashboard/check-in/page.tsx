@@ -4,9 +4,11 @@ import { PageTitle } from "@/components/dashboard/page-title";
 import { MonitorUp, ScanLine } from "lucide-react";
 import { getBranding } from "@/lib/branding";
 import { DashboardActions, DashboardLinkButton } from "@/components/dashboard/dashboard-surface";
+import { requirePermission } from "@/lib/authorization";
 
 export default async function CheckInPage() {
-  const branding = await getBranding();
+  const authorization = await requirePermission("checkins:manage");
+  const branding = await getBranding(authorization.organization.id);
   return (
     <AppShell active="Check In">
       <PageTitle title="Check-In" />

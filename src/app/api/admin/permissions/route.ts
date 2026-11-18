@@ -8,7 +8,12 @@ import { prisma } from "@/lib/db";
 export async function GET(request: NextRequest) {
   const access = await authorizeApi(request, "permissions:view");
   if (!access.ok) return access.response;
+  const organizationId = access.authorization.organization.id;
   const permissions = await prisma.permission.findMany({
+    where: {
+      OR: [{ system: true }, { organizationId }],
+      ...(!access.authorization.user.isSuperAdmin ? { NOT: { slug: { startsWith: "clients:" } } } : {})
+    },
     orderBy: { slug: "asc" },
     include: { _count: { select: { roles: true, userOverrides: true } } }
   });
@@ -35,7 +40,7 @@ export async function PUT(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid permission" }, { status: 400 });
   }
-  const existing = parsed.data.id ? await prisma.permission.findUnique({ where: { id: parsed.data.id } }) : null;
+  const existing = parsed.data.id ? await prisma.permission.findFirst({ where: { id: parsed.data.id, OR: [{ system: true }, { organizationId: access.authorization.organization.id }] } }) : null;
   if (parsed.data.id && !existing) return NextResponse.json({ error: "Permission not found" }, { status: 404 });
   if (existing?.system) return NextResponse.json({ error: "System permissions cannot be edited" }, { status: 403 });
 
@@ -55,6 +60,7 @@ export async function PUT(request: NextRequest) {
               name: parsed.data.name,
               slug: parsed.data.slug,
               description: parsed.data.description,
+              organizationId: access.authorization.organization.id,
               system: false
             }
           });
@@ -62,6 +68,7 @@ export async function PUT(request: NextRequest) {
         data: auditLogData({
           request,
           actorUserId: access.authorization.user.id,
+          organizationId: access.authorization.organization.id,
           action: parsed.data.id ? "admin.permission_updated" : "admin.permission_created",
           targetType: "Permission",
           targetId: saved.id,

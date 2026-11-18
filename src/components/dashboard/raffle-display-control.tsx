@@ -45,7 +45,7 @@ const modes: { value: RaffleDisplayMode; label: string; description: string }[] 
 ];
 
 const confettiPresetLabels: Record<RaffleConfettiPreset, string> = {
-  BRAND: "EventPass",
+  BRAND: "Praxis",
   GOLD: "Gold",
   CELEBRATION: "Celebration",
   COOL: "Cool",

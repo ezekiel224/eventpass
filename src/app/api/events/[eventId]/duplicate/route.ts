@@ -1,14 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { eventQueryInclude, serializeEvent } from "@/lib/prisma-helpers";
 import { communicationTemplateDefinitions, eventCommunicationTemplateKey, getCommunicationTemplate } from "@/lib/communication-templates";
+import { authorizeEventApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ eventId: string }> };
 
 export const dynamic = "force-dynamic";
 
-export async function POST(_request: Request, { params }: Params) {
+export async function POST(request: NextRequest, { params }: Params) {
   const { eventId } = await params;
+  const access = await authorizeEventApi(request, eventId, "events:manage");
+  if (!access.ok) return access.response;
   const original = await prisma.event.findUnique({
     where: { id: eventId },
     include: {
@@ -43,7 +46,7 @@ export async function POST(_request: Request, { params }: Params) {
       organizer: original.organizer,
       contactEmail: original.contactEmail,
       contactPhone: original.contactPhone,
-      passTheme: original.passTheme,
+      passTheme: "minimal",
       status: "DRAFT",
       registrationEnabled: original.registrationEnabled,
       qrPassesEnabled: original.qrPassesEnabled,

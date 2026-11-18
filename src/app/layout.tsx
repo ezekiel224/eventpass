@@ -2,7 +2,6 @@ import "./globals.css";
 import "../../public/tamagui.generated.css";
 import { Providers } from "@/components/providers";
 import { GlobalBackdrop } from "@/components/layout/global-backdrop";
-import { getBranding } from "@/lib/branding";
 import { PwaRegistration } from "@/components/pwa-registration";
 import { cookies } from "next/headers";
 
@@ -20,11 +19,9 @@ function isAppearance(value: string | undefined): value is Appearance {
   return value === "light" || value === "dark";
 }
 
-export async function generateMetadata() {
-  const branding = await getBranding();
-
+export function generateMetadata() {
   return {
-    title: `${branding.name} - Event operations`,
+    title: "Praxis",
     description: "Internal event pass, registration, and check-in management.",
     manifest: "/manifest.webmanifest"
   };

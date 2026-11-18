@@ -7,7 +7,7 @@ import {
   unsupportedTemplateVariables
 } from "@/lib/communication-templates";
 import { prisma } from "@/lib/db";
-import { getDefaultOrganization } from "@/lib/prisma-helpers";
+import { authorizeApi } from "@/lib/authorization";
 
 const templateSchema = z.object({
   key: z.string().min(1),
@@ -18,8 +18,10 @@ const templateSchema = z.object({
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const organization = await getDefaultOrganization();
+export async function GET(request: NextRequest) {
+  const access = await authorizeApi(request, "settings:manage");
+  if (!access.ok) return access.response;
+  const organization = access.authorization.organization;
   const templates = await Promise.all(
     Object.keys(communicationTemplateDefinitions).map((key) => getCommunicationTemplate(organization.id, key as keyof typeof communicationTemplateDefinitions))
   );
@@ -27,6 +29,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
+  const access = await authorizeApi(request, "settings:manage");
+  if (!access.ok) return access.response;
   const parsed = templateSchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json({ error: "Enter a subject, message, and button label within the allowed lengths." }, { status: 400 });
@@ -40,7 +44,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: `Unsupported variable${unsupported.length === 1 ? "" : "s"}: ${unsupported.map((variable) => `{{${variable}}}`).join(", ")}` }, { status: 400 });
   }
 
-  const organization = await getDefaultOrganization();
+  const organization = access.authorization.organization;
   await prisma.communicationTemplate.upsert({
     where: { organizationId_key: { organizationId: organization.id, key: parsed.data.key } },
     update: { subject: parsed.data.subject, body: parsed.data.body, actionLabel: parsed.data.actionLabel },

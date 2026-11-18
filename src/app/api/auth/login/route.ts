@@ -34,11 +34,13 @@ export async function POST(request: NextRequest) {
   });
 
   if (!user?.passwordHash || !user.active || !(await compare(parsed.data.password, user.passwordHash))) {
+    const failedAuthorization = user ? await getAuthorizationForUser(user.id) : null;
     await prisma.auditLog.create({
       data: auditLogData({
         request,
         actorUserId: user?.id ?? null,
         actor: user ? { id: user.id, email: user.email, name: user.name } : null,
+        organizationId: failedAuthorization?.organization.id,
         action: "auth.login_failed",
         targetType: "Session",
         targetId: user?.id ?? null,
@@ -49,17 +51,18 @@ export async function POST(request: NextRequest) {
   }
 
   await setSessionCookie(user);
+  const authorization = await getAuthorizationForUser(user.id);
   await prisma.auditLog.create({
     data: auditLogData({
       request,
       actorUserId: user.id,
       actor: { id: user.id, email: user.email, name: user.name },
+      organizationId: authorization?.organization.id,
       action: "auth.login_succeeded",
       targetType: "Session",
       targetId: user.id
     })
   });
-  const authorization = await getAuthorizationForUser(user.id);
   const home = authorization?.permissions.has("dashboard:view") ? "/dashboard" : authorization?.permissions.has("checkins:manage") ? "/scan" : "/forbidden";
   return NextResponse.json({ ok: true, mustChangePassword: user.mustChangePassword, home });
 }

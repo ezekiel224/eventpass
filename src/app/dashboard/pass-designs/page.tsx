@@ -7,11 +7,12 @@ import { prisma } from "@/lib/db";
 import { normalizeExistingPass } from "@/lib/pass-data";
 import { parseStringArray } from "@/lib/prisma-helpers";
 import { createQrDataUrl } from "@/services/qr";
+import { requirePermission } from "@/lib/authorization";
 
-async function previewData(): Promise<NormalizedPassData> {
+async function previewData(organizationId: string): Promise<NormalizedPassData> {
   const [branding, attendee] = await Promise.all([
-    getBranding(),
-    prisma.attendee.findFirst({ include: { event: true, pass: true }, orderBy: { createdAt: "desc" } })
+    getBranding(organizationId),
+    prisma.attendee.findFirst({ where: { event: { organizationId } }, include: { event: true, pass: true }, orderBy: { createdAt: "desc" } })
   ]);
 
   if (!attendee?.pass) {
@@ -89,7 +90,8 @@ async function previewData(): Promise<NormalizedPassData> {
 }
 
 export default async function PassDesignsPage() {
-  const data = await previewData();
+  const authorization = await requirePermission("passes:manage");
+  const data = await previewData(authorization.organization.id);
   return (
     <AppShell active="Pass Designs">
       <PageTitle title="Pass Designs" />

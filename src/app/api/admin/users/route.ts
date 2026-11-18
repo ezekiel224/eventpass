@@ -15,22 +15,32 @@ function temporaryPassword() {
 
 const userInclude = {
   roles: { include: { role: true } },
-  permissionOverrides: { include: { permission: true } }
+  permissionOverrides: { include: { permission: true } },
+  clientMemberships: {
+    include: {
+      roles: { include: { role: true } },
+      permissionOverrides: { include: { permission: true } }
+    }
+  }
 } as const;
 
 type UserWithAccess = Prisma.UserGetPayload<{ include: typeof userInclude }>;
 
-function serializeUser(user: UserWithAccess) {
+function serializeUser(user: UserWithAccess, organizationId: string) {
+  const membership = user.clientMemberships.find((candidate) => candidate.organizationId === organizationId);
+  const roles = membership?.roles ?? [];
+  const overrides = membership?.permissionOverrides ?? [];
   return {
     id: user.id,
     email: user.email,
     username: user.username,
     name: user.name,
-    active: user.active,
+    isSuperAdmin: user.isSuperAdmin,
+    active: membership?.active ?? user.active,
     mustChangePassword: user.mustChangePassword,
     createdAt: user.createdAt.toISOString(),
-    roles: user.roles.map(({ role }) => ({ id: role.id, name: role.name, slug: role.slug })),
-    overrides: user.permissionOverrides.map(({ permission, allowed }) => ({
+    roles: roles.map(({ role }) => ({ id: role.id, name: role.name, slug: role.slug })),
+    overrides: overrides.map(({ permission, allowed }) => ({
       permissionId: permission.id,
       permissionSlug: permission.slug,
       allowed
@@ -41,8 +51,13 @@ function serializeUser(user: UserWithAccess) {
 export async function GET(request: NextRequest) {
   const access = await authorizeApi(request, "users:view");
   if (!access.ok) return access.response;
-  const users = await prisma.user.findMany({ include: userInclude, orderBy: { createdAt: "asc" } });
-  return NextResponse.json({ users: users.map(serializeUser) });
+  const organizationId = access.authorization.organization.id;
+  const users = await prisma.user.findMany({
+    where: { clientMemberships: { some: { organizationId, active: true } } },
+    include: userInclude,
+    orderBy: { createdAt: "asc" }
+  });
+  return NextResponse.json({ users: users.map((user) => serializeUser(user, organizationId)) });
 }
 
 export async function POST(request: NextRequest) {
@@ -56,11 +71,43 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid account" }, { status: 400 });
   }
   const roles = await prisma.role.findMany({
-    where: { id: { in: parsed.data.roleIds }, assignable: true },
+    where: { id: { in: parsed.data.roleIds }, assignable: true, OR: [{ system: true }, { organizationId: access.authorization.organization.id }] },
     select: { id: true, slug: true }
   });
   if (roles.length !== new Set(parsed.data.roleIds).size) {
     return NextResponse.json({ error: "One or more roles cannot be assigned" }, { status: 400 });
+  }
+
+  const existingAccount = await prisma.user.findUnique({
+    where: { email: parsed.data.email },
+    include: { clientMemberships: { where: { organizationId: access.authorization.organization.id }, select: { id: true } } }
+  });
+  if (existingAccount) {
+    if (existingAccount.clientMemberships.length) {
+      return NextResponse.json({ error: "An account with that email already belongs to this client" }, { status: 409 });
+    }
+    const user = await prisma.$transaction(async (transaction) => {
+      await transaction.clientMembership.create({
+        data: {
+          organizationId: access.authorization.organization.id,
+          userId: existingAccount.id,
+          roles: { create: roles.map((role) => ({ roleId: role.id })) }
+        }
+      });
+      await transaction.auditLog.create({
+        data: auditLogData({
+          request,
+          actorUserId: access.authorization.user.id,
+          organizationId: access.authorization.organization.id,
+          action: "admin.user_added_to_client",
+          targetType: "User",
+          targetId: existingAccount.id,
+          metadata: { email: existingAccount.email, roleIds: roles.map((role) => role.id) }
+        })
+      });
+      return transaction.user.findUniqueOrThrow({ where: { id: existingAccount.id }, include: userInclude });
+    });
+    return NextResponse.json({ user: serializeUser(user, access.authorization.organization.id), temporaryPassword: null, linkedExisting: true });
   }
 
   const generatedPassword = parsed.data.temporaryPassword ?? temporaryPassword();
@@ -76,8 +123,11 @@ export async function POST(request: NextRequest) {
           role: roles.some((role) => role.slug === "admin") ? "ADMIN" : "USER",
           active: true,
           mustChangePassword: true,
-          roles: {
-            create: roles.map((role) => ({ roleId: role.id }))
+          clientMemberships: {
+            create: {
+              organizationId: access.authorization.organization.id,
+              roles: { create: roles.map((role) => ({ roleId: role.id })) }
+            }
           }
         },
         include: userInclude
@@ -86,6 +136,7 @@ export async function POST(request: NextRequest) {
         data: auditLogData({
           request,
           actorUserId: access.authorization.user.id,
+          organizationId: access.authorization.organization.id,
           action: "admin.user_created",
           targetType: "User",
           targetId: created.id,
@@ -95,7 +146,7 @@ export async function POST(request: NextRequest) {
       return created;
     });
     return NextResponse.json({
-      user: serializeUser(user),
+      user: serializeUser(user, access.authorization.organization.id),
       temporaryPassword: parsed.data.temporaryPassword ? null : generatedPassword
     }, { status: 201 });
   } catch (error) {
@@ -121,32 +172,50 @@ export async function PUT(request: NextRequest) {
   }
 
   const [target, roles, permissions] = await Promise.all([
-    prisma.user.findUnique({ where: { id: parsed.data.userId } }),
-    prisma.role.findMany({ where: { id: { in: parsed.data.roleIds }, assignable: true }, select: { id: true, slug: true } }),
-    prisma.permission.findMany({ where: { id: { in: parsed.data.overrides.map(({ permissionId }) => permissionId) } }, select: { id: true } })
+    prisma.user.findFirst({
+      where: { id: parsed.data.userId, clientMemberships: { some: { organizationId: access.authorization.organization.id } } },
+      include: { clientMemberships: { where: { organizationId: access.authorization.organization.id }, select: { id: true } } }
+    }),
+    prisma.role.findMany({ where: { id: { in: parsed.data.roleIds }, assignable: true, OR: [{ system: true }, { organizationId: access.authorization.organization.id }] }, select: { id: true, slug: true } }),
+    prisma.permission.findMany({ where: { id: { in: parsed.data.overrides.map(({ permissionId }) => permissionId) }, OR: [{ system: true }, { organizationId: access.authorization.organization.id }] }, select: { id: true, slug: true } })
   ]);
   if (!target) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+  if (target.isSuperAdmin && !access.authorization.user.isSuperAdmin) {
+    return NextResponse.json({ error: "Only a Super Admin can change another Super Admin" }, { status: 403 });
+  }
+  const nextSuperAdmin = parsed.data.isSuperAdmin ?? target.isSuperAdmin;
+  if (nextSuperAdmin !== target.isSuperAdmin && !access.authorization.user.isSuperAdmin) {
+    return NextResponse.json({ error: "Only a Super Admin can change platform access" }, { status: 403 });
+  }
+  if (target.isSuperAdmin && !nextSuperAdmin && await prisma.user.count({ where: { isSuperAdmin: true, active: true } }) <= 1) {
+    return NextResponse.json({ error: "The last active Super Admin cannot be demoted" }, { status: 409 });
+  }
   if (roles.length !== new Set(parsed.data.roleIds).size) {
     return NextResponse.json({ error: "One or more roles cannot be assigned" }, { status: 400 });
   }
   if (permissions.length !== new Set(parsed.data.overrides.map(({ permissionId }) => permissionId)).size) {
     return NextResponse.json({ error: "One or more permission overrides are invalid" }, { status: 400 });
   }
+  if (!access.authorization.user.isSuperAdmin && permissions.some((permission) => permission.slug.startsWith("clients:"))) {
+    return NextResponse.json({ error: "Client administration permissions are reserved for Super Admins" }, { status: 403 });
+  }
+
+  const membershipId = target.clientMemberships[0]?.id;
+  if (!membershipId) return NextResponse.json({ error: "Client membership not found" }, { status: 404 });
 
   const updated = await prisma.$transaction(async (transaction) => {
-    await transaction.userRole.deleteMany({ where: { userId: target.id } });
-    await transaction.userPermissionOverride.deleteMany({ where: { userId: target.id } });
-    await transaction.user.update({
-      where: { id: target.id },
+    if (nextSuperAdmin !== target.isSuperAdmin) {
+      await transaction.user.update({ where: { id: target.id }, data: { isSuperAdmin: nextSuperAdmin } });
+    }
+    await transaction.clientMembershipRole.deleteMany({ where: { membershipId } });
+    await transaction.clientMembershipPermissionOverride.deleteMany({ where: { membershipId } });
+    await transaction.clientMembership.update({
+      where: { id: membershipId },
       data: {
         active: parsed.data.active,
-        role: roles.some((role) => role.slug === "admin") ? "ADMIN" : "USER",
         roles: { create: roles.map((role) => ({ roleId: role.id })) },
         permissionOverrides: {
-          create: parsed.data.overrides.map((override) => ({
-            permissionId: override.permissionId,
-            allowed: override.allowed
-          }))
+          create: parsed.data.overrides.map((override) => ({ permissionId: override.permissionId, allowed: override.allowed }))
         }
       }
     });
@@ -154,11 +223,13 @@ export async function PUT(request: NextRequest) {
       data: auditLogData({
         request,
         actorUserId: access.authorization.user.id,
+        organizationId: access.authorization.organization.id,
         action: "admin.user_access_updated",
         targetType: "User",
         targetId: target.id,
         metadata: {
           active: parsed.data.active,
+          isSuperAdmin: nextSuperAdmin,
           roleIds: roles.map((role) => role.id),
           overrides: parsed.data.overrides
         }
@@ -167,7 +238,7 @@ export async function PUT(request: NextRequest) {
     return transaction.user.findUniqueOrThrow({ where: { id: target.id }, include: userInclude });
   });
 
-  return NextResponse.json({ user: serializeUser(updated) });
+  return NextResponse.json({ user: serializeUser(updated, access.authorization.organization.id) });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -182,8 +253,17 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Use Change Password to update your own password." }, { status: 400 });
   }
 
-  const target = await prisma.user.findUnique({ where: { id: parsed.data.userId }, select: { id: true, email: true } });
+  const target = await prisma.user.findFirst({
+    where: { id: parsed.data.userId, clientMemberships: { some: { organizationId: access.authorization.organization.id, active: true } } },
+    select: { id: true, email: true, isSuperAdmin: true, _count: { select: { clientMemberships: true } } }
+  });
   if (!target) return NextResponse.json({ error: "Account not found." }, { status: 404 });
+  if (target.isSuperAdmin && !access.authorization.user.isSuperAdmin) {
+    return NextResponse.json({ error: "Only a Super Admin can reset another Super Admin" }, { status: 403 });
+  }
+  if (target._count.clientMemberships > 1 && !access.authorization.user.isSuperAdmin) {
+    return NextResponse.json({ error: "Only a Super Admin can reset an account shared across clients" }, { status: 403 });
+  }
 
   const generatedPassword = temporaryPassword();
   const passwordHash = await hash(generatedPassword, 12);
@@ -196,6 +276,7 @@ export async function PATCH(request: NextRequest) {
       data: auditLogData({
         request,
         actorUserId: access.authorization.user.id,
+        organizationId: access.authorization.organization.id,
         action: "admin.user_password_reset",
         targetType: "User",
         targetId: target.id,
@@ -224,57 +305,70 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "You cannot delete your own account" }, { status: 400 });
   }
 
-  const target = await prisma.user.findUnique({
-    where: { id: parsed.data.userId },
-    include: { roles: { include: { role: true } } }
+  const target = await prisma.user.findFirst({
+    where: { id: parsed.data.userId, clientMemberships: { some: { organizationId: access.authorization.organization.id } } },
+    include: {
+      roles: { include: { role: true } },
+      clientMemberships: { include: { roles: { include: { role: true } } } }
+    }
   });
   if (!target) return NextResponse.json({ error: "Account not found" }, { status: 404 });
+  if (target.isSuperAdmin && !access.authorization.user.isSuperAdmin) {
+    return NextResponse.json({ error: "Only a Super Admin can delete another Super Admin" }, { status: 403 });
+  }
+  if (target.isSuperAdmin && await prisma.user.count({ where: { isSuperAdmin: true, active: true } }) <= 1) {
+    return NextResponse.json({ error: "The last active Super Admin cannot be deleted" }, { status: 409 });
+  }
   if (target.email.toLowerCase() !== parsed.data.confirmationEmail) {
     return NextResponse.json({ error: "The confirmation email does not match this account" }, { status: 400 });
   }
 
-  const targetIsAdmin = target.role === "ADMIN" || target.roles.some(({ role }) => role.slug === "admin");
+  const membership = target.clientMemberships.find((candidate) => candidate.organizationId === access.authorization.organization.id);
+  if (!membership) return NextResponse.json({ error: "Client membership not found" }, { status: 404 });
+  const targetIsAdmin = membership.roles.some(({ role }) => role.slug === "admin");
   if (targetIsAdmin) {
-    const possibleAdmins = await prisma.user.findMany({
+    const possibleAdmins = await prisma.clientMembership.count({
       where: {
+        organizationId: access.authorization.organization.id,
         active: true,
-        OR: [
-          { role: "ADMIN" },
-          { roles: { some: { role: { slug: "admin" } } } }
-        ]
-      },
-      select: { id: true }
+        roles: { some: { role: { slug: "admin" } } }
+      }
     });
-    if (possibleAdmins.length <= 1) {
+    if (possibleAdmins <= 1) {
       return NextResponse.json({ error: "The last active administrator cannot be deleted" }, { status: 409 });
     }
   }
 
+  const deleteEntireUser = target.clientMemberships.length === 1;
   await prisma.$transaction(async (transaction) => {
-    await transaction.auditLog.updateMany({
-      where: { actorUserId: target.id, actorEmail: null },
-      data: { actorEmail: target.email, actorName: target.name }
-    });
+    if (deleteEntireUser) {
+      await transaction.auditLog.updateMany({
+        where: { actorUserId: target.id, actorEmail: null },
+        data: { actorEmail: target.email, actorName: target.name }
+      });
+    }
     await transaction.auditLog.create({
       data: auditLogData({
         request,
         actorUserId: access.authorization.user.id,
         actor: access.authorization.user,
-        action: "admin.user_deleted",
+        organizationId: access.authorization.organization.id,
+        action: deleteEntireUser ? "admin.user_deleted" : "admin.client_membership_removed",
         targetType: "User",
         targetId: target.id,
         metadata: {
           email: target.email,
           username: target.username,
           name: target.name,
-          roles: target.roles.map(({ role }) => role.slug),
+          roles: membership.roles.map(({ role }) => role.slug),
           active: target.active,
           createdAt: target.createdAt.toISOString()
         }
       })
     });
-    await transaction.user.delete({ where: { id: target.id } });
+    if (deleteEntireUser) await transaction.user.delete({ where: { id: target.id } });
+    else await transaction.clientMembership.delete({ where: { id: membership.id } });
   });
 
-  return NextResponse.json({ ok: true, deletedUserId: target.id, deletedEmail: target.email });
+  return NextResponse.json({ ok: true, deletedUserId: deleteEntireUser ? target.id : null, deletedEmail: target.email, removedFromClient: !deleteEntireUser });
 }

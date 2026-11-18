@@ -22,6 +22,7 @@ type NavigationItem = {
   detail: string;
   permission: string;
   adminOnly?: boolean;
+  superAdminOnly?: boolean;
   icon: typeof LayoutDashboard;
 };
 
@@ -56,6 +57,7 @@ const navigationGroups: { label: string; items: NavigationItem[] }[] = [
       { href: "/admin/settings/accounts", label: "Accounts", detail: "Staff access", permission: "users:view", icon: UserCog },
       { href: "/admin/settings/permissions", label: "Permissions", detail: "Roles and capabilities", permission: "roles:view", icon: KeyRound },
       { href: "/admin/audit", label: "Audit trail", detail: "Administrative history", permission: "audit:view", adminOnly: true, icon: Fingerprint },
+      { href: "/admin/clients", label: "Clients", detail: "Client workspaces and access", permission: "clients:view", superAdminOnly: true, icon: Users },
     ],
   },
 ];
@@ -69,19 +71,23 @@ function IconControl({ label, children, onClick, expanded }: { label: string; ch
 export function TamaguiAppFrame({
   children,
   active,
-  organizationName,
+  platformName,
+  clientName,
   accountName,
   events,
   permissions,
   isAdmin,
+  isSuperAdmin,
 }: {
   children: ReactNode;
   active: string;
-  organizationName: string;
+  platformName: string;
+  clientName: string;
   accountName: string;
   events: ShellEvent[];
   permissions: string[];
   isAdmin: boolean;
+  isSuperAdmin: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -135,8 +141,8 @@ export function TamaguiAppFrame({
   const selectedEvent = events.find((event) => event.id === eventId) ?? events[0];
   const visibleGroups = useMemo(() => navigationGroups.map((group) => ({
     ...group,
-    items: group.items.filter((item) => permissions.includes(item.permission) && (!item.adminOnly || isAdmin)),
-  })).filter((group) => group.items.length > 0), [permissions, isAdmin]);
+    items: group.items.filter((item) => permissions.includes(item.permission) && (!item.adminOnly || isAdmin) && (!item.superAdminOnly || isSuperAdmin)),
+  })).filter((group) => group.items.length > 0), [permissions, isAdmin, isSuperAdmin]);
 
   function eventHref(id: string) {
     if (pathname === "/dashboard/events") return `/dashboard?eventId=${encodeURIComponent(id)}`;
@@ -180,7 +186,7 @@ export function TamaguiAppFrame({
               <div className={`ep-nav-group ep-event-group${openMenu === "events" ? " is-open" : ""}`}>
                 <button className="ep-event-switcher" type="button" aria-label={`Select event, current event ${selectedEvent?.name ?? "none"}`} aria-haspopup="menu" aria-expanded={openMenu === "events"} onClick={() => setOpenMenu((value) => value === "events" ? null : "events")}>
                   <CalendarDays size={14} />
-                  <span className="ep-event-name">{selectedEvent?.name ?? "No active events"}</span>
+                  <span className="ep-event-name">{clientName} · {selectedEvent?.name ?? "No active events"}</span>
                   <ChevronDown className="ep-nav-chevron" size={12} />
                 </button>
                 <div className="ep-hover-panel ep-event-panel">
@@ -204,7 +210,7 @@ export function TamaguiAppFrame({
               </form>
             </div>
 
-            <ThemeWordmark palette={palette} setPalette={setPalette} organizationName={organizationName} />
+            <ThemeWordmark palette={palette} setPalette={setPalette} organizationName={platformName} />
 
             <nav className="ep-nav-right" aria-label="Primary navigation">
               <Link href={`/dashboard${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`} className={`ep-top-link${active === "Dashboard" || active === "Analytics" ? " is-active" : ""}`}>
@@ -254,15 +260,10 @@ function ThemeWordmark({ palette, setPalette, organizationName }: { palette: Sit
   const [switchLocked, setSwitchLocked] = useState(false);
   const unlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const letters = [
-    { letter: "I", theme: siteThemes[0] },
-    { letter: "n", theme: siteThemes[1] },
-    { letter: "s", theme: siteThemes[2] },
-    { letter: "i", theme: siteThemes[3] },
-    { letter: "g", theme: siteThemes[0] },
-    { letter: "h", theme: siteThemes[1] },
-    { letter: "t", theme: siteThemes[2] },
-  ];
+  const letters = Array.from(organizationName).map((letter, index) => ({
+    letter,
+    theme: siteThemes[index % siteThemes.length]
+  }));
 
   useEffect(() => () => {
     if (unlockTimer.current) clearTimeout(unlockTimer.current);

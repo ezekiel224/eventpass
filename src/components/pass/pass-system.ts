@@ -1,9 +1,3 @@
-export const passThemeIds = ["casino", "gala", "ice-cream", "retro-arcade", "science", "biology", "space", "minimal"] as const;
-
-export type PassThemeId = (typeof passThemeIds)[number];
-export type PassFace = "front" | "back";
-export type GenericVariant = "light" | "dark";
-
 export type NormalizedPassData = {
   eventName: string;
   eventSubtitle: string | null;
@@ -35,68 +29,6 @@ export type NormalizedPassData = {
   menuSelections: string[];
   under21Alert: boolean;
 };
-
-export type PassThemeDefinition = {
-  id: PassThemeId;
-  label: string;
-  shortLabel: string;
-  description: string;
-};
-
-export const passThemeRegistry: Record<PassThemeId, PassThemeDefinition> = {
-  casino: {
-    id: "casino",
-    label: "Casino Night",
-    shortLabel: "Casino",
-    description: "Velvet, lacquer, gold leaf, and an interactive roulette wheel."
-  },
-  gala: {
-    id: "gala",
-    label: "Fancy Gala",
-    shortLabel: "Gala",
-    description: "Editorial black-tie typography with responsive foil and Art Deco linework."
-  },
-  "ice-cream": {
-    id: "ice-cream",
-    label: "Ice Cream Social",
-    shortLabel: "Social",
-    description: "A polished pastel-parlor pass with raised lettering, scalloped trim, and playful printed sprinkles."
-  },
-  "retro-arcade": {
-    id: "retro-arcade",
-    label: "Retro Game Night",
-    shortLabel: "Arcade",
-    description: "A neon CRT credential with sprites, tokens, and high-score details."
-  },
-  science: {
-    id: "science",
-    label: "General Science",
-    shortLabel: "Science",
-    description: "A secure research credential with atoms, waveforms, and instrument panels."
-  },
-  biology: {
-    id: "biology",
-    label: "Biology",
-    shortLabel: "Biology",
-    description: "Layered living systems, bioluminescence, cells, and a DNA helix."
-  },
-  space: {
-    id: "space",
-    label: "Space",
-    shortLabel: "Space",
-    description: "A cinematic mission credential with stellar parallax and orbital depth."
-  },
-  minimal: {
-    id: "minimal",
-    label: "Clean Generic",
-    shortLabel: "Minimal",
-    description: "A flexible production-safe pass with crisp hierarchy and restrained depth."
-  }
-};
-
-export function isPassTheme(value: string | null | undefined): value is PassThemeId {
-  return passThemeIds.includes(value as PassThemeId);
-}
 
 export function safePassColor(value: string | null | undefined, fallback: string) {
   return value && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback;

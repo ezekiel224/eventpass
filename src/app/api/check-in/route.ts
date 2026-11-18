@@ -6,10 +6,14 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 import { checkInSchema, qrValidationSchema } from "@/lib/validation";
 import { verifyQrPayload } from "@/services/qr";
 import { rateLimit } from "@/services/rate-limit";
+import { authorizeApi } from "@/lib/authorization";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const access = await authorizeApi(request, "checkins:manage");
+  if (!access.ok) return access.response;
+  const organizationId = access.authorization.organization.id;
   const eventId = request.nextUrl.searchParams.get("eventId")?.trim();
   const complete = request.nextUrl.searchParams.get("complete") === "true";
   const cursor = request.nextUrl.searchParams.get("cursor")?.trim() || undefined;
@@ -18,7 +22,7 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(Math.max(Number.isFinite(requestedLimit) ? Math.floor(requestedLimit) : 20, 1), 250);
   const attendeeWhere = {
     ...(eventId ? { eventId } : {}),
-    event: { status: { not: "ARCHIVED" as const } },
+    event: { organizationId, status: { not: "ARCHIVED" as const } },
     ...(query ? {
       OR: [
         { firstName: { contains: query } },
@@ -44,9 +48,9 @@ export async function GET(request: NextRequest) {
         }
       }
     }),
-    prisma.checkIn.count({ where: { attendee: { ...(eventId ? { eventId } : {}), event: { status: { not: "ARCHIVED" } } } } }),
+    prisma.checkIn.count({ where: { attendee: { ...(eventId ? { eventId } : {}), event: { organizationId, status: { not: "ARCHIVED" } } } } }),
     prisma.checkIn.findMany({
-      where: { duplicate: false, reversedAt: null, attendee: { ...(eventId ? { eventId } : {}), event: { status: { not: "ARCHIVED" } } } },
+      where: { duplicate: false, reversedAt: null, attendee: { ...(eventId ? { eventId } : {}), event: { organizationId, status: { not: "ARCHIVED" } } } },
       distinct: ["attendeeId"],
       select: { attendee: { select: { plusOneEnabled: true } } }
     }),
@@ -74,6 +78,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const access = await authorizeApi(request, "checkins:manage");
+  if (!access.ok) return access.response;
+  const organizationId = access.authorization.organization.id;
   const session = await verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value);
   const rawScannerId = request.headers.get("x-eventpass-scanner-id")?.trim() ?? "";
   const scannerId = /^[a-zA-Z0-9_-]{1,80}$/.test(rawScannerId)
@@ -92,8 +99,8 @@ export async function POST(request: NextRequest) {
   }
 
   if (parsed.data.clientScanId) {
-    const existing = await prisma.checkIn.findUnique({
-      where: { clientScanId: parsed.data.clientScanId },
+    const existing = await prisma.checkIn.findFirst({
+      where: { clientScanId: parsed.data.clientScanId, attendee: { event: { organizationId } } },
       include: { attendee: { include: attendeeInclude } }
     });
     if (existing) {
@@ -117,7 +124,7 @@ export async function POST(request: NextRequest) {
     try {
       decoded = JSON.parse(parsed.data.qrPayload);
     } catch {
-      const pass = await prisma.pass.findUnique({ where: { fallbackCode: parsed.data.qrPayload.trim() } });
+      const pass = await prisma.pass.findFirst({ where: { fallbackCode: parsed.data.qrPayload.trim(), attendee: { event: { organizationId } } } });
       attendeeId = pass?.attendeeId;
       decoded = null;
     }
@@ -131,7 +138,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (parsed.data.fallbackCode) {
-    const pass = await prisma.pass.findUnique({ where: { fallbackCode: parsed.data.fallbackCode } });
+    const pass = await prisma.pass.findFirst({ where: { fallbackCode: parsed.data.fallbackCode, attendee: { event: { organizationId } } } });
     attendeeId = pass?.attendeeId;
   }
 
@@ -139,8 +146,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ valid: false, error: "No matching attendee found" }, { status: 404 });
   }
 
-  const attendee = await prisma.attendee.findUnique({
-    where: { id: attendeeId },
+  const attendee = await prisma.attendee.findFirst({
+    where: { id: attendeeId, event: { organizationId } },
     include: attendeeInclude
   });
 
@@ -183,7 +190,7 @@ export async function POST(request: NextRequest) {
     clientScanId: parsed.data.clientScanId,
     recordedAt: parsed.data.recordedAt ? new Date(parsed.data.recordedAt) : undefined,
     syncedAt: parsed.data.clientScanId ? new Date() : undefined,
-    scannedById: session?.userId
+    scannedById: access.authorization.user.id
   });
 
   const updated = await prisma.attendee.findUniqueOrThrow({

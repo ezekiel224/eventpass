@@ -12,11 +12,11 @@ The primary users for the current product phase are event operators and administ
 
 ## Product Purpose
 
-EventPass manages the operational lifecycle of an event: creating and publishing events, registering attendees, issuing QR passes, checking people in, running raffles and voting, monitoring communications, and administering staff access. Success means an operator can understand an event's state quickly and complete time-sensitive work with confidence.
+Praxis manages the operational lifecycle of an event across isolated client workspaces: creating and publishing events, registering attendees, issuing QR passes, checking people in, running raffles and voting, monitoring communications, and administering staff access. Success means an operator can understand an event's state quickly and complete time-sensitive work with confidence.
 
 ## Positioning
 
-EventPass brings planning, attendee access, live-event operations, engagement activities, and permission-aware administration into one event workspace instead of splitting them across unrelated tools.
+Praxis brings planning, attendee access, live-event operations, engagement activities, and permission-aware administration into one client-aware event workspace instead of splitting them across unrelated tools.
 
 ## Operating Context
 
@@ -34,7 +34,7 @@ Operators work across planning periods and live event environments. The system s
 
 ## Brand Commitments
 
-The product name is EventPass. Organization branding data and event imagery are functional content and must remain supported. No existing visual treatment is binding for the dashboard redesign.
+The product name is Praxis. Client branding data and event imagery are functional content and must remain supported. Super Admins manage client workspaces; client Admins manage the existing operational features within their assigned clients.
 
 For dashboard and administration surfaces, use a familiar modern product-dashboard structure with spacious hierarchy, modular data composition, and crisp borders. The color system comes exclusively from the Emerald Cyber Tamagui palettes: quiet green-neutral surfaces, deep green ink, vivid emerald for action and selection, and the alert scale only for destructive or failed states. Dark mode uses the same base and brand scales. Do not use gradients or revive the previous warm palette. The supplied dashboard references establish the expected craft level and clarity, not a layout or palette to copy.
 

@@ -231,12 +231,6 @@ body {
   background: hsl(var(--ep-primary) / 0.18);
 }
 
-.glass {
-  border: 1px solid hsl(var(--ep-border) / 0.72);
-  background: hsl(var(--ep-card));
-  box-shadow: 0 14px 34px rgb(6 17 12 / 0.09);
-}
-
 .surface-grid {
   background-image: none;
 }
@@ -254,85 +248,6 @@ body {
   background-image: none;
 }
 
-.chrome-panel {
-  border: 1px solid hsl(var(--ep-border) / 0.72);
-  background: hsl(var(--ep-card));
-  box-shadow: 0 8px 22px rgb(6 17 12 / 0.06);
-}
-
-.liquid-modal {
-  border: 1px solid hsl(var(--ep-foreground) / 0.14);
-  border-radius: 0.875rem;
-  background: hsl(var(--ep-card));
-  box-shadow: 0 24px 64px rgb(2 14 9 / 0.24);
-}
-
-.liquid-modal::before { content: none; }
-
-.liquid-icon-button {
-  display: grid;
-  width: 2.75rem;
-  height: 2.75rem;
-  flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid hsl(var(--ep-foreground) / 0.12);
-  border-radius: 0.9rem;
-  color: hsl(var(--ep-muted-foreground));
-  background: hsl(var(--ep-background) / 0.4);
-  box-shadow: inset 0 1px 0 hsl(var(--ep-foreground) / 0.08), 0 10px 30px rgb(6 17 12 / 0.1);
-  backdrop-filter: blur(18px);
-}
-
-.liquid-icon-button:hover {
-  color: hsl(var(--ep-foreground));
-  border-color: hsl(var(--ep-primary) / 0.35);
-  background: hsl(var(--ep-primary) / 0.08);
-  transform: translateY(-1px);
-}
-
-.liquid-scroll {
-  scrollbar-width: none;
-}
-
-.liquid-command-dock {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid hsl(var(--ep-foreground) / 0.11);
-  border-radius: 0.875rem;
-  background: hsl(var(--ep-card));
-  box-shadow: 0 8px 22px rgb(6 17 12 / 0.06);
-}
-
-.liquid-command-dock::before { content: none; }
-
-.liquid-account {
-  border: 1px solid hsl(var(--ep-foreground) / 0.1);
-  background: hsl(var(--ep-background));
-}
-
-.liquid-metric {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid hsl(var(--ep-foreground) / 0.11);
-  border-radius: 0.875rem;
-  background: hsl(var(--ep-card));
-  box-shadow: 0 8px 22px rgb(6 17 12 / 0.06);
-  transform: translateY(0);
-  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), border-color 220ms ease, box-shadow 300ms ease;
-}
-
-.liquid-metric::before, .liquid-metric::after { content: none; }
-
-.liquid-metric:hover {
-  border-color: hsl(var(--ep-primary) / 0.25);
-  box-shadow:
-    inset 0 1px 0 hsl(var(--ep-foreground) / 0.18),
-    inset 0 -1px 0 hsl(var(--ep-background) / 0.42),
-    0 3px 5px rgb(6 17 12 / 0.045),
-    0 20px 46px rgb(6 17 12 / 0.12);
-  transform: translateY(-2px);
-}
-
 .liquid-lens {
   display: grid;
   width: 2.75rem;
@@ -344,12 +259,6 @@ body {
   background: hsl(var(--ep-primary) / 0.075);
   box-shadow: inset 0 1px 0 hsl(var(--ep-foreground) / 0.14), 0 5px 14px rgb(6 17 12 / 0.08);
   backdrop-filter: blur(10px);
-}
-
-.liquid-rail {
-  color: hsl(150 20% 99%);
-  background: hsl(153 48% 5%);
-  box-shadow: inset -1px 0 0 hsl(153 14% 24%);
 }
 
 .liquid-card {

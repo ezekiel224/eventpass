@@ -18,7 +18,7 @@ export default async function SignupPage() {
   const branding = await getBranding();
 
   return (
-    <AuthShell productName={branding.name}>
+    <AuthShell productName="Praxis">
       <Card className="w-full max-w-md animate-fade-up overflow-hidden p-7 sm:p-8">
         <div className="flex items-center justify-between">
           <BrandMark branding={branding} size="lg" />

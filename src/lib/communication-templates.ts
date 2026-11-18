@@ -22,7 +22,7 @@ export const communicationTemplateDefinitions = {
       ["seat", "Seat", "Table 12"],
       ["organizer", "Organizer", "Events Team"],
       ["contactEmail", "Contact email", "events@example.com"],
-      ["organizationName", "Organization", "EventPass"]
+      ["organizationName", "Organization", "Praxis"]
     ]
   },
   PRIZE_ACCEPTANCE: {
@@ -38,7 +38,7 @@ export const communicationTemplateDefinitions = {
       ["prizeValue", "Prize value", " with a fair-market value of $750"],
       ["expirationDays", "Expiration period", "30"],
       ["contactEmail", "Contact email", "events@example.com"],
-      ["organizationName", "Organization", "EventPass"]
+      ["organizationName", "Organization", "Praxis"]
     ]
   }
 } as const;

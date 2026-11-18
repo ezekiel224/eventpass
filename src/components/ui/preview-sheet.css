@@ -30,7 +30,8 @@
 
 .ep-preview-sheet-copy h2 {
   margin: 0;
-  font-size: 28px;
+  color: var(--color);
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: -.02em;
   line-height: 1.1;
@@ -40,7 +41,7 @@
   max-width: 680px;
   margin: 4px 0 0;
   color: var(--color-10);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 20px;
 }
 
@@ -55,6 +56,18 @@
   max-width: 920px;
   margin-inline: auto;
   padding: 20px 20px 32px;
+  color: var(--color);
+}
+
+/* Tamagui sheets render in a portal, outside the dashboard's Tailwind theme
+   wrapper. Keep sheet copy on Tamagui's active foreground tokens so labels
+   cannot fall back to the light-theme ink color in dark mode. */
+.ep-preview-sheet-content .text-foreground {
+  color: var(--color);
+}
+
+.ep-preview-sheet-content .text-muted-foreground {
+  color: var(--color-10);
 }
 
 .ep-preview-summary {

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { passThemeIds } from "@/components/pass/pass-system";
 
 const instantSchema = (message: string) => z.string().datetime({ offset: true, message }).transform((value) => new Date(value));
 
@@ -25,7 +24,6 @@ export const eventFieldsSchema = z.object({
   organizer: z.string().trim().min(2, "Enter the organizer name.").max(120, "Keep the organizer name under 120 characters."),
   contactEmail: z.string().trim().email("Enter a valid contact email address."),
   contactPhone: z.string().trim().max(40, "Keep the phone number under 40 characters.").optional(),
-  passTheme: z.enum(passThemeIds).default("minimal"),
   registrationEnabled: z.boolean().default(true),
   qrPassesEnabled: z.boolean().default(true),
   emailConfirmationsEnabled: z.boolean().default(true),

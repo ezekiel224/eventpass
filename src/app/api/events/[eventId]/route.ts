@@ -3,15 +3,18 @@ import { prisma } from "@/lib/db";
 import { eventQueryInclude, serializeEvent, stringifyStringArray } from "@/lib/prisma-helpers";
 import { eventUpdateSchema } from "@/lib/validation";
 import { eventCommunicationTemplateKey } from "@/lib/communication-templates";
+import { authorizeApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ eventId: string }> };
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
+  const access = await authorizeApi(request, "events:manage");
+  if (!access.ok) return access.response;
   const { eventId } = await params;
-  const event = await prisma.event.findUnique({
-    where: { id: eventId },
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, organizationId: access.authorization.organization.id },
     include: eventQueryInclude()
   });
 
@@ -23,6 +26,8 @@ export async function GET(_request: NextRequest, { params }: Params) {
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
+  const access = await authorizeApi(request, "events:manage");
+  if (!access.ok) return access.response;
   const { eventId } = await params;
   let body: unknown;
   try {
@@ -36,6 +41,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const flattened = parsed.error.flatten();
     return NextResponse.json({ error: "Review the highlighted event details.", fieldErrors: flattened.fieldErrors, formErrors: flattened.formErrors }, { status: 400 });
   }
+
+  const existing = await prisma.event.findFirst({ where: { id: eventId, organizationId: access.authorization.organization.id }, select: { id: true } });
+  if (!existing) return NextResponse.json({ error: "Event not found" }, { status: 404 });
 
   const event = await prisma.event.update({
     where: { id: eventId },
@@ -52,9 +60,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   return NextResponse.json({ event: serializeEvent(event) });
 }
 
-export async function DELETE(_request: NextRequest, { params }: Params) {
+export async function DELETE(request: NextRequest, { params }: Params) {
+  const access = await authorizeApi(request, "events:manage");
+  if (!access.ok) return access.response;
   const { eventId } = await params;
-  const existing = await prisma.event.findUnique({ where: { id: eventId }, select: { id: true, organizationId: true } });
+  const existing = await prisma.event.findFirst({ where: { id: eventId, organizationId: access.authorization.organization.id }, select: { id: true, organizationId: true } });
   if (!existing) return NextResponse.json({ error: "Event not found." }, { status: 404 });
 
   await prisma.$transaction(async (transaction) => {

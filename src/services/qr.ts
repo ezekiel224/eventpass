@@ -28,9 +28,13 @@ export function verifyQrPayload(payload: QrPayload) {
 
 export async function createQrDataUrl(payload: QrPayload) {
   return QRCode.toDataURL(JSON.stringify(payload), {
-    margin: 2,
-    width: 512,
-    errorCorrectionLevel: "M"
+    margin: 4,
+    width: 640,
+    errorCorrectionLevel: "H",
+    color: {
+      dark: "#19154FFF",
+      light: "#FFFFFFFF"
+    }
   });
 }
 

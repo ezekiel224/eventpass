@@ -49,6 +49,11 @@ export async function POST(request: NextRequest) {
         data: { id: INSTALLATION_ID }
       });
       const { adminRole } = await ensureSystemRbac(transaction, { migrateLegacyAdmins: false });
+      const organization = await transaction.organization.upsert({
+        where: { id: "org_default" },
+        update: { name: "Insight", slug: "insight" },
+        create: { id: "org_default", name: "Insight", slug: "insight" }
+      });
       const created = await transaction.user.create({
         data: {
           email: parsed.data.email,
@@ -56,12 +61,19 @@ export async function POST(request: NextRequest) {
           name: parsed.data.name,
           passwordHash,
           role: "ADMIN",
+          isSuperAdmin: true,
           active: true,
           mustChangePassword: false,
           passwordChangedAt: new Date(),
           emailVerified: new Date(),
           roles: {
             create: { roleId: adminRole.id }
+          },
+          clientMemberships: {
+            create: {
+              organizationId: organization.id,
+              roles: { create: { roleId: adminRole.id } }
+            }
           }
         }
       });
@@ -73,6 +85,7 @@ export async function POST(request: NextRequest) {
         data: auditLogData({
           request,
           actorUserId: created.id,
+          organizationId: organization.id,
           action: "installation.admin_created",
           targetType: "User",
           targetId: created.id,

@@ -3,10 +3,10 @@
 import { CheckCircle2, QrCode, RotateCcw, ShieldAlert } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { QrCameraScanner } from "@/components/scanner/qr-camera-scanner";
+import { AlertDialogPanel } from "@/components/ui/alert-dialog-panel";
 import { Button } from "@/components/ui/button";
 import { Card, GlassCard } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { LiquidModal } from "@/components/ui/liquid-modal";
 import { formatTime, initials } from "@/lib/utils";
 import { scannerRequestHeaders } from "@/lib/scanner-client";
 import { AttendeeSummary, CheckInResult } from "@/types/domain";
@@ -229,10 +229,10 @@ export function CheckInManager({ timeZone }: { timeZone: string }) {
           </div>
         </Card>
       </div>
-      <LiquidModal open={Boolean(undoTarget)} onClose={() => { setUndoTarget(null); setUndoReason(""); }} title="Undo this check-in?" description={undoTarget ? `${undoTarget.attendee.name} will return to not checked in. The reason and operator are retained in the audit trail.` : ""} size="sm" label={null}>
+      <AlertDialogPanel open={Boolean(undoTarget)} onOpenChange={(open) => { if (!open) { setUndoTarget(null); setUndoReason(""); } }} title="Undo this check-in?" description={undoTarget ? `${undoTarget.attendee.name} will return to not checked in. The reason and operator are retained in the audit trail.` : ""}>
         <label className="grid gap-2 text-sm font-semibold">Reason<Input autoFocus value={undoReason} onChange={(event) => setUndoReason(event.target.value)} placeholder="Scanned by mistake" /></label>
         <div className="mt-5 flex justify-end gap-2"><Button type="button" variant="ghost" onClick={() => { setUndoTarget(null); setUndoReason(""); }}>Cancel</Button><Button type="button" variant="danger" disabled={undoReason.trim().length < 3} onClick={() => void undoCheckIn()}><RotateCcw className="h-4 w-4" /> Undo check-in</Button></div>
-      </LiquidModal>
+      </AlertDialogPanel>
     </>
   );
 }

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { serializeRaffleAttendee } from "@/lib/raffle-attendee";
 import { qrValidationSchema } from "@/lib/validation";
 import { verifyQrPayload } from "@/services/qr";
+import { authorizeEventApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ eventId: string }> };
 
@@ -44,6 +45,8 @@ function fallbackCodeFromPayload(payload: string | undefined) {
 
 export async function POST(request: NextRequest, { params }: Params) {
   const { eventId } = await params;
+  const access = await authorizeEventApi(request, eventId, "raffles:manage");
+  if (!access.ok) return access.response;
   const parsed = scanSchema.safeParse(await request.json());
 
   if (!parsed.success) {

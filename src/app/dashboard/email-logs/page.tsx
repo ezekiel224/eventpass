@@ -5,15 +5,19 @@ import { PageTitle } from "@/components/dashboard/page-title";
 import { DashboardBadge, DashboardEmpty, DashboardPanel, DashboardPanelHeader, DashboardRow } from "@/components/dashboard/dashboard-surface";
 import { prisma } from "@/lib/db";
 import { getBranding } from "@/lib/branding";
+import { requirePermission } from "@/lib/authorization";
 
 export const dynamic = "force-dynamic";
 
 export default async function EmailLogsPage() {
+  const authorization = await requirePermission("settings:manage");
+  const organizationId = authorization.organization.id;
   const [emailLogs, branding] = await Promise.all([prisma.emailLog.findMany({
+    where: { event: { organizationId } },
     orderBy: { createdAt: "desc" },
     take: 50,
     include: { event: true }
-  }), getBranding()]);
+  }), getBranding(organizationId)]);
 
   return (
     <AppShell active="Campaigns">

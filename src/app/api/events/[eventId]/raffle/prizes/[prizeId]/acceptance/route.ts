@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { issuePrizeAcceptance } from "@/lib/prize-acceptance";
+import { authorizeEventApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ eventId: string; prizeId: string }> };
 
 export async function POST(request: NextRequest, { params }: Params) {
   const { eventId, prizeId } = await params;
+  const access = await authorizeEventApi(request, eventId, "raffles:manage");
+  if (!access.ok) return access.response;
   const prize = await prisma.rafflePrize.findFirst({
     where: { id: prizeId, eventId, status: "ACTIVE" },
     select: { id: true, winnerAttendeeId: true, acceptanceStatus: true }

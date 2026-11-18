@@ -5,15 +5,19 @@ import { Card } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
 import { getBranding } from "@/lib/branding";
 import { redirect } from "next/navigation";
+import { getAuthorizationForUser } from "@/lib/authorization";
+import { requestedClientId } from "@/lib/client-context";
 
 export default async function ChangePasswordPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (!user.mustChangePassword) redirect("/dashboard");
-  const branding = await getBranding();
+  const authorization = await getAuthorizationForUser(user.id, await requestedClientId());
+  if (!authorization) redirect("/forbidden");
+  const branding = await getBranding(authorization.organization.id);
 
   return (
-    <AuthShell productName={branding.name}>
+    <AuthShell productName="Praxis">
       <Card className="w-full max-w-md p-7 sm:p-8">
         <BrandMark branding={branding} size="lg" />
         <p className="mt-7 panel-label">Required security step</p>

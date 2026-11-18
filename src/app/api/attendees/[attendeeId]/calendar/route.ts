@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getPublicAppBaseUrl } from "@/lib/public-url";
+import { authorizeAttendeeApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ attendeeId: string }> };
 
@@ -16,6 +17,8 @@ function escapeIcs(value: string) {
 
 export async function GET(request: NextRequest, { params }: Params) {
   const { attendeeId } = await params;
+  const access = await authorizeAttendeeApi(request, attendeeId, "passes:manage");
+  if (!access.ok) return access.response;
   const attendee = await prisma.attendee.findUnique({
     where: { id: attendeeId },
     include: { event: true, pass: true }
@@ -31,7 +34,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   const calendar = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//EventPass//Registration Pass//EN",
+    "PRODID:-//Praxis//Registration Pass//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",

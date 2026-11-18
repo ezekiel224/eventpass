@@ -1,6 +1,6 @@
 "use client";
 
-import { Gift, RefreshCcw, Sparkles, Ticket } from "lucide-react";
+import { Gift, RefreshCcw, Sparkles, Ticket, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MarkdownContent } from "@/components/ui/markdown-content";
@@ -13,6 +13,8 @@ type RafflePrize = {
   description: string | null;
   value: string | null;
   imageUrl: string | null;
+  entryMode: "TICKETS" | "ALL_GUESTS";
+  eligibleGuestTotal: number;
   totalTickets: number;
 };
 
@@ -294,8 +296,8 @@ export function RaffleDisplay({ initialEventId = "", timeZone }: { initialEventI
               <div className="flex flex-col justify-between gap-6 p-6">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                    <Ticket className="h-3.5 w-3.5" />
-                    {prize.totalTickets} tickets
+                    {prize.entryMode === "ALL_GUESTS" ? <Users className="h-3.5 w-3.5" /> : <Ticket className="h-3.5 w-3.5" />}
+                    {prize.entryMode === "ALL_GUESTS" ? "Guest draw" : `${prize.totalTickets} tickets`}
                   </div>
                   <h2 className="mt-4 text-3xl font-semibold leading-tight">{prize.name}</h2>
                   {prize.description ? <MarkdownContent value={prize.description} className="mt-3 text-base text-muted-foreground" /> : null}
@@ -303,9 +305,9 @@ export function RaffleDisplay({ initialEventId = "", timeZone }: { initialEventI
                 <div className="grid grid-cols-[1fr_auto] items-end gap-4">
                   <div>
                     {prize.value ? <p className="text-sm font-semibold text-accent">{prize.value}</p> : null}
-                    <p className="mt-1 text-xs uppercase text-muted-foreground">Prize pool</p>
+                    <p className="mt-1 text-xs uppercase text-muted-foreground">{prize.entryMode === "ALL_GUESTS" ? "Registered guests" : "Prize pool"}</p>
                   </div>
-                  <p className="text-6xl font-semibold tabular-nums text-primary">{prize.totalTickets}</p>
+                  <p className="text-6xl font-semibold tabular-nums text-primary">{prize.entryMode === "ALL_GUESTS" ? prize.eligibleGuestTotal : prize.totalTickets}</p>
                 </div>
               </div>
             </div>

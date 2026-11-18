@@ -3,7 +3,6 @@ import { LoginForm } from "@/components/auth/login-form";
 import { SimpleLoginScreen } from "@/components/auth/simple-login-screen";
 import { getCurrentUser } from "@/lib/auth";
 import { getAuthorizationForUser } from "@/lib/authorization";
-import { getBranding } from "@/lib/branding";
 import { isInitialSetupAvailable } from "@/lib/setup";
 
 export default async function LoginPage() {
@@ -17,10 +16,8 @@ export default async function LoginPage() {
     redirect("/signup");
   }
 
-  const branding = await getBranding();
-
   return (
-    <SimpleLoginScreen productName={branding.name}>
+    <SimpleLoginScreen productName="Praxis">
       <LoginForm />
     </SimpleLoginScreen>
   );

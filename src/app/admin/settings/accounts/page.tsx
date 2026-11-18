@@ -11,7 +11,7 @@ export default async function AccountsPage() {
   return (
     <AppShell active="Accounts">
       <PageTitle title="Accounts" />
-      <AccountsManager currentUserId={authorization.user.id} canDeleteAccounts={isAdministrator(authorization)} />
+      <AccountsManager currentUserId={authorization.user.id} canDeleteAccounts={isAdministrator(authorization)} canManageSuperAdmins={authorization.user.isSuperAdmin} />
     </AppShell>
   );
 }

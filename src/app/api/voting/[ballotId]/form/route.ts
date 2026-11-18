@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { votingFormSchema } from "@/lib/voting";
+import { authorizeApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ ballotId: string }> };
 
 export async function PUT(request: NextRequest, { params }: Params) {
+  const access = await authorizeApi(request, "voting:manage");
+  if (!access.ok) return access.response;
   const { ballotId } = await params;
   const parsed = votingFormSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Every question needs a prompt and at least two complete options." }, { status: 400 });
-  const ballot = await prisma.votingBallot.findUnique({ where: { id: ballotId }, select: { status: true, _count: { select: { submissions: true } } } });
+  const ballot = await prisma.votingBallot.findFirst({ where: { id: ballotId, event: { organizationId: access.authorization.organization.id } }, select: { status: true, _count: { select: { submissions: true } } } });
   if (!ballot) return NextResponse.json({ error: "Ballot not found." }, { status: 404 });
   if (ballot._count.submissions) return NextResponse.json({ error: "The form cannot be restructured after voting has started. Close and duplicate the ballot for a new version." }, { status: 409 });
 

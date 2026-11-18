@@ -3,22 +3,20 @@ import { TamaguiDashboardHome, type DashboardHomeData } from "@/components/dashb
 import { prisma } from "@/lib/db";
 import { getBranding } from "@/lib/branding";
 import { formatDate, formatTime } from "@/lib/utils";
-import { getCurrentUser } from "@/lib/auth";
-import { getAuthorizationForUser } from "@/lib/authorization";
+import { requirePermission } from "@/lib/authorization";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ eventId?: string }> }) {
-  const [{ eventId }, branding, events, currentUser] = await Promise.all([
-    searchParams,
-    getBranding(),
-    prisma.event.findMany({ where: { status: { not: "ARCHIVED" } }, orderBy: { startsAt: "desc" }, select: { id: true, name: true } }),
-    getCurrentUser(),
+  const [authorization, { eventId }] = await Promise.all([requirePermission("dashboard:view"), searchParams]);
+  const organizationId = authorization.organization.id;
+  const [branding, events] = await Promise.all([
+    getBranding(organizationId),
+    prisma.event.findMany({ where: { organizationId, status: { not: "ARCHIVED" } }, orderBy: { startsAt: "desc" }, select: { id: true, name: true } })
   ]);
-  const authorization = currentUser ? await getAuthorizationForUser(currentUser.id) : null;
   const selectedId = events.some((event) => event.id === eventId) ? eventId : events[0]?.id;
-  const selected = selectedId ? await prisma.event.findUnique({
-    where: { id: selectedId },
+  const selected = selectedId ? await prisma.event.findFirst({
+    where: { id: selectedId, organizationId },
     include: {
       attendees: { include: { checkIns: { where: { duplicate: false, reversedAt: null }, include: { station: true } } } },
       emailLogs: { orderBy: { createdAt: "desc" }, take: 40 },
@@ -66,5 +64,5 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     };
   }
 
-  return <AppShell active="Dashboard"><TamaguiDashboardHome data={data} permissions={[...(authorization?.permissions ?? [])]} /></AppShell>;
+  return <AppShell active="Dashboard"><TamaguiDashboardHome data={data} permissions={[...authorization.permissions]} /></AppShell>;
 }

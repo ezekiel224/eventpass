@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { serializeRaffleAttendee } from "@/lib/raffle-attendee";
+import { authorizeEventApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ eventId: string }> };
 
@@ -22,6 +23,8 @@ const allocationSchema = z.object({
 
 export async function PUT(request: NextRequest, { params }: Params) {
   const { eventId } = await params;
+  const access = await authorizeEventApi(request, eventId, "raffles:manage");
+  if (!access.ok) return access.response;
   const parsed = allocationSchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -34,7 +37,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
         include: { raffleEntries: { where: { prize: { status: "ACTIVE" } } } }
       }),
       transaction.rafflePrize.findMany({
-        where: { eventId, status: "ACTIVE" },
+        where: { eventId, status: "ACTIVE", entryMode: "TICKETS" },
         select: { id: true }
       })
     ]);

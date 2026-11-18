@@ -1,5 +1,5 @@
 ---
-name: EventPass
+name: Praxis
 description: Calm event operations in an adaptive, user-selectable color workspace.
 colors:
   canvas: "#F3F5F6"
@@ -86,13 +86,13 @@ components:
     padding: "20px"
 ---
 
-# Design System: EventPass
+# Design System: Praxis
 
 ## Overview
 
 **Creative North Star: "The Adaptive Operations Bar"**
 
-EventPass is a calm, precise operations product with four selectable color families, each available in accessible light and dark appearances. The interface starts flat and spacious, then the navigation condenses into a floating pill as content moves beneath it. Dense event work remains approachable through strong hierarchy, connected surfaces, and gentle interaction feedback.
+Praxis is a calm, precise operations product with four selectable color families, each available in accessible light and dark appearances. The interface starts flat and spacious, then the navigation condenses into a floating pill as content moves beneath it. Dense event work remains approachable through strong hierarchy, connected surfaces, and gentle interaction feedback.
 
 The system is built from Tamagui themes and components. Shared palette families are declared in `src/app/globals.css`, selected through `src/components/theme-system.tsx`, and consumed through semantic Tamagui and Tailwind tokens. Page-specific palettes must not be introduced.
 

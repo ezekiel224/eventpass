@@ -10,7 +10,7 @@ import { RollingNumber } from "@/components/ui/rolling-number";
 import type { EventSummary } from "@/types/domain";
 import "./raffle-live-operations.css";
 
-type Prize = { id: string; name: string; description: string | null; value: string | null; imageUrl: string | null };
+type Prize = { id: string; name: string; description: string | null; value: string | null; imageUrl: string | null; entryMode: "TICKETS" | "ALL_GUESTS" };
 type RaffleAttendee = {
   id: string;
   name: string;
@@ -55,7 +55,7 @@ export function RaffleTicketStation({ eventId }: { eventId: string }) {
       setLoadingPrizes(true);
       void fetch(`/api/events/${eventId}/raffle?limit=1`, { cache: "no-store" })
         .then((response) => response.json())
-        .then((data) => setPrizes(data.raffle?.prizes ?? []))
+        .then((data) => setPrizes((data.raffle?.prizes ?? []).filter((prize: Prize) => prize.entryMode === "TICKETS")))
         .finally(() => setLoadingPrizes(false));
     }, 0);
     return () => window.clearTimeout(timeout);

@@ -1,17 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getBranding } from "@/lib/branding";
 import { prisma } from "@/lib/db";
 import { createGoogleCalendarUrl, renderPassEmail, sendEmail } from "@/services/email";
 import { getCommunicationTemplate, renderCommunicationTemplate } from "@/lib/communication-templates";
 import { formatDate, formatTime } from "@/lib/utils";
 import { getPublicAppBaseUrl } from "@/lib/public-url";
+import { authorizeAttendeeApi } from "@/lib/authorization";
 
 type Params = { params: Promise<{ attendeeId: string }> };
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request, { params }: Params) {
+export async function POST(request: NextRequest, { params }: Params) {
   const { attendeeId } = await params;
+  const access = await authorizeAttendeeApi(request, attendeeId, "passes:manage");
+  if (!access.ok) return access.response;
   const attendee = await prisma.attendee.findUnique({
     where: { id: attendeeId },
     include: {
@@ -36,7 +39,7 @@ export async function POST(request: Request, { params }: Params) {
   let errorMessage: string | undefined;
 
   try {
-    const branding = await getBranding();
+  const branding = await getBranding(access.authorization.organization.id);
     const template = await getCommunicationTemplate(attendee.event.organizationId, "PASS_CONFIRMATION", attendee.event.id);
     const rendered = renderCommunicationTemplate(template, {
       name: `${attendee.firstName} ${attendee.lastName}`,

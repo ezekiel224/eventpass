@@ -13,7 +13,6 @@ export type EventSummary = {
   organizer: string;
   contactEmail: string;
   contactPhone: string | null;
-  passTheme: string;
   status: string;
   registrationEnabled: boolean;
   qrPassesEnabled: boolean;

@@ -3,9 +3,9 @@ import { ImmersiveScanner } from "@/components/scanner/immersive-scanner";
 import { requirePermission } from "@/lib/authorization";
 
 export const metadata: Metadata = {
-  title: "EventPass Scanner",
+  title: "Praxis Scanner",
   description: "Full-screen event check-in and raffle ticket scanner.",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "EventPass Scanner" }
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Praxis Scanner" }
 };
 
 export const viewport: Viewport = { themeColor: "#06110c", viewportFit: "cover", width: "device-width", initialScale: 1, maximumScale: 1 };

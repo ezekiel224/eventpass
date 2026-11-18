@@ -14,7 +14,10 @@ export const permissionCatalog = [
   { name: "Manage roles", slug: "roles:manage", description: "Create and edit non-system roles." },
   { name: "View permissions", slug: "permissions:view", description: "View the permission catalog." },
   { name: "Manage permissions", slug: "permissions:manage", description: "Create and update permission definitions." },
-  { name: "View audit trail", slug: "audit:view", description: "View security-sensitive administrative activity." }
+  { name: "View audit trail", slug: "audit:view", description: "View security-sensitive administrative activity." },
+  { name: "View clients", slug: "clients:view", description: "View every client workspace in Praxis.", superAdminOnly: true },
+  { name: "Create clients", slug: "clients:create", description: "Create and initialize new Praxis client workspaces.", superAdminOnly: true },
+  { name: "Manage clients", slug: "clients:manage", description: "Switch, update, and administer Praxis client workspaces.", superAdminOnly: true }
 ] as const;
 
 export type PermissionSlug = (typeof permissionCatalog)[number]["slug"] | (string & {});
@@ -25,6 +28,8 @@ export function permissionForRequest(pathname: string, method: string): Permissi
   if (pathname.startsWith("/api/admin/roles")) return method === "GET" ? "roles:view" : "roles:manage";
   if (pathname.startsWith("/api/admin/permissions")) return method === "GET" ? "permissions:view" : "permissions:manage";
   if (pathname.startsWith("/api/admin/audit")) return "audit:view";
+  if (pathname.startsWith("/api/admin/clients/select")) return "clients:manage";
+  if (pathname.startsWith("/api/admin/clients")) return method === "POST" ? "clients:create" : method === "DELETE" ? "clients:manage" : "clients:view";
   if (pathname.includes("/raffle")) return "raffles:manage";
   if (pathname.startsWith("/api/voting")) return "voting:manage";
   if (pathname.startsWith("/api/events")) return "events:manage";
@@ -35,6 +40,7 @@ export function permissionForRequest(pathname: string, method: string): Permissi
 
   if (pathname.startsWith("/admin/settings/accounts")) return "users:view";
   if (pathname.startsWith("/admin/settings/permissions")) return "roles:view";
+  if (pathname.startsWith("/admin/clients")) return "clients:view";
   if (pathname.startsWith("/dashboard/events")) return "events:manage";
   if (pathname.startsWith("/dashboard/registration")) return "events:manage";
   if (pathname.startsWith("/dashboard/waitlist")) return "attendees:manage";

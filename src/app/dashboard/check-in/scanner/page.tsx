@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { ImmersiveScanner } from "@/components/scanner/immersive-scanner";
 
 export const metadata: Metadata = {
-  title: "Pass scanner · EventPass",
+  title: "Pass scanner · Praxis",
   description: "Continuous mobile pass scanning for event check-in.",
   appleWebApp: {
     capable: true,
