@@ -54,8 +54,8 @@ export function OperationSelect({
         <Select.Viewport className="ep-operation-select-viewport ep-nav-displacing-overlay" minWidth={240}>
           <Select.Group>
             <Select.Label className="ep-operation-select-label">{label}</Select.Label>
-            {options.map((option) => (
-              <Select.Item className="ep-operation-select-item" key={option.value} value={option.value} disabled={option.disabled}>
+            {options.map((option, index) => (
+              <Select.Item className="ep-operation-select-item" key={option.value} value={option.value} index={index} disabled={option.disabled}>
                 <Select.ItemText>{option.label}</Select.ItemText>
                 <Select.ItemIndicator><Check size={14} /></Select.ItemIndicator>
               </Select.Item>

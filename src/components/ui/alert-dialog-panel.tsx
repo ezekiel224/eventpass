@@ -19,7 +19,7 @@ export function AlertDialogPanel({
 }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialog.Portal>
+      <AlertDialog.Portal zIndex={140_000}>
         <AlertDialog.Overlay
           className="ep-nav-displacing-overlay"
           animation="quick"
