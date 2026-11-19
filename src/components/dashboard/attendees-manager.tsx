@@ -407,7 +407,7 @@ export function AttendeesManager({ eventId, initialQuery = "", timeZone }: { eve
             </div>
           ) : null}
           {selectedEvent?.menuOptions.length ? (
-            <label className="grid gap-2 text-sm font-medium">Menu selection<select value={form.selectedMenu} onChange={(event) => setField("selectedMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal"><option value="">Not selected</option>{selectedEvent.menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+            <label className="grid gap-2 text-sm font-medium">Menu selection<OperationSelect value={form.selectedMenu} onValueChange={(value) => setField("selectedMenu", value)} label="Menu selection" options={[{ value: "", label: "Not selected" }, ...selectedEvent.menuOptions.map((option) => ({ value: option, label: option }))]} compact /></label>
           ) : null}
           <label className="choice-tile flex items-center gap-2 p-3 text-sm">
             <input type="checkbox" checked={form.plusOneEnabled} onChange={(event) => setField("plusOneEnabled", event.target.checked)} className="h-4 w-4 accent-primary" />
@@ -443,7 +443,7 @@ export function AttendeesManager({ eventId, initialQuery = "", timeZone }: { eve
                 </div>
               ) : null}
               {selectedEvent?.menuOptions.length ? (
-                <label className="grid gap-2 text-sm font-medium">Plus-one menu selection<select value={form.plusOneMenu} onChange={(event) => setField("plusOneMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal"><option value="">Not selected</option>{selectedEvent.menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+                <label className="grid gap-2 text-sm font-medium">Plus-one menu selection<OperationSelect value={form.plusOneMenu} onValueChange={(value) => setField("plusOneMenu", value)} label="Plus-one menu selection" options={[{ value: "", label: "Not selected" }, ...selectedEvent.menuOptions.map((option) => ({ value: option, label: option }))]} compact /></label>
               ) : null}
             </div>
           ) : null}
@@ -554,7 +554,7 @@ export function AttendeesManager({ eventId, initialQuery = "", timeZone }: { eve
               </div>
             ) : null}
             {selectedEvent?.menuOptions.length ? (
-              <label className="grid gap-2 text-sm font-medium">Attendee menu selection<select value={editForm.selectedMenu} onChange={(event) => setEditField("selectedMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal"><option value="">Not selected</option>{selectedEvent.menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+              <label className="grid gap-2 text-sm font-medium">Attendee menu selection<OperationSelect value={editForm.selectedMenu} onValueChange={(value) => setEditField("selectedMenu", value)} label="Attendee menu selection" options={[{ value: "", label: "Not selected" }, ...selectedEvent.menuOptions.map((option) => ({ value: option, label: option }))]} compact /></label>
             ) : null}
 
             <label className="choice-tile flex items-center gap-2 p-3 text-sm">
@@ -587,7 +587,7 @@ export function AttendeesManager({ eventId, initialQuery = "", timeZone }: { eve
                   </div>
                 ) : null}
                 {selectedEvent?.menuOptions.length ? (
-                  <label className="grid gap-2 text-sm font-medium">Plus-one menu selection<select value={editForm.plusOneMenu} onChange={(event) => setEditField("plusOneMenu", event.target.value)} className="focus-ring h-11 rounded-xl border border-border bg-background px-3 font-normal"><option value="">Not selected</option>{selectedEvent.menuOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+                  <label className="grid gap-2 text-sm font-medium">Plus-one menu selection<OperationSelect value={editForm.plusOneMenu} onValueChange={(value) => setEditField("plusOneMenu", value)} label="Plus-one menu selection" options={[{ value: "", label: "Not selected" }, ...selectedEvent.menuOptions.map((option) => ({ value: option, label: option }))]} compact /></label>
                 ) : null}
               </div>
             ) : null}

@@ -3,6 +3,7 @@
 import { Camera, CheckCircle2, Loader2, Minus, Plus, ShieldAlert, StopCircle } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { OperationSelect } from "@/components/ui/operation-select";
 import { cn } from "@/lib/utils";
 
 type QrCameraScannerProps = {
@@ -326,16 +327,15 @@ export function QrCameraScanner({
       {cameras.length > 1 ? (
         <label className={cn("grid gap-1.5 text-sm font-medium", immersive && "absolute right-3 top-[calc(env(safe-area-inset-top)+7.5rem)] z-30 w-44 text-white")}>
           <span className={immersive ? "sr-only" : undefined}>Camera lens</span>
-          <select
+          <OperationSelect
             value={cameraId}
-            onChange={(event) => void selectCamera(event.target.value)}
-            className={cn("focus-ring h-11 rounded-xl border px-3 text-sm", immersive ? "border-white/25 bg-black/75 text-white backdrop-blur-md" : "border-border bg-background")}
+            onValueChange={(value) => void selectCamera(value)}
+            label="Camera lens"
+            options={cameras.map((camera, index) => ({ value: camera.id, label: cameraName(camera, index) }))}
+            inverse={immersive}
+            compact
             disabled={isStarting}
-          >
-            {cameras.map((camera, index) => (
-              <option key={camera.id} value={camera.id}>{cameraName(camera, index)}</option>
-            ))}
-          </select>
+          />
           {immersive ? null : <span className="text-xs font-normal text-muted-foreground">Choose front, rear, wide, or telephoto when your phone exposes those lenses.</span>}
         </label>
       ) : null}

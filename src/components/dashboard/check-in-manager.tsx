@@ -7,6 +7,7 @@ import { AlertDialogPanel } from "@/components/ui/alert-dialog-panel";
 import { Button } from "@/components/ui/button";
 import { Card, GlassCard } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { OperationSelect } from "@/components/ui/operation-select";
 import { formatTime, initials } from "@/lib/utils";
 import { scannerRequestHeaders } from "@/lib/scanner-client";
 import { AttendeeSummary, CheckInResult } from "@/types/domain";
@@ -126,16 +127,14 @@ export function CheckInManager({ timeZone }: { timeZone: string }) {
           </div>
           <form className="mt-5 grid gap-4" onSubmit={submit}>
             <QrCameraScanner onScan={submitScannedPayload} startLabel="Scan pass" stopLabel="Stop camera" />
-            <select
+            <OperationSelect
               value={attendeeId}
-              onChange={(event) => setAttendeeId(event.target.value)}
-              className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm"
-            >
-              <option value="">Choose attendee</option>
-              {attendees.map((attendee) => (
-                <option key={attendee.id} value={attendee.id}>{attendee.name} - {attendee.eventName}</option>
-              ))}
-            </select>
+              onValueChange={setAttendeeId}
+              label="Attendee"
+              placeholder="Choose attendee"
+              options={[{ value: "", label: "Choose attendee" }, ...attendees.map((attendee) => ({ value: attendee.id, label: `${attendee.name} - ${attendee.eventName}` }))]}
+              compact
+            />
             <Input value={fallbackCode} onChange={(event) => setFallbackCode(event.target.value)} placeholder="Or enter fallback code, e.g. EP-MAYA" />
             <textarea
               value={qrPayload}

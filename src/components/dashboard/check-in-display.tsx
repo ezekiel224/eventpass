@@ -4,6 +4,7 @@ import { Building2, CheckCircle2, Clock3, Eraser, History as HistoryIcon, Radio,
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { OperationSelect } from "@/components/ui/operation-select";
 import { PreviewSheet } from "@/components/ui/preview-sheet";
 import { visibleCheckIns } from "@/lib/check-in-display";
 import { formatDate, formatTime, initials } from "@/lib/utils";
@@ -168,10 +169,7 @@ export function CheckInDisplay({ initialEventId = "", timeZone }: { initialEvent
               <span className={`h-2 w-2 rounded-full ${connected ? "animate-pulse bg-emerald-500" : "bg-destructive"}`} />
               {connected ? "Live" : "Reconnecting"}
             </span>
-            <select value={eventId} onChange={(event) => { setEventId(event.target.value); setLogs([]); setClearedLogIds(new Set()); setHistoryOpen(false); setHistoryLogs([]); setHistoryQuery(""); setHistoryCursor(null); setConnected(false); }} className="focus-ring h-11 rounded-xl border border-border bg-card px-3 text-sm" aria-label="Event">
-              {events.length === 0 ? <option value="">No active events</option> : null}
-              {events.map((event) => <option key={event.id} value={event.id}>{event.name}</option>)}
-            </select>
+            <OperationSelect value={eventId} onValueChange={(value) => { setEventId(value); setLogs([]); setClearedLogIds(new Set()); setHistoryOpen(false); setHistoryLogs([]); setHistoryQuery(""); setHistoryCursor(null); setConnected(false); }} label="Event" options={events.length === 0 ? [{ value: "", label: "No active events" }] : events.map((event) => ({ value: event.id, label: event.name }))} compact />
           </div>
         </header>
 

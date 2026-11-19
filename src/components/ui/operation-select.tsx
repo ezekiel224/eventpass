@@ -18,6 +18,8 @@ export function OperationSelect({
   placeholder = "Choose an option",
   disabled = false,
   compact = false,
+  inverse = false,
+  className = "",
 }: {
   value: string;
   onValueChange: (value: string) => void;
@@ -26,13 +28,23 @@ export function OperationSelect({
   placeholder?: string;
   disabled?: boolean;
   compact?: boolean;
+  inverse?: boolean;
+  className?: string;
 }) {
-  const selectedLabel = options.find((option) => option.value === value)?.label;
+  const getItemLabel = (nextValue: string) => options.find((option) => option.value === nextValue)?.label;
 
   return (
-    <Select native="web" value={value} onValueChange={onValueChange} size={compact ? "md" : "lg"} zIndex={120_000}>
-      <Select.Trigger className="ep-operation-select" aria-label={label} disabled={disabled}>
-        <Select.Value placeholder={placeholder}>{selectedLabel}</Select.Value>
+    <Select
+      value={value}
+      onValueChange={onValueChange}
+      renderValue={getItemLabel}
+      disablePreventBodyScroll
+      lazyMount
+      size={compact ? "md" : "lg"}
+      zIndex={120_000}
+    >
+      <Select.Trigger className={`ep-operation-select${inverse ? " ep-operation-select-inverse" : ""}${className ? ` ${className}` : ""}`} aria-label={label} disabled={disabled}>
+        <Select.Value placeholder={placeholder} />
         <Select.Icon><ChevronDown size={15} /></Select.Icon>
       </Select.Trigger>
 

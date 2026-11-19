@@ -4,6 +4,7 @@ import { Gift, RefreshCcw, Sparkles, Ticket, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { MarkdownContent } from "@/components/ui/markdown-content";
+import { OperationSelect } from "@/components/ui/operation-select";
 import { EventSummary } from "@/types/domain";
 import { formatTime } from "@/lib/utils";
 
@@ -251,17 +252,14 @@ export function RaffleDisplay({ initialEventId = "", timeZone }: { initialEventI
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <select
-              className="focus-ring h-10 rounded-xl border border-border bg-background px-3 text-sm"
+            <OperationSelect
               value={eventId}
-              onChange={(event) => void chooseEvent(event.target.value)}
+              onValueChange={(value) => void chooseEvent(value)}
               disabled={events.length === 0}
-              aria-label="Event"
-            >
-              {events.map((event) => (
-                <option key={event.id} value={event.id}>{event.name}</option>
-              ))}
-            </select>
+              label="Event"
+              options={events.map((event) => ({ value: event.id, label: event.name }))}
+              compact
+            />
             <Button type="button" variant="secondary" onClick={() => void loadRaffle()} disabled={!eventId || loading}>
               <RefreshCcw className="h-4 w-4" /> Refresh
             </Button>
