@@ -30,7 +30,7 @@ export function OperationSelect({
   const selectedLabel = options.find((option) => option.value === value)?.label;
 
   return (
-    <Select value={value} onValueChange={onValueChange} size={compact ? "md" : "lg"} zIndex={120_000}>
+    <Select native="web" value={value} onValueChange={onValueChange} size={compact ? "md" : "lg"} zIndex={120_000}>
       <Select.Trigger className="ep-operation-select" aria-label={label} disabled={disabled}>
         <Select.Value placeholder={placeholder}>{selectedLabel}</Select.Value>
         <Select.Icon><ChevronDown size={15} /></Select.Icon>
@@ -54,8 +54,13 @@ export function OperationSelect({
         <Select.Viewport className="ep-operation-select-viewport ep-nav-displacing-overlay" minWidth={240}>
           <Select.Group>
             <Select.Label className="ep-operation-select-label">{label}</Select.Label>
-            {options.map((option, index) => (
-              <Select.Item className="ep-operation-select-item" key={option.value} value={option.value} index={index} disabled={option.disabled}>
+            {options.map((option) => (
+              <Select.Item
+                className="ep-operation-select-item"
+                key={option.value}
+                value={option.value}
+                disabled={option.disabled}
+              >
                 <Select.ItemText>{option.label}</Select.ItemText>
                 <Select.ItemIndicator><Check size={14} /></Select.ItemIndicator>
               </Select.Item>

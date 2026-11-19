@@ -21,13 +21,11 @@ export function ConfirmDialog({
   onConfirm: () => void;
   destructive?: boolean;
 }) {
-  const Action = destructive ? AlertDialog.Destructive : AlertDialog.Action;
-
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialog.Portal zIndex={140_000}>
+      <AlertDialog.Portal>
         <AlertDialog.Overlay
-          className="ep-nav-displacing-overlay"
+          className="ep-nav-displacing-overlay ep-alert-dialog-overlay"
           animation="quick"
           backgroundColor="shadow-color"
           opacity="enter:0 exit:0"
@@ -51,18 +49,14 @@ export function ConfirmDialog({
             <AlertDialog.Cancel asChild>
               <Button size="md" variant="outlined" aria-label="Cancel">Cancel</Button>
             </AlertDialog.Cancel>
-            <Action asChild>
-              <Button
-                size="md"
-                className={destructive ? undefined : "ep-confirm-primary-action"}
-                aria-label={confirmLabel}
-                backgroundColor={destructive ? "alert-500" : undefined}
-                color={destructive ? "alert-950" : undefined}
-                onPress={onConfirm}
-              >
-                {confirmLabel}
-              </Button>
-            </Action>
+            <button
+              type="button"
+              className={`ep-confirm-dialog-button${destructive ? " ep-confirm-dialog-button-destructive" : " ep-confirm-primary-action"}`}
+              aria-label={confirmLabel}
+              onClick={onConfirm}
+            >
+              {confirmLabel}
+            </button>
           </div>
         </AlertDialog.Content>
       </AlertDialog.Portal>

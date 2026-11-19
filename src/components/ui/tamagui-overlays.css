@@ -4,6 +4,16 @@
   padding: 20px !important;
   gap: 16px !important;
   box-shadow: 0 24px 64px rgb(2 14 9 / 24%) !important;
+  z-index: 140001 !important;
+}
+
+dialog:has(.ep-confirm-dialog-content) {
+  z-index: 140001 !important;
+}
+
+.ep-alert-dialog-overlay {
+  z-index: 140000 !important;
+  pointer-events: none !important;
 }
 
 .ep-alert-dialog-heading,
