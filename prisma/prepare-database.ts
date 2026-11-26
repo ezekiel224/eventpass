@@ -170,6 +170,11 @@ async function prepareRaffleEntryModes() {
   await addColumnIfMissing("RafflePrize", "entryMode", `TEXT NOT NULL DEFAULT 'TICKETS'`);
 }
 
+async function prepareRaffleDisplayMessages() {
+  await addColumnIfMissing("Event", "raffleDisplayMessage", "TEXT");
+  await addColumnIfMissing("Event", "raffleDisplayMessageAt", "DATETIME");
+}
+
 async function preparePassDesigns() {
   if (!(await tableExists("Event"))) return;
   const columns = await prisma.$queryRawUnsafe<TableInfoRow[]>(`PRAGMA table_info("Event")`);
@@ -184,6 +189,7 @@ async function main() {
     await prepareCheckInAdmissionConstraint();
     await prepareClientSeparation();
     await prepareRaffleEntryModes();
+    await prepareRaffleDisplayMessages();
     await preparePassDesigns();
     console.log("Database constraints and client separation are ready");
   } finally {

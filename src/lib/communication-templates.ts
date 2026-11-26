@@ -1,17 +1,22 @@
 import { prisma } from "@/lib/db";
 import { markdownToHtml } from "@/lib/markdown";
 
+const legacyPassConfirmationBody = "Hi **{{firstName}}**,\n\nThank you for registering for **{{eventName}}**. Your digital event pass is ready. Keep this email handy and present the QR code at check-in.\n\n{{eventDescription}}";
+
 export const communicationTemplateDefinitions = {
   PASS_CONFIRMATION: {
     name: "Thank you for registering",
     description: "Sent after registration and when an operator resends a guest's pass.",
     subject: "Thank you for registering for {{eventName}}",
-    body: "Hi **{{firstName}}**,\n\nThank you for registering for **{{eventName}}**. Your digital event pass is ready. Keep this email handy and present the QR code at check-in.\n\n{{eventDescription}}",
+    body: "Hi **{{firstName}} {{lastName}}**,\n\nThank you for registering for **{{eventName}}**. Your digital event pass is ready. Keep this email handy and present the QR code at check-in.\n\n{{eventDescription}}",
     actionLabel: "Open digital pass",
     variables: [
-      ["name", "Full name", "Jordan Lee"],
-      ["firstName", "First name", "Jordan"],
-      ["lastName", "Last name", "Lee"],
+      ["name", "Guest full name", "Jordan Lee"],
+      ["firstName", "Guest first name", "Jordan"],
+      ["lastName", "Guest last name", "Lee"],
+      ["plusOneName", "Plus-one full name", "Taylor Morgan"],
+      ["plusOneFirstName", "Plus-one first name", "Taylor"],
+      ["plusOneLastName", "Plus-one last name", "Morgan"],
       ["eventName", "Event name", "Annual Celebration"],
       ["eventDescription", "Event description", "An evening celebrating our team and community."],
       ["eventDate", "Event date", "Friday, October 16, 2026"],
@@ -65,13 +70,15 @@ export async function getCommunicationTemplate(organizationId: string, key: Comm
   const saved = await prisma.communicationTemplate.findUnique({ where: { organizationId_key: { organizationId, key: scopedKey } } });
   const fallback = eventId && !saved ? await prisma.communicationTemplate.findUnique({ where: { organizationId_key: { organizationId, key } } }) : null;
   const definition = communicationTemplateDefinitions[key];
+  const savedBody = saved?.body === legacyPassConfirmationBody ? definition.body : saved?.body;
+  const fallbackBody = fallback?.body === legacyPassConfirmationBody ? definition.body : fallback?.body;
 
   return {
     key,
     name: definition.name,
     description: definition.description,
     subject: saved?.subject ?? fallback?.subject ?? definition.subject,
-    body: saved?.body ?? fallback?.body ?? definition.body,
+    body: savedBody ?? fallbackBody ?? definition.body,
     actionLabel: saved?.actionLabel ?? fallback?.actionLabel ?? definition.actionLabel,
     variables: definition.variables
   };

@@ -31,6 +31,8 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         name: true,
+        raffleDisplayMessage: true,
+        raffleDisplayMessageAt: true,
         rafflePrizes: {
           where: { status: "ACTIVE", drawnAt: null },
           select: { id: true, name: true },
@@ -44,6 +46,7 @@ export async function GET(request: NextRequest) {
     displays: displays.map(serializeRaffleDisplay),
     events: events.map((event) => ({
       ...event,
+      raffleDisplayMessageAt: event.raffleDisplayMessageAt?.toISOString() ?? null,
       rafflePrizes: sortPrizesByName(event.rafflePrizes)
     }))
   });

@@ -96,6 +96,8 @@ export async function getRaffleDisplayContent(eventId: string) {
       venue: true,
       startsAt: true,
       logoUrl: true,
+      raffleDisplayMessage: true,
+      raffleDisplayMessageAt: true,
       rafflePrizes: {
         where: { status: "ACTIVE" },
         include: { entries: { select: { attendeeId: true, ticketCount: true } } },
@@ -129,7 +131,9 @@ export async function getRaffleDisplayContent(eventId: string) {
       name: event.name,
       venue: event.venue,
       startsAt: event.startsAt.toISOString(),
-      logoUrl: event.logoUrl
+      logoUrl: event.logoUrl,
+      raffleDisplayMessage: event.raffleDisplayMessage,
+      raffleDisplayMessageAt: event.raffleDisplayMessageAt?.toISOString() ?? null
     },
     stats: {
       prizeCount: prizes.filter((prize) => !prize.drawnAt).length,

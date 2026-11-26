@@ -25,7 +25,6 @@ type Html5Scanner = {
     configuration: {
       fps: number;
       qrbox: { width: number; height: number };
-      videoConstraints?: MediaTrackConstraints;
     },
     qrCodeSuccessCallback: (decodedText: string) => void,
     qrCodeErrorCallback?: () => void
@@ -47,6 +46,16 @@ type Html5QrcodeClass = {
   new (elementId: string): Html5Scanner;
   getCameras: () => Promise<Array<{ id: string; label: string }>>;
 };
+
+function cameraStartErrorMessage(error: unknown) {
+  const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error || "Unknown camera error");
+  if (!window.isSecureContext) return "Camera access requires HTTPS. Open the secure version of this page, then try again.";
+  if (/NotAllowedError|Permission|denied/i.test(detail)) return "Camera access is blocked. Allow camera access for this site in your browser settings, then try again.";
+  if (/NotReadableError|TrackStartError|busy|in use/i.test(detail)) return "The camera is being used by another app or browser tab. Close it there, then try again.";
+  if (/OverconstrainedError|ConstraintNotSatisfiedError/i.test(detail)) return "This camera could not use the requested settings. Choose another rear camera or try again.";
+  if (/NotFoundError|DevicesNotFoundError/i.test(detail)) return "No available camera was found. Check the device camera settings, then try again.";
+  return `Camera could not start. Check camera permission and try again. ${detail}`;
+}
 
 export function QrCameraScanner({
   onScan,
@@ -154,49 +163,59 @@ export function QrCameraScanner({
       setCameras(availableCameras);
       setCameraId(preferredCamera);
 
-      const scanner = new Qrcode(readerId);
-      scannerRef.current = scanner;
-      const supportedConstraints = navigator.mediaDevices.getSupportedConstraints() as MediaTrackSupportedConstraints & { zoom?: boolean };
-      const videoConstraints = {
-        ...(preferredCamera
-          ? { deviceId: { exact: preferredCamera } }
-          : { facingMode: { ideal: "environment" } }),
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
-        ...(supportedConstraints.zoom ? { zoom: true } : {})
-      } as MediaTrackConstraints;
+      const handleDecodedText = (decodedText: string) => {
+        const now = Date.now();
+        if (scanLockedRef.current || (lastScanRef.current.value === decodedText && now - lastScanRef.current.at < 2500)) {
+          return;
+        }
+        scanLockedRef.current = true;
+        lastScanRef.current = { value: decodedText, at: now };
+        setFeedback(null);
+        void Promise.resolve(onScanRef.current(decodedText))
+          .then((result) => {
+            const success = result !== false;
+            setFeedback(success ? "success" : "error");
+            playFeedback(success);
+          })
+          .catch(() => setFeedback("error"))
+          .finally(() => {
+            unlockTimerRef.current = window.setTimeout(() => {
+              scanLockedRef.current = false;
+              setFeedback(null);
+            }, 900);
+          });
+      };
 
-      await scanner.start(
-        preferredCamera || { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 260, height: 260 },
-          videoConstraints
-        },
-        (decodedText: string) => {
-          const now = Date.now();
-          if (scanLockedRef.current || (lastScanRef.current.value === decodedText && now - lastScanRef.current.at < 2500)) {
-            return;
-          }
-          scanLockedRef.current = true;
-          lastScanRef.current = { value: decodedText, at: now };
-          setFeedback(null);
-          void Promise.resolve(onScanRef.current(decodedText))
-            .then((result) => {
-              const success = result !== false;
-              setFeedback(success ? "success" : "error");
-              playFeedback(success);
-            })
-            .catch(() => setFeedback("error"))
-            .finally(() => {
-              unlockTimerRef.current = window.setTimeout(() => {
-                scanLockedRef.current = false;
-                setFeedback(null);
-              }, 900);
-            });
-        },
-        () => undefined
-      );
+      async function beginScanning(camera: string | { facingMode: string }) {
+        const nextScanner = new Qrcode(readerId);
+        scannerRef.current = nextScanner;
+        try {
+          await nextScanner.start(
+            camera,
+            { fps: 10, qrbox: { width: 260, height: 260 } },
+            handleDecodedText,
+            () => undefined
+          );
+          return nextScanner;
+        } catch (error) {
+          try { nextScanner.clear(); } catch { /* A failed WebKit stream may already have cleared its preview. */ }
+          if (scannerRef.current === nextScanner) scannerRef.current = null;
+          throw error;
+        }
+      }
+
+      let scanner: Html5Scanner;
+      try {
+        scanner = await beginScanning(preferredCamera || { facingMode: "environment" });
+      } catch (preferredCameraError) {
+        if (!preferredCamera) throw preferredCameraError;
+        scanner = await beginScanning({ facingMode: "environment" });
+      }
+
+      try {
+        const activeCameraId = scanner.getRunningTrackSettings().deviceId;
+        if (activeCameraId && availableCameras.some((camera) => camera.id === activeCameraId)) setCameraId(activeCameraId);
+      } catch { /* Some WebKit versions do not expose the selected device ID. */ }
 
       function detectZoom() {
         if (scannerRef.current !== scanner) return;
@@ -228,8 +247,7 @@ export function QrCameraScanner({
       setIsActive(true);
       onActiveChange?.(true);
     } catch (startError) {
-      const detail = startError instanceof Error ? startError.message : "Unknown camera error";
-      setError(`Camera could not start. Allow camera access, use HTTPS or localhost, then try again. ${detail}`);
+      setError(cameraStartErrorMessage(startError));
       await stopCamera();
     } finally {
       setIsStarting(false);

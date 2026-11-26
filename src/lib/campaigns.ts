@@ -17,6 +17,28 @@ export async function countCampaignRecipients(eventId: string, segment: string) 
   return prisma.attendee.count({ where: attendeeWhere(eventId, segment) });
 }
 
+type CampaignGuest = {
+  firstName: string;
+  lastName: string;
+  plusOneFirstName?: string | null;
+  plusOneLastName?: string | null;
+};
+
+export function personalizeCampaignText(template: string, guest: CampaignGuest, eventName: string) {
+  const name = `${guest.firstName} ${guest.lastName}`.trim();
+  const plusOneFirstName = guest.plusOneFirstName ?? "";
+  const plusOneLastName = guest.plusOneLastName ?? "";
+  const plusOneName = `${plusOneFirstName} ${plusOneLastName}`.trim();
+  return template
+    .replaceAll("{{firstName}}", guest.firstName)
+    .replaceAll("{{lastName}}", guest.lastName)
+    .replaceAll("{{name}}", name)
+    .replaceAll("{{plusOneFirstName}}", plusOneFirstName)
+    .replaceAll("{{plusOneLastName}}", plusOneLastName)
+    .replaceAll("{{plusOneName}}", plusOneName)
+    .replaceAll("{{eventName}}", eventName);
+}
+
 export async function sendCampaign(campaignId: string, publicBaseUrl: string) {
   const claimed = await prisma.campaign.updateMany({ where: { id: campaignId, status: { in: ["DRAFT", "SCHEDULED"] } }, data: { status: "SENDING" } });
   if (claimed.count === 0) return null;
@@ -25,13 +47,14 @@ export async function sendCampaign(campaignId: string, publicBaseUrl: string) {
   const branding = await getBranding(campaign.event.organizationId);
 
   await prisma.campaignRecipient.createMany({ data: attendees.flatMap((attendee) => attendee.email ? [{ campaignId, attendeeId: attendee.id, email: attendee.email, name: `${attendee.firstName} ${attendee.lastName}` }] : []) });
-  const recipients = await prisma.campaignRecipient.findMany({ where: { campaignId, status: "PENDING" } });
+  const recipients = await prisma.campaignRecipient.findMany({ where: { campaignId, status: "PENDING" }, include: { attendee: { select: { firstName: true, lastName: true, plusOneFirstName: true, plusOneLastName: true } } } });
   let deliveredCount = 0;
   let failedCount = 0;
   for (const recipient of recipients) {
-    const firstName = recipient.name.split(" ")[0] ?? recipient.name;
-    const personalized = campaign.body.replaceAll("{{firstName}}", firstName).replaceAll("{{name}}", recipient.name).replaceAll("{{eventName}}", campaign.event.name);
-    const subject = campaign.subject.replaceAll("{{firstName}}", firstName).replaceAll("{{name}}", recipient.name).replaceAll("{{eventName}}", campaign.event.name);
+    const fallbackParts = recipient.name.trim().split(/\s+/);
+    const guest = recipient.attendee ?? { firstName: fallbackParts[0] ?? recipient.name, lastName: fallbackParts.slice(1).join(" ") };
+    const personalized = personalizeCampaignText(campaign.body, guest, campaign.event.name);
+    const subject = personalizeCampaignText(campaign.subject, guest, campaign.event.name);
     try {
       const delivery = await sendEmail({
         to: recipient.email,

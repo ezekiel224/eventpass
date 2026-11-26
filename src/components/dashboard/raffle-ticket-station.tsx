@@ -100,7 +100,7 @@ export function RaffleTicketStation({ eventId }: { eventId: string }) {
     setAllocations((current) => ({ ...current, [prizeId]: Math.max(0, Math.floor(Number.isFinite(count) ? count : 0)) }));
   }
 
-  async function saveAllocations(nextAllocations = allocations) {
+  async function saveAllocations(nextAllocations = allocations, resetAfterSave = false) {
     if (!attendee) return false;
     const total = Object.values(nextAllocations).reduce((sum, value) => sum + (Number(value) || 0), 0);
     if (total > attendee.raffleTickets) {
@@ -124,8 +124,15 @@ export function RaffleTicketStation({ eventId }: { eventId: string }) {
       setMessage(data.error ?? "Could not save ticket selections.");
       return false;
     }
-    loadAttendee(data.attendee);
-    setMessage(`Saved. ${data.attendee.remainingTickets} ticket${data.attendee.remainingTickets === 1 ? "" : "s"} remaining.`);
+    if (resetAfterSave) {
+      setAttendee(null);
+      setAllocations({});
+      setLookup("");
+      setMessage("Selections confirmed. Ready for the next guest.");
+    } else {
+      loadAttendee(data.attendee);
+      setMessage(`Saved. ${data.attendee.remainingTickets} ticket${data.attendee.remainingTickets === 1 ? "" : "s"} remaining.`);
+    }
     return true;
   }
 
@@ -187,7 +194,6 @@ export function RaffleTicketStation({ eventId }: { eventId: string }) {
           <header className="ep-operation-panel-header">
             <div className="ep-station-step">2</div>
             <div className="ep-section-heading"><h2>Tickets by prize</h2></div>
-            <Button type="button" onClick={() => void saveAllocations()} disabled={!attendee || usedTickets > (attendee?.raffleTickets ?? 0)} loading={saving} loadingLabel="Saving selections…"><CheckCircle2 className="h-4 w-4" /> Confirm selections</Button>
           </header>
 
           <div className="ep-station-prize-list">
@@ -214,6 +220,12 @@ export function RaffleTicketStation({ eventId }: { eventId: string }) {
           </div>
         </section>
       </div>
+      {attendee ? (
+        <div className="ep-station-confirm-float">
+          <div><strong>{usedTickets}</strong><span> of {attendee.raffleTickets} tickets selected</span></div>
+          <Button type="button" onClick={() => void saveAllocations(allocations, true)} disabled={usedTickets > attendee.raffleTickets} loading={saving} loadingLabel="Confirming…"><CheckCircle2 className="h-4 w-4" /> Confirm selections</Button>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -7,6 +7,7 @@
 }
 
 .ep-display-control,
+.ep-display-broadcast,
 .ep-display-create,
 .ep-display-ledger,
 .ep-station-control,
@@ -114,6 +115,15 @@
   gap: 10px;
   padding: 16px 20px 20px;
 }
+.ep-display-broadcast > form {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr) auto auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px 20px;
+}
+.ep-display-broadcast label { color: var(--color); font-size: .6875rem; font-weight: 750; }
+.ep-display-broadcast-count { color: var(--color-8); font-size: .6875rem; font-variant-numeric: tabular-nums; }
 .ep-display-create label,
 .ep-display-editor-grid label { display: grid; gap: 7px; color: var(--color); font-size: 11px; font-weight: 750; }
 .ep-display-create .ep-operation-select,
@@ -211,6 +221,24 @@
 .ep-station-ticket-control .ep-tamagui-button { min-width: 36px !important; width: 36px; padding-inline: 0 !important; }
 .ep-station-ticket-control .ep-tamagui-input { text-align: center; font-variant-numeric: tabular-nums; }
 .ep-station-remove-ticket { color: var(--c-color-alert-700) !important; }
+.ep-station-confirm-float {
+  position: fixed;
+  z-index: 40;
+  right: max(24px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 10px 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--background) 94%, transparent);
+  box-shadow: 0 18px 50px color-mix(in srgb, var(--color) 16%, transparent);
+  backdrop-filter: blur(14px);
+}
+.ep-station-confirm-float > div { min-width: 118px; }
+.ep-station-confirm-float strong { font-size: .875rem; font-variant-numeric: tabular-nums; }
+.ep-station-confirm-float span { color: var(--color-8); font-size: .6875rem; }
 
 @media (max-width: 960px) {
   .ep-display-create > form { grid-template-columns: repeat(2,minmax(0,1fr)); }
@@ -219,6 +247,8 @@
   .ep-display-row { grid-template-columns: minmax(180px,1fr) repeat(2,minmax(105px,.7fr)) auto; }
   .ep-display-row .ep-display-detail:nth-of-type(4) { display: none; }
   .ep-station-layout { grid-template-columns: 1fr; }
+  .ep-display-broadcast > form { grid-template-columns: auto minmax(180px, 1fr) auto auto; }
+  .ep-display-broadcast-count { grid-column: 2; }
 }
 
 @media (max-width: 720px) {
@@ -235,6 +265,10 @@
   .ep-display-metric-strip > div:nth-child(4),
   .ep-station-metric-strip > div:nth-child(4) { border-top: 1px solid var(--border-color); }
   .ep-display-create > form { grid-template-columns: 1fr; }
+  .ep-display-broadcast > form { grid-template-columns: 1fr 1fr; }
+  .ep-display-broadcast > form label,
+  .ep-display-broadcast > form .ep-tamagui-input { grid-column: 1 / -1; }
+  .ep-display-broadcast-count { grid-column: 1 / -1; }
   .ep-display-row { grid-template-columns: minmax(0,1fr) auto; gap: 12px; }
   .ep-display-row .ep-display-detail { display: none; }
   .ep-display-editor-grid { grid-template-columns: 1fr; }
@@ -248,6 +282,12 @@
   .ep-station-prize-row { grid-template-columns: 54px minmax(0,1fr); }
   .ep-station-prize-image { width: 54px; height: 48px; }
   .ep-station-ticket-control { grid-column: 1 / -1; grid-template-columns: 36px minmax(60px,1fr) 36px 36px; }
+  .ep-station-confirm-float {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: max(12px, env(safe-area-inset-left));
+    justify-content: space-between;
+  }
 }
 
 @media (max-width: 430px) {

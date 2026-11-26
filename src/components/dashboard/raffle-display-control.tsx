@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Link2, Monitor, Pause, Play, Plus, Save, Settings2, Trash2, Wifi, WifiOff } from "lucide-react";
+import { ExternalLink, Link2, Megaphone, Monitor, Pause, Play, Plus, Save, Settings2, Trash2, Wifi, WifiOff, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -33,7 +33,13 @@ type Display = {
   updatedAt: string;
 };
 
-type EventOption = { id: string; name: string; rafflePrizes: { id: string; name: string }[] };
+type EventOption = {
+  id: string;
+  name: string;
+  raffleDisplayMessage: string | null;
+  raffleDisplayMessageAt: string | null;
+  rafflePrizes: { id: string; name: string }[];
+};
 type ControlData = { displays: Display[]; events: EventOption[] };
 
 const modes: { value: RaffleDisplayMode; label: string; description: string }[] = [
@@ -199,7 +205,10 @@ function DisplayEditor({ display, events, onChanged, timeZone }: { display: Disp
 export function RaffleDisplayControl({ timeZone, eventId = "" }: { timeZone: string; eventId?: string }) {
   const [data, setData] = useState<ControlData>({ displays: [], events: [] });
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState("");
+  const [broadcast, setBroadcast] = useState("");
+  const [broadcastSaving, setBroadcastSaving] = useState(false);
   const [create, setCreate] = useState({ name: "", eventId, mode: "WALL" as RaffleDisplayMode, rotationSeconds: 12 });
 
   const load = useCallback(async () => {
@@ -215,8 +224,14 @@ export function RaffleDisplayControl({ timeZone, eventId = "" }: { timeZone: str
           ? current.eventId
           : next.events[0]?.id ?? "",
     }));
+    const nextEventId = next.events.some((event) => event.id === eventId)
+      ? eventId
+      : next.events.some((event) => event.id === create.eventId)
+        ? create.eventId
+        : next.events[0]?.id ?? "";
+    setBroadcast(next.events.find((event) => event.id === nextEventId)?.raffleDisplayMessage ?? "");
     setLoading(false);
-  }, [eventId]);
+  }, [create.eventId, eventId]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => void load(), 0);
@@ -224,22 +239,49 @@ export function RaffleDisplayControl({ timeZone, eventId = "" }: { timeZone: str
   }, [load]);
 
   const displays = useMemo(() => eventId ? data.displays.filter((display) => display.eventId === eventId) : data.displays, [data.displays, eventId]);
-  const selectedEvent = data.events.find((event) => event.id === eventId);
+  const selectedEvent = data.events.find((event) => event.id === (eventId || create.eventId));
   const onlineCount = displays.filter((display) => display.online).length;
   const pairedCount = displays.filter((display) => display.paired).length;
 
   async function addDisplay(event: FormEvent) {
     event.preventDefault();
     setMessage("");
-    const response = await fetch("/api/raffle-displays", {
-      method: "POST",
+    setCreating(true);
+    try {
+      const response = await fetch("/api/raffle-displays", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(create),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setMessage(result.error ?? "Could not create the display.");
+        return;
+      }
+      setCreate((current) => ({ ...current, name: "" }));
+      setMessage("Display created. Open its configuration to pair a screen.");
+      await load();
+    } catch {
+      setMessage("Could not create the display. Check the connection and try again.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function updateBroadcast(nextMessage: string) {
+    if (!selectedEvent) return;
+    setBroadcastSaving(true);
+    setMessage("");
+    const response = await fetch("/api/raffle-displays/message", {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(create),
+      body: JSON.stringify({ eventId: selectedEvent.id, message: nextMessage }),
     });
     const result = await response.json();
-    if (!response.ok) return setMessage(result.error ?? "Could not create the display.");
-    setCreate((current) => ({ ...current, name: "" }));
-    setMessage("Display created. Open its configuration to pair a screen.");
+    setBroadcastSaving(false);
+    if (!response.ok) return setMessage(result.error ?? "Could not update the display message.");
+    setBroadcast(result.message ?? "");
+    setMessage(result.message ? "Message is live on every raffle display." : "Display message cleared.");
     await load();
   }
 
@@ -258,6 +300,20 @@ export function RaffleDisplayControl({ timeZone, eventId = "" }: { timeZone: str
         </dl>
       </section>
 
+      <section className="ep-display-broadcast">
+        <header className="ep-operation-panel-header">
+          <div className="ep-section-heading"><h2>Broadcast message</h2><p>Temporarily replaces the prize view on every screen for this event.</p></div>
+          <Megaphone aria-hidden="true" />
+        </header>
+        <form onSubmit={(submitEvent) => { submitEvent.preventDefault(); void updateBroadcast(broadcast.trim()); }}>
+          <label htmlFor="raffle-display-message">Message</label>
+          <Input id="raffle-display-message" maxLength={280} value={broadcast} onChange={(inputEvent) => setBroadcast(inputEvent.target.value)} placeholder="Message for every raffle screen" disabled={!selectedEvent} />
+          <span className="ep-display-broadcast-count">{broadcast.length}/280</span>
+          <Button type="submit" loading={broadcastSaving} loadingLabel="Broadcasting…" disabled={!selectedEvent || !broadcast.trim()}><Megaphone className="h-4 w-4" /> Broadcast</Button>
+          <Button type="button" variant="secondary" disabled={!selectedEvent?.raffleDisplayMessage || broadcastSaving} onClick={() => void updateBroadcast("")}><X className="h-4 w-4" /> Clear</Button>
+        </form>
+      </section>
+
       <section className="ep-display-create">
         <header className="ep-operation-panel-header">
           <div className="ep-section-heading"><h2>Add a display</h2></div>
@@ -268,7 +324,7 @@ export function RaffleDisplayControl({ timeZone, eventId = "" }: { timeZone: str
           <label>Event<OperationSelect label="Event" value={create.eventId} onValueChange={(value) => setCreate({ ...create, eventId: value })} options={data.events.map((event) => ({ value: event.id, label: event.name }))} /></label>
           <label>Mode<OperationSelect label="Mode" value={create.mode} onValueChange={(value) => setCreate({ ...create, mode: value as RaffleDisplayMode })} options={modes.map((mode) => ({ value: mode.value, label: mode.label }))} /></label>
           <label>Rotation<Input type="number" min={6} max={60} value={create.rotationSeconds} onChange={(event) => setCreate({ ...create, rotationSeconds: Number(event.target.value) })} /></label>
-          <Button className="w-full" disabled={!create.eventId || loading}><Monitor className="h-4 w-4" /> Create display</Button>
+          <Button type="submit" className="w-full" disabled={!create.eventId || loading} loading={creating} loadingLabel="Creating display…"><Monitor className="h-4 w-4" /> Create display</Button>
         </form>
       </section>
 

@@ -240,6 +240,8 @@ model Event {
   prizeReceiptSubmitter     String?
   prizeReceiptExtension     String?
   prizeFundingSource        String?
+  raffleDisplayMessage      String?
+  raffleDisplayMessageAt    DateTime?
   attendees                 Attendee[]
   emailLogs                 EmailLog[]
   rafflePrizes              RafflePrize[]
